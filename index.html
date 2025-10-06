@@ -4,13 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EuroJackpot • TV‑Style Ziehung (by ENOWEB)</title>
-
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
-
 <style>
-:root{ --cy:#00fff0; --mag:#ff5be8; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --warn:#f59e0b; }
+:root{ --cy:#00fff0; --mag:#ff5be8; --ink:#eaf7ff; --bg:#060712; }
 body{margin:0;background:
   radial-gradient(1000px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
   radial-gradient(1000px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%),
@@ -24,12 +22,10 @@ body{margin:0;background:
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
 .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.2rem .6rem; font-size:.78rem;}
 .small{font-size:.85rem;opacity:.9}
-/* Simulation */
 .simwrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#03070e}
 .simwrap canvas{width:100%;height:420px;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
 .simlabel{position:absolute;top:10px;left:12px}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
-/* Result rail */
 .rail{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
 .rail .slotbox{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
 .sep{width:2px;height:28px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 .25rem}
@@ -37,7 +33,6 @@ body{margin:0;background:
   background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
 .chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);font-weight:800}
 .chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05}
-/* Hot/Cold */
 table.heat{width:100%; border-collapse:separate; border-spacing:0 6px}
 table.heat td{padding:6px 8px; background:rgba(255,255,255,.05); border-radius:8px; text-align:center}
 td.hot{background:linear-gradient(180deg,rgba(30,200,160,.35),rgba(30,200,160,.12))}
@@ -83,7 +78,7 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div id="statusText" class="text-sm mb-2">Starte Archiv‑Download…</div>
       <div class="grid grid-cols-3 gap-2 text-center my-2">
@@ -91,6 +86,10 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
         <div class="badge">Von: <b id="kpiFrom">–</b></div>
         <div class="badge">Bis: <b id="kpiTo">–</b></div>
       </div>
+      <div class="mt-2 small opacity-80">Wenn der Auto‑Download blockiert ist: ZIP oder TXT hier ziehen & ablegen.</div>
+      <input id="fileInput" type="file" class="mt-2 block w-full bg-gray-900 p-2 rounded" accept=".zip,.csv,.txt">
+      <textarea id="pasteBox" class="mt-2 w-full h-24 bg-gray-900 p-2 rounded" placeholder="Oder CSV/TXT hier einfügen…"></textarea>
+      <button id="btnParsePaste" class="btn btn--gray mt-2">CSV/TXT einlesen</button>
     </section>
   </div>
 
@@ -106,27 +105,35 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
 <script>
 const $=s=>document.querySelector(s);
-const LS_ARCH='ej_archive_working_v1';
+const LS_ARCH='ej_archive_hardened_v3';
 window.__ej={draws:[],freqA:Array(51).fill(0),freqB:Array(13).fill(0)};
 
-/* ===== Loader (1:1 Logik wie im 6aus49‑Tool, nur für EuroJackpot) ===== */
-async function fetchWithProxies(url){
-  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
-  let last=null;
-  for(const u of trials){
-    try{
-      const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip') || u.endsWith('.zip')){
-        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob); const entries=Object.values(zip.files);
-        const wanted = entries.filter(f=>/\\.(txt|csv)$/i.test(f.name));
-        if(!wanted.length) throw new Error('ZIP ohne TXT/CSV');
-        let combined=''; for(const f of wanted){ combined+='\\n'+await f.async('string'); }
-        return combined;
-      } else { return await res.text(); }
-    }catch(e){ last=e; }
+/* ===== Robust auto-archive ===== */
+async function getTextFromRes(res, url){
+  const blob=await res.blob();
+  const ct=(res.headers.get('content-type')||'').toLowerCase();
+  // try ZIP
+  if(ct.includes('zip') || url.endsWith('.zip') || (await blob.slice(0,4).text()).startsWith('PK\\x03\\x04')){
+    try{ const zip=await JSZip.loadAsync(blob); let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ out+='\\n'+await f.async('string'); } } if(out.trim()) return out; }catch{}
   }
-  throw last||new Error('Download fehlgeschlagen');
+  // else plain
+  try{ return await (new Response(blob)).text(); }catch{return '';}
+}
+async function fetchWithProxies(url){
+  const chain=[
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://corsproxy.io/?'+encodeURIComponent(url),
+    'https://cors.isomorphic-git.org/'+url,
+    'https://thingproxy.freeboard.io/fetch/'+url,
+    url
+  ];
+  for(const u of chain){
+    try{
+      const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0;
+      const t=await getTextFromRes(r,url); if(t && t.trim()) return t;
+    }catch{}
+  }
+  throw new Error('Alle Quellen blockiert');
 }
 function parseEuroArchive(txt){
   try{
@@ -135,7 +142,7 @@ function parseEuroArchive(txt){
     const H=head.split(delim).map(s=>s.trim());
     const idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
       A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
-    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt (Tag,Monat,Jahr,ZahlA1..5,ZahlB1..2).');
+    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt.');
 
     const out=[];
     for(let i=1;i<lines.length;i++){
@@ -158,18 +165,26 @@ function parseEuroArchive(txt){
 }
 async function autoLoadArchive(){
   const url=$('#archiveUrl').value.trim();
-  $('#statusText').textContent='Online‑Archiv wird geladen…';
+  $('#statusText').textContent='Lade Archiv…';
   try{
-    const raw = await fetchWithProxies(url);
+    const raw=await fetchWithProxies(url);
     localStorage.setItem(LS_ARCH, raw);
     parseEuroArchive(raw);
   }catch(e){
     const saved=localStorage.getItem(LS_ARCH);
-    if(saved){ parseEuroArchive(saved); $('#statusText').textContent='Online fehlgeschlagen – lokale Kopie geladen.'; }
-    else{ $('#statusText').textContent='Kein Archiv verfügbar (online & lokal fehlgeschlagen).'; }
+    if(saved){ parseEuroArchive(saved); $('#statusText').textContent='Online blockiert – lokale Kopie geladen.'; }
+    else{ $('#statusText').textContent='Auto‑Download blockiert. Bitte ZIP ziehen/ablegen oder CSV einfügen.'; }
   }
 }
 autoLoadArchive();
+
+// Manual fallbacks
+$('#fileInput').addEventListener('change', async (ev)=>{
+  const f=ev.target.files[0]; if(!f) return;
+  if(f.name.endsWith('.zip')){ const zip=await JSZip.loadAsync(f); let txt=''; for(const file of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(file.name)) txt+='\\n'+await file.async('string'); } localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
+  else { const txt=await f.text(); localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
+});
+$('#btnParsePaste').onclick=()=>{ const txt=$('#pasteBox').value; if(txt.trim()){ localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); } };
 
 /* ===== Hot/Cold ===== */
 function renderHotCold(){
@@ -191,7 +206,7 @@ function renderHotCold(){
   table($('#hotEuro'),B,12);
 }
 
-/* ===== Simulation (starkes Containment, Sog + Rutsche, result-rail roll) ===== */
+/* ===== Simulation hardened ===== */
 const {Engine,Render,Runner,Bodies,Body,Constraint,Events,World,Vector}=Matter;
 function createDrum(canvas,count){
   const engine=Engine.create({gravity:{x:0,y:0}}); const world=engine.world;
@@ -199,7 +214,7 @@ function createDrum(canvas,count){
   const render=Render.create({canvas,engine,options:{width:W,height:H,wireframes:false,background:'transparent',pixelRatio:Math.min(2,devicePixelRatio||1)}});
   const cx=W*0.48, cy=H*0.58, R=Math.min(W,H)*0.38;
 
-  const segs=160, thick=30, segLen=(Math.PI*2*R)/segs+3;
+  const segs=220, thick=36, segLen=(Math.PI*2*R)/segs+4;
   const walls=[]; for(let i=0;i<segs;i++){ const a=i/segs*Math.PI*2, x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
     walls.push(Bodies.rectangle(x,y,thick,segLen,{isStatic:true,angle:a+Math.PI/2,render:{fillStyle:'rgba(10,25,38,.96)'}})); }
   World.add(world,walls);
@@ -217,36 +232,34 @@ function createDrum(canvas,count){
   const arms=[blade(R*0.8,0),blade(R*0.8,Math.PI/3),blade(R*0.8,-Math.PI/3)];
   arms.forEach(a=>World.add(world,[a,Constraint.create({pointA:{x:cx,y:cy},bodyB:a,length:0,stiffness:1})]));
 
+  // balls
   const balls=[]; const rBall=Math.max(10,R*0.08);
   for(let i=0;i<count;i++){
     const ang=i/count*Math.PI*2 + Math.random()*0.05;
     const x=cx+Math.cos(ang)*R*0.6, y=cy+Math.sin(ang)*R*0.6;
-    const b=Bodies.circle(x,y,rBall,{restitution:0.68,friction:0.02,frictionAir:0.035,density:0.0018,render:{fillStyle:'#13b3aa'}});
+    const b=Bodies.circle(x,y,rBall,{restitution:0.65,friction:0.02,frictionAir:0.035,density:0.0018,render:{fillStyle:'#13b3aa'}});
     b.labelNum=i+1; balls.push(b);
   }
   World.add(world,balls);
 
   // mask & numbers
-  function clip(ctx){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.clip(); }
-  function unclip(ctx){ ctx.restore(); }
+  function clip(ctx){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.clip(); } function unclip(ctx){ ctx.restore(); }
   Events.on(render,'beforeRender',()=>clip(render.context));
-  Events.on(render,'afterRender',()=>{
-    const ctx=render.context; ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='800 14px Inter,system-ui';
-    for(const b of balls){ ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); ctx.fillStyle='#eafffb'; ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); }
-    unclip(ctx);
-  });
+  Events.on(render,'afterRender',()=>{ const ctx=render.context; ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='800 14px Inter,system-ui';
+    for(const b of balls){ ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); ctx.fillStyle='#eafffb'; ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); } unclip(ctx); });
 
   const runner=Runner.create(); Render.run(render); Runner.run(runner,engine);
 
-  function guard(b){ const d=Math.hypot(b.position.x-cx,b.position.y-cy); if(d>R-18){ const dir=Vector.normalise({x:cx-b.position.x,y:cy-b.position.y}); Body.applyForce(b,b.position,{x:dir.x*0.02,y:dir.y*0.02}); } }
+  // radial keeper force always inward
+  function guard(b){ const dx=cx-b.position.x, dy=cy-b.position.y; const d=Math.hypot(dx,dy); const edge=R-16; if(d>edge){ Body.applyForce(b,b.position,{x:(dx/d)*0.03,y:(dy/d)*0.03}); } }
 
   let t0=null,suctionActive=0;
   Events.on(engine,'beforeUpdate',()=>{
     const ts=engine.timing.timestamp/1000; if(!t0) t0=ts; const dt=ts-t0;
-    const speed=Math.min(2.0,0.4+dt*0.22);
+    const speed=Math.min(1.9,0.45+dt*0.22);
     arms.forEach((a,i)=>Body.setAngularVelocity(a,i%2?speed:-speed));
     if(!suctionActive){ Body.setAngle(flap,intakeAngle); Body.setAngularVelocity(flap,0); }
-    balls.forEach(b=>{ b.velocity.x=Math.max(-10,Math.min(10,b.velocity.x)); b.velocity.y=Math.max(-10,Math.min(10,b.velocity.y)); guard(b); });
+    balls.forEach(b=>{ b.velocity.x=Math.max(-9,Math.min(9,b.velocity.x)); b.velocity.y=Math.max(-9,Math.min(9,b.velocity.y)); guard(b); });
   });
 
   function nearestBall(){ let best=null,bd=1e9; for(const b of balls){ if(b.picked) continue; const dx=b.position.x-intake.x,dy=b.position.y-intake.y; const d=dx*dx+dy*dy; if(d<bd){bd=d;best=b;} } return best; }
@@ -255,7 +268,7 @@ function createDrum(canvas,count){
     suctionActive=0; return t; }
   async function openFlap(ms=420){ for(let i=0;i<10;i++){Body.rotate(flap,0.1); await sleep(10);} await sleep(ms); for(let i=0;i<10;i++){Body.rotate(flap,-0.1); await sleep(10);} Body.setAngle(flap,intakeAngle); }
   function insideIntake(b){ return Math.abs(b.position.x-intake.x)<26 && Math.abs(b.position.y-intake.y)<26; }
-  function tryEject(b){ if(!b||b.picked) return null; if(insideIntake(b)){ Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3); b.picked=true; return b; } return null; }
+  function tryEject(b){ if(!b||b.picked) return null; if(insideIntake(b)){ Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3); b.picked=true; World.remove(world,b); return b; } return null; }
   async function drawOne(){ const t=await suctionOne(); await openFlap(480); const s=performance.now(); while(performance.now()-s<1000){ const g=tryEject(t); if(g) return {body:g,ejection:{x:g.position.x,y:g.position.y}}; await sleep(16);} return null; }
 
   return {drawOne, canvas};
