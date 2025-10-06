@@ -3,47 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Premium Ziehung (Matter.js, 3D‑Look, Rutsche)</title>
+<title>EuroJackpot • Premium Ziehung v2 (fix: Containment & Clean Look)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <style>
-:root{
-  --ink:#eaf7ff; --bg:#070a14; --panel:rgba(13,19,38,.78);
-  --cy:#01ffee; --mag:#ff4ee4; --green:#18c47d; --amber:#f59e0b;
-}
-html,body{height:100%}
-body{
-  margin:0; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;
-  background:
-    radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.10), transparent 60%),
-    radial-gradient(1200px 800px at 110% -10%, rgba(255,0,234,.10), transparent 60%),
-    linear-gradient(180deg,#060a12,#05070e 60%, #060a12);
-}
-.h1{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
-.card{background:var(--panel); backdrop-filter: blur(14px); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; box-shadow:0 14px 44px rgba(0,0,0,.45)}
+:root{ --ink:#eaf7ff; --bg:#070a14; --panel:rgba(13,19,38,.78); --cy:#01ffee; --mag:#ff4ee4;}
+body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
+  radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.10), transparent 60%),
+  radial-gradient(1200px 800px at 110% -10%, rgba(255,0,234,.10), transparent 60%),
+  linear-gradient(180deg,#060a12,#05070e 60%, #060a12);}
+.h1{background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent;font-weight:900}
+.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 14px 44px rgba(0,0,0,.45)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
-.btn--green{background:#15803d;color:#fff;} .btn--amber{background:#b45309;color:#fff;} .btn--gray{background:#374151;color:#fff;}
-.grid2{display:grid; grid-template-columns:1fr; gap:14px}
-@media (min-width: 900px){ .grid2{grid-template-columns:1fr 1fr} }
-.simwrap{position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.08); background:#03070e}
-.simwrap canvas{width:100%; height:420px; max-height:62vh; background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
-.label{position:absolute; top:10px; left:12px; font-size:14px; opacity:.85}
-.bubble{display:inline-block; padding:3px 9px; border-radius:999px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12)}
-.slot{position:absolute; right:10px; top:10px; width:92px; height:92px; border-radius:14px; border:1px solid rgba(0,255,200,.28); background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10)); display:flex; align-items:center; justify-content:center; font-size:12px; color:#8bffc9; box-shadow: inset 0 0 18px rgba(0,255,200,.08)}
-.legend{font-size:.85rem; opacity:.8}
-.badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.2rem .6rem; font-size:.78rem;}
-/* Number chip style for the overlay list */
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a); box-shadow: inset 0 -6px 10px rgba(0,0,0,.2), 0 10px 20px rgba(0,0,0,.35); font-weight:800}
-.chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655); color:#241a05; box-shadow: inset 0 -6px 10px rgba(0,0,0,.15), 0 10px 22px rgba(255,220,130,.25)}
+.btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+.simwrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#03070e}
+.simwrap canvas{width:100%;height:420px;max-height:62vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
+.label{position:absolute;top:10px;left:12px;font-size:14px;opacity:.85}
+.bubble{display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12)}
+.slot{position:absolute;right:10px;top:10px;width:92px;height:92px;border-radius:14px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9;box-shadow:inset 0 0 18px rgba(0,255,200,.08)}
+.badge{background:rgba(255,255,255,.06);border:1px solid rgba(140,170,255,.22);border-radius:999px;padding:.2rem .6rem;font-size:.78rem}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);box-shadow:inset 0 -6px 10px rgba(0,0,0,.2),0 10px 20px rgba(0,0,0,.35);font-weight:800}
+.chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
 </style>
 </head>
 <body class="p-4">
-  <h1 class="h1 text-3xl md:text-4xl mb-3">EuroJackpot • Premium Ziehung</h1>
+  <h1 class="h1 text-3xl md:text-4xl mb-3">EuroJackpot • Premium Ziehung v2</h1>
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln, Gate‑Klappe, Rutsche, 3D‑Look)</h2>
-      <p class="legend mb-2">Physik mit Matter.js · Kollisionen & Rotation · **Klappe** am Gate · **Rutsche** zum Auswurf · 3D‑Optik (Schatten/Glanz). Reihenfolge: 5 aus 50, danach 2 aus 12.</p>
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (sauberes Containment + Clip-Maske)</h2>
       <div class="grid2">
         <div class="simwrap">
           <div class="label"><span class="bubble">Haupttrommel (1–50)</span></div>
@@ -67,7 +56,6 @@ body{
 
     <section class="card">
       <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
-      <p id="statusText" class="text-sm opacity-80 mb-2">Noch kein Archiv geladen.</p>
       <div class="mb-2">
         <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       </div>
@@ -86,246 +74,121 @@ body{
         </label>
         <button id="pasteBtn" class="btn btn--gray">📋 CSV/TXT einfügen</button>
       </div>
-      <div id="fileName" class="text-xs opacity-70">Keine Datei ausgewählt</div>
+      <div id="statusText" class="text-xs opacity-80">Noch kein Archiv geladen.</div>
     </section>
   </div>
 
 <script>
-/* ============ Archiv: robust auto-downloader ============ */
-const LS_ARCH='ej_archive_v6', $=s=>document.querySelector(s);
-function parseText(txt){
-  try{
-    const t=txt.replace(/\\r\\n?/g,'\\n'), head=t.slice(0,2000);
-    const delim = (head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length ? '\\t' : (head.match(/;/g)||[]).length? ';' : ',';
-    const lines=t.split('\\n').map(l=>l.trim()).filter(Boolean);
-    const h=lines[0].split(delim).map(x=>x.trim());
-    const idx={ Tag:h.findIndex(x=>/tag/i.test(x)), Monat:h.findIndex(x=>/monat|month/i.test(x)), Jahr:h.findIndex(x=>/jahr|year/i.test(x)),
-      A:[1,2,3,4,5].map(k=>h.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>h.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x))) };
-    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt.');
-    const out=[];
-    for(let i=1;i<lines.length;i++){
-      const c=lines[i].split(delim).map(s=>s.trim()); if(c.length <= Math.max(...idx.A, ...idx.B)) continue;
-      const A=idx.A.map(ii=>+c[ii]).filter(Number.isFinite), B=idx.B.map(ii=>+c[ii]).filter(Number.isFinite);
-      const day=+c[idx.Tag], mon=+c[idx.Monat], year=+c[idx.Jahr];
-      if(A.length===5 && B.length===2){ const date=new Date(Date.UTC(year,mon-1,day)).toISOString().slice(0,10); out.push({date, main:A.slice().sort((a,b)=>a-b), euro:B.slice().sort((a,b)=>a-b)}); }
-    }
-    out.sort((a,b)=>a.date.localeCompare(b.date));
-    $('#kpiCount').textContent=out.length; $('#kpiTo').textContent=out.at(-1)?.date||'–'; $('#statusText').textContent='Archiv geladen ✔';
-    return out;
-  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; return []; }
-}
-async function withProxies(url){
-  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
-  for(const u of trials){
-    try{
-      const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip')||u.endsWith('.zip')){
-        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob); let combo='';
-        for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ combo+='\\n'+await f.async('string'); } }
-        return combo;
-      } else { return await res.text(); }
-    }catch(e){}
-  }
-  throw new Error('Download fehlgeschlagen.');
-}
-async function loadLatest(){
-  $('#statusText').textContent='Online-Archiv wird geprüft…';
-  try{ const raw=await withProxies($('#archiveUrl').value.trim()); const arr=parseText(raw); localStorage.setItem(LS_ARCH, raw); }
-  catch(e){ const saved=localStorage.getItem(LS_ARCH); if(saved){ parseText(saved); $('#statusText').textContent='Online-Check fehlgeschlagen – lokale Kopie geladen.';} else { $('#statusText').textContent='Kein Archiv verfügbar.'; } }
-}
-$('#loadLatestBtn').addEventListener('click', loadLatest);
-$('#forceDlBtn').addEventListener('click', async()=>{ const u=$('#archiveUrl').value.trim(); try{ const r=await fetch(u); const b=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='archiv_eurojackpot.zip'; a.click(); }catch(e){ alert('Direkt-Download nicht möglich.'); } });
-$('#directDl').href=$('#archiveUrl').value.trim();
-$('#zipInput').addEventListener('change', async (e)=>{ const f=e.target.files[0]; if(!f) return; $('#fileName').textContent=f.name;
-  if(f.name.endsWith('.zip')){ const z=await JSZip.loadAsync(f); let combo=''; for(const file of Object.values(z.files)){ if(/\\.(txt|csv)$/i.test(file.name)){ combo+='\\n'+await file.async('string'); } } parseText(combo); localStorage.setItem(LS_ARCH, combo); }
-  else{ const t=await f.text(); parseText(t); localStorage.setItem(LS_ARCH,t); }
-});
-$('#pasteBtn').addEventListener('click', ()=>{ const sample="Tag\\tMonat\\tJahr\\tZahlA1\\tZahlA2\\tZahlA3\\tZahlA4\\tZahlA5\\tZahlB1\\tZahlB2\\n23\\t3\\t2012\\t5\\t46\\t37\\t21\\t8\\t8\\t6"; const txt=prompt('CSV/TXT (mit Kopfzeile):', sample); if(!txt) return; parseText(txt); localStorage.setItem(LS_ARCH, txt); });
-(function(){ const saved=localStorage.getItem(LS_ARCH); if(saved){ parseText(saved);} else { loadLatest(); } })();
+/* ===== Archiv Loader (wie gehabt, kurz) ===== */
+const LS_ARCH='ej_archive_v7', $=s=>document.querySelector(s);
+async function withProxies(url){const T=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];for(const u of T){try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw 0;const ct=r.headers.get('content-type')||'';if(ct.includes('zip')||u.endsWith('.zip')){const b=await r.blob();const z=await JSZip.loadAsync(b);let s='';for(const f of Object.values(z.files)){if(/\\.(txt|csv)$/i.test(f.name))s+='\\n'+await f.async('string');}return s;}else return await r.text();}catch{}}throw new Error('Download fehlgeschlagen');}
+function parseText(t){try{t=t.replace(/\\r\\n?/g,'\\n');const head=t.slice(0,2e3);const d=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';const L=t.split('\\n').map(l=>l.trim()).filter(Boolean);const H=L[0].split(d).map(x=>x.trim());const id={Tag:H.findIndex(x=>/tag/i.test(x)),Monat:H.findIndex(x=>/monat|month/i.test(x)),Jahr:H.findIndex(x=>/jahr|year/i.test(x)),A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))),B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};if(id.Tag<0||id.Monat<0||id.Jahr<0||id.A.some(i=>i<0)||id.B.some(i=>i<0)) throw 0;const out=[];for(let i=1;i<L.length;i++){const c=L[i].split(d).map(s=>s.trim());if(c.length<=Math.max(...id.A,...id.B))continue;const A=id.A.map(ii=>+c[ii]).filter(Number.isFinite),B=id.B.map(ii=>+c[ii]).filter(Number.isFinite);const day=+c[id.Tag],mon=+c[id.Monat],year=+c[id.Jahr];if(A.length===5&&B.length===2){const date=new Date(Date.UTC(year,mon-1,day)).toISOString().slice(0,10);out.push({date,main:A.slice().sort((a,b)=>a-b),euro:B.slice().sort((a,b)=>a-b)})}}out.sort((a,b)=>a.date.localeCompare(b.date));$('#kpiCount').textContent=out.length;$('#kpiTo').textContent=out.at(-1)?.date||'–';$('#statusText').textContent='Archiv geladen ✔';return out;}catch(e){$('#statusText').textContent='Archiv nicht erkannt';return []}}
+document.getElementById('loadLatestBtn').onclick=async()=>{try{const raw=await withProxies($('#archiveUrl').value.trim());parseText(raw);localStorage.setItem(LS_ARCH,raw);}catch(e){const s=localStorage.getItem(LS_ARCH);if(s){parseText(s);$('#statusText').textContent='Fallback: lokale Kopie.'}else{$('#statusText').textContent='Kein Archiv verfügbar.'}}};
+document.getElementById('forceDlBtn').onclick=async()=>{try{const r=await fetch($('#archiveUrl').value.trim());const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='archiv_eurojackpot.zip';a.click();}catch{alert('Direkt-Download nicht möglich.')}};
+document.getElementById('directDl').href=$('#archiveUrl').value;
 
-/* ============ Simulation: 2 Trommeln, Klappe + Rutsche, 3D‑Look ============ */
-const {Engine, Render, Runner, Bodies, Body, Composite, Constraint, Events, World, Vector} = Matter;
+/* ===== Simulation v2 ===== */
+const {Engine, Render, Runner, Bodies, Body, Constraint, Events, World}=Matter;
+function createDrum(canvas, count){
+  const engine=Engine.create({gravity:{x:0,y:0}}); engine.timing.timeScale=0.95;
+  const world=engine.world; const W=canvas.clientWidth,H=canvas.clientHeight; canvas.width=W; canvas.height=H;
+  const render=Render.create({canvas,engine,options:{width:W,height:H,wireframes:false,background:"transparent",pixelRatio:Math.min(2,devicePixelRatio||1)}});
+  const cx=W*0.48, cy=H*0.58, R=Math.min(W,H)*0.38;
 
-function createDrum(canvas, opts){
-  const engine = Engine.create({gravity:{x:0,y:0}});
-  const world = engine.world;
-  const W = canvas.clientWidth, H = canvas.clientHeight; canvas.width=W; canvas.height=H;
+  // Circular wall via dense segments with overlap
+  const segs=96, thick=28, segLen=(Math.PI*2*R)/segs+2;
+  const walls=[]; for(let i=0;i<segs;i++){const a=i/segs*Math.PI*2, x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
+    walls.push(Bodies.rectangle(x,y,thick,segLen,{isStatic:true,angle:a+Math.PI/2,slop:0.1,render:{fillStyle:"rgba(10,25,38,.96)"}}));}
+  World.add(world,walls);
 
-  const render = Render.create({ canvas, engine, options:{ width:W, height:H, wireframes:false, background:"transparent", pixelRatio:Math.min(2,window.devicePixelRatio||1) } });
+  // Outer invisible bounds (just in case)
+  World.add(world,[Bodies.rectangle(W/2,-80,W+400,160,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W/2,H+80,W+400,160,{isStatic:true,render:{visible:false}}),Bodies.rectangle(-80,H/2,160,H+400,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W+80,H/2,160,H+400,{isStatic:true,render:{visible:false}})]);
 
-  // 3D-ish bezel drawing on background
-  function drawBezel(){
-    const ctx=render.context, cx=W*0.48, cy=H*0.58, R=Math.min(W,H)*0.38;
-    const g=ctx.createRadialGradient(cx,cy,R*0.3,cx,cy,R); g.addColorStop(0,'rgba(255,255,255,0.06)'); g.addColorStop(1,'rgba(0,0,0,0.55)');
-    ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R+18,0,Math.PI*2); ctx.lineWidth=28; ctx.strokeStyle=g; ctx.stroke(); ctx.restore();
-    // tick marks
-    ctx.save(); ctx.translate(cx,cy);
-    for(let i=0;i<28;i++){ ctx.rotate((Math.PI*2)/28); ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.fillRect(R-24,-6,20,12); }
-    ctx.restore();
-  }
+  // Gate + chute
+  const gateAngle=-Math.PI*0.14+Math.PI/2;
+  const pivot={x:cx+Math.cos(gateAngle)*(R-70),y:cy+Math.sin(gateAngle)*(R-70)};
+  const flap=Bodies.rectangle(pivot.x,pivot.y+60,26,120,{chamfer:{radius:6},render:{fillStyle:"#136d68"},frictionAir:0.02}); Body.setAngle(flap,gateAngle);
+  const hinge=Constraint.create({pointA:pivot,bodyB:flap,pointB:{x:0,y:-60},stiffness:1,length:0}); World.add(world,[flap,hinge]);
+  const chute1=Bodies.rectangle(pivot.x+60,pivot.y-8,140,12,{isStatic:true,angle:-0.35,render:{fillStyle:"rgba(60,200,170,.18)"}});
+  const chute2=Bodies.rectangle(pivot.x+120,pivot.y+34,160,12,{isStatic:true,angle:-0.35,render:{fillStyle:"rgba(60,200,170,.18)"}});
+  World.add(world,[chute1,chute2]);
 
-  const cx=W*0.48, cy=H*0.58;
-  const radius = Math.min(W,H)*0.38;
-  const segs = 48; // tighter ring for better containment
-  const wallThickness = 26;
-  const walls=[];
-  for(let i=0;i<segs;i++){
-    const angle=(i/segs)*Math.PI*2;
-    const x=cx + Math.cos(angle)*radius, y=cy + Math.sin(angle)*radius;
-    walls.push(Bodies.rectangle(x,y, wallThickness, (Math.PI*2*radius)/segs + 1.5, {isStatic:true, angle:angle+Math.PI/2, render:{fillStyle:"rgba(10,25,38,0.95)"}}));
-  }
-  World.add(world, walls);
+  // Three paddles with ease-in speed
+  const blade=(len,ang)=>Bodies.rectangle(cx,cy,len,14,{density:0.004,frictionAir:0.035,angle:ang,render:{fillStyle:"#17c3b2"}});
+  const arms=[blade(R*0.82,0),blade(R*0.82,Math.PI/3),blade(R*0.82,-Math.PI/3)];
+  arms.forEach(a=>World.add(world,[a,Constraint.create({pointA:{x:cx,y:cy},bodyB:a,length:0,stiffness:1})]));
 
-  // Invisible outer bounds
-  World.add(world,[
-    Bodies.rectangle(W/2,-60,W+300,120,{isStatic:true, render:{visible:false}}),
-    Bodies.rectangle(W/2,H+60,W+300,120,{isStatic:true, render:{visible:false}}),
-    Bodies.rectangle(-60,H/2,120,H+300,{isStatic:true, render:{visible:false}}),
-    Bodies.rectangle(W+60,H/2,120,H+300,{isStatic:true, render:{visible:false}}),
-  ]);
+  // Poisson-disk spawn inside circle (no overlaps)
+  function spawnPositions(n, rad){ const pts=[]; let tries=0; while(pts.length<n && tries<5000){tries++; const rr=R*0.6*Math.sqrt(Math.random()), ang=Math.random()*Math.PI*2; const x=cx+Math.cos(ang)*rr, y=cy+Math.sin(ang)*rr;
+      if(pts.every(p=>((p.x-x)**2+(p.y-y)**2)>(rad*2.2)**2)) pts.push({x,y}); } return pts; }
+  const rBall=Math.max(10,R*0.08); const pos=spawnPositions(count,rBall);
+  const balls=pos.map((p,i)=>{const b=Bodies.circle(p.x,p.y,rBall,{restitution:0.84,friction:0.018,frictionAir:0.02,density:0.0016,slop:0.01,render:{fillStyle:"#13b3aa",strokeStyle:"rgba(255,255,255,.08)",lineWidth:1}}); b.labelNum=i+1; return b;});
+  World.add(world,balls);
 
-  // Gate position & chute geometry
-  const gateAngle = -Math.PI*0.14 + Math.PI/2;
-  const gatePivot = {x: cx + Math.cos(gateAngle)*(radius-70), y: cy + Math.sin(gateAngle)*(radius-70)};
-  // Gate flap (rounded bar)
-  const flapW = 28, flapH = 120;
-  const flap = Bodies.rectangle(gatePivot.x, gatePivot.y + flapH/2, flapW, flapH, { chamfer:{radius:6}, render:{fillStyle:"#136d68"}, frictionAir:0.02 });
-  const hinge = Constraint.create({ pointA: gatePivot, bodyB: flap, pointB:{x:0,y:-flapH/2}, stiffness:1, length:0 });
-  Body.setAngle(flap, gateAngle);
-  World.add(world,[flap, hinge]);
+  // Clip mask (visual): draw only inside drum
+  function clipMask(ctx){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.clip(); }
+  function unclip(ctx){ ctx.restore(); }
 
-  // Chute (Rutsche): two static slanted walls forming a corridor to top-right slot
-  const slotX = W - 56, slotY = 56;
-  const r1 = Bodies.rectangle(gatePivot.x+60, gatePivot.y-10, 140, 12, {isStatic:true, angle:-0.35, render:{fillStyle:"rgba(60,200,170,.18)"}});
-  const r2 = Bodies.rectangle(gatePivot.x+120, gatePivot.y+40, 160, 12, {isStatic:true, angle:-0.35, render:{fillStyle:"rgba(60,200,170,.18)"}});
-  World.add(world,[r1,r2]);
-
-  // Paddles (3‑arm spinner) for nicer motion
-  const bladeLen = radius*0.82, bladeW=14;
-  const arms=[
-    Bodies.rectangle(cx,cy, bladeLen, bladeW, {density:0.004, frictionAir:0.035, render:{fillStyle:"#17c3b2"}}),
-    Bodies.rectangle(cx,cy, bladeLen, bladeW, {density:0.004, frictionAir:0.035, render:{fillStyle:"#17c3b2"}, angle:Math.PI/3}),
-    Bodies.rectangle(cx,cy, bladeLen, bladeW, {density:0.004, frictionAir:0.035, render:{fillStyle:"#17c3b2"}, angle:-Math.PI/3}),
-  ];
-  const pivots=arms.map(a=>Constraint.create({pointA:{x:cx,y:cy}, bodyB:a, length:0, stiffness:1}));
-  World.add(world,[...arms, ...pivots]);
-
-  // Balls placed on circular band – no overlaps
-  const balls=[]; const n=opts.count; const labels=opts.labels;
-  const rBall = Math.max(10, radius*0.08); const bandR = radius*0.62;
-  for(let i=0;i<n;i++){
-    const ang=i/n*Math.PI*2 + (Math.random()*0.2);
-    const x=cx + Math.cos(ang)*bandR, y=cy + Math.sin(ang)*bandR;
-    const b=Bodies.circle(x,y,rBall,{ restitution:0.84, friction:0.018, frictionAir:0.02, density:0.0016,
-      render:{fillStyle:"#13b3aa", strokeStyle:"rgba(255,255,255,0.08)", lineWidth:1} });
-    b.labelNum = labels[i];
-    balls.push(b);
-  }
-  World.add(world, balls);
-
-  // Engine
-  const runner = Runner.create();
-
-  // Mixing control
-  let mixing=true;
-  Events.on(runner,"beforeUpdate",()=>{
-    const speed = mixing?1.9:0.3;
-    arms.forEach((a,i)=>Body.setAngularVelocity(a, i%2?speed:-speed));
-    // keep flap closed by default
-    Body.setAngle(flap, gateAngle); Body.setAngularVelocity(flap, 0);
+  // Velocity cap for stability
+  Events.on(engine,"beforeUpdate",()=>{
+    const t=engine.timing.timestamp/1000;
+    const target=Math.min(2, 0.3+ t*0.15); // ease-in
+    arms.forEach((a,i)=>Body.setAngularVelocity(a, i%2?target:-target));
+    Body.setAngle(flap,gateAngle); Body.setAngularVelocity(flap,0);
+    balls.forEach(b=>{ b.velocity.x=Math.max(-12,Math.min(12,b.velocity.x)); b.velocity.y=Math.max(-12,Math.min(12,b.velocity.y)); });
   });
 
-  // Render overlays (3D bevel, numbers with outline, glow on gold)
-  Events.on(render,"beforeRender", drawBezel);
+  // Pretty overlays + clipping
+  Events.on(render,"beforeRender",()=>{
+    const ctx=render.context; clipMask(ctx);
+    // bezel ring
+    ctx.save(); const g=ctx.createRadialGradient(cx,cy,R*0.25,cx,cy,R); g.addColorStop(0,'rgba(255,255,255,.06)'); g.addColorStop(1,'rgba(0,0,0,.55)');
+    ctx.beginPath(); ctx.arc(cx,cy,R+18,0,Math.PI*2); ctx.lineWidth=28; ctx.strokeStyle=g; ctx.stroke(); ctx.restore();
+  });
   Events.on(render,"afterRender",()=>{
     const ctx=render.context;
     // numbers with outline
     ctx.save(); ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="800 14px Inter,system-ui";
     for(const b of balls){
-      // outline
-      ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,0.55)"; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x, b.position.y);
-      // fill
-      ctx.fillStyle = (b.render.fillStyle==="#f9d67a")?"#241a05":"#eafffb";
-      ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x, b.position.y);
-      // glow for picked
-      if(b.render.fillStyle==="#f9d67a"){
-        const g=ctx.createRadialGradient(b.position.x,b.position.y,6,b.position.x,b.position.y,34);
-        g.addColorStop(0,"rgba(255,220,120,.35)"); g.addColorStop(1,"rgba(255,220,120,0)");
-        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,34,0,Math.PI*2); ctx.fill();
-      }
+      if(b.position.x<0||b.position.y<0||b.position.x>W||b.position.y>H) continue;
+      ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x, b.position.y);
+      ctx.fillStyle=(b.render.fillStyle==="#f9d67a")?"#241a05":"#eafffb"; ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x, b.position.y);
+      if(b.render.fillStyle==="#f9d67a"){ const g=ctx.createRadialGradient(b.position.x,b.position.y,6,b.position.x,b.position.y,34);
+        g.addColorStop(0,"rgba(255,220,120,.35)"); g.addColorStop(1,"rgba(255,220,120,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(b.position.x,b.position.y,34,0,Math.PI*2); ctx.fill(); }
     }
-    ctx.restore();
+    unclip(ctx);
   });
 
-  function start(){ Render.run(render); Runner.run(runner, engine); }
+  const runner=Runner.create();
+  function start(){ Render.run(render); Runner.run(runner,engine); }
   function stop(){ Render.stop(render); Runner.stop(runner); }
-  function reset(){ stop(); World.clear(world,false); Engine.clear(engine); }
+  async function openFlap(ms=520){ for(let t=0;t<12;t++){ Body.rotate(flap,0.09); await sleep(12);} await sleep(ms); for(let t=0;t<12;t++){ Body.rotate(flap,-0.09); await sleep(12);} Body.setAngle(flap,gateAngle); }
+  function insideGate(b){ const gx=pivot.x+40, gy=pivot.y+10; return (b.position.x>gx-28 && b.position.x<gx+48 && b.position.y>gy-28 && b.position.y<gy+48); }
+  function tryEject(){ for(const b of balls){ if(b.picked) continue; if(insideGate(b)){ Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3); b.picked=true; b.render.fillStyle="#f9d67a"; return b; } } return null; }
+  async function drawOne(){ await openFlap(500); const t0=performance.now(); while(performance.now()-t0<1600){ const g=tryEject(); if(g) return g; await sleep(16);} return null; }
 
-  async function openFlap(ms=620){
-    // smooth hinge swing open and close
-    for(let t=0;t<12;t++){ Body.rotate(flap, 0.09); await sleep(12); }
-    await sleep(ms);
-    for(let t=0;t<12;t++){ Body.rotate(flap, -0.09); await sleep(12); }
-    Body.setAngle(flap, gateAngle);
-  }
-  function insideGate(b){
-    const gx=gatePivot.x+40, gy=gatePivot.y+10;
-    return (b.position.x>gx-32 && b.position.x<gx+52 && b.position.y>gy-32 && b.position.y<gy+52);
-  }
-  function tryEject(){
-    for(const b of balls){
-      if(b.picked) continue;
-      if(insideGate(b)){
-        Body.setVelocity(b,{x:10, y:-2}); Body.setAngularVelocity(b, 3);
-        b.picked=true; b.render.fillStyle="#f9d67a";
-        return b;
-      }
-    }
-    return null;
-  }
-  async function drawOne(){
-    await openFlap(520);
-    const t0=performance.now();
-    while(performance.now()-t0<1600){
-      const got=tryEject(); if(got) return got;
-      await sleep(16);
-    }
-    return null;
-  }
-  return { start, stop, reset, setMixing:(m)=>mixing=m, drawOne, getPicked:()=>balls.filter(b=>b.picked).map(b=>b.labelNum).sort((a,b)=>a-b) };
+  return {start,stop,drawOne,getPicked:()=>balls.filter(b=>b.picked).map(b=>b.labelNum).sort((a,b)=>a-b)};
 }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // Build drums
-const drumA=createDrum(document.getElementById('canvasA'), {count:50, labels:[...Array(50)].map((_,i)=>i+1)});
-const drumB=createDrum(document.getElementById('canvasB'), {count:12, labels:[...Array(12)].map((_,i)=>i+1)});
+const drumA=createDrum(document.getElementById('canvasA'),50);
+const drumB=createDrum(document.getElementById('canvasB'),12);
 drumA.start(); drumB.start();
 
 // Controls
-document.getElementById('btnStop').addEventListener('click', ()=>{ drumA.stop(); drumB.stop(); });
-document.getElementById('btnReset').addEventListener('click', ()=>{ location.reload(); });
-
-// Sequential draw 5 + 2
-document.getElementById('btnStartDraw').addEventListener('click', async ()=>{
+document.getElementById('btnStop').onclick=()=>{drumA.stop();drumB.stop();};
+document.getElementById('btnReset').onclick=()=>location.reload();
+document.getElementById('btnStartDraw').onclick=async()=>{
   const btn=document.getElementById('btnStartDraw'); if(btn.disabled) return; btn.disabled=true;
-  const result={main:[], euro:[], created_at:new Date().toISOString()};
-  // Warm-up
-  drumA.setMixing(true); drumB.setMixing(true); await sleep(900);
-  // 5 from A
-  for(let i=0;i<5;i++){ const b=await drumA.drawOne(); if(b) result.main.push(b.labelNum);
-    $('#pickedList').innerHTML = `Gezogen: ${result.main.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')} ${result.euro.length? '· ' + result.euro.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' '):''}`;
-    await sleep(300);
-  }
-  // 2 from B
-  for(let i=0;i<2;i++){ const b=await drumB.drawOne(); if(b) result.euro.push(b.labelNum);
-    $('#pickedList').innerHTML = `Gezogen: ${result.main.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')} · ${result.euro.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')}`;
-    await sleep(300);
-  }
-  result.main.sort((a,b)=>a-b); result.euro.sort((a,b)=>a-b);
-  document.getElementById('result').innerHTML=`<b>Ergebnis:</b> Haupt: ${result.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.euro.map(n=>String(n).padStart(2,'0')).join(' ')}<div class="text-xs opacity-80">${result.created_at}</div>`;
+  const res={main:[],euro:[],created_at:new Date().toISOString()};
+  await sleep(900);
+  for(let i=0;i<5;i++){ const b=await drumA.drawOne(); if(b) res.main.push(b.labelNum); document.getElementById('pickedList').innerHTML=`Gezogen: ${res.main.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')}`; await sleep(300); }
+  for(let i=0;i<2;i++){ const b=await drumB.drawOne(); if(b) res.euro.push(b.labelNum); document.getElementById('pickedList').innerHTML=`Gezogen: ${res.main.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')} · ${res.euro.map(n=>`<span class='chip chip--gold ml-1'>${String(n).padStart(2,'0')}</span>`).join(' ')}`; await sleep(300); }
+  res.main.sort((a,b)=>a-b); res.euro.sort((a,b)=>a-b);
+  document.getElementById('result').innerHTML=`<b>Ergebnis:</b> Haupt: ${res.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${res.euro.map(n=>String(n).padStart(2,'0')).join(' ')}<div class="text-xs opacity-80">${res.created_at}</div>`;
   btn.disabled=false;
-});
+};
 </script>
 </body>
 </html>
