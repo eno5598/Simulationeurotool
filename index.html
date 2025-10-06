@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Studio Pro (by ENOWEB)</title>
+<title>EuroJackpot • Studio WOW (by ENOWEB)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-:root{ --ink:#eaf7ff; --bg:#0a0d16; --panel:rgba(13,20,35,.86); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; --green:#15c37a }
+:root{ --ink:#eaf7ff; --bg:#070a12; --panel:rgba(12,18,32,.9); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; --green:#18d19a }
 body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
- radial-gradient(1100px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
- radial-gradient(1100px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);}
+ radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
+ radial-gradient(1200px 800px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);}
 .h1{font-weight:900;background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent}
 .brand{font-weight:900;background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0);background-size:400% 100%;
  -webkit-background-clip:text;color:transparent;animation:grad 6s linear infinite}
@@ -20,7 +20,7 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .sim{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;background:#03070e}
-.sim canvas{width:100%;height:440px;max-height:65vh;background:
+.sim canvas{width:100%;height:460px;max-height:68vh;background:
  radial-gradient(80% 100% at 50% 35%, #0b1626, #081425 60%, #06101f)}
 .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.25rem .65rem; font-size:.78rem;}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
@@ -28,23 +28,23 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 .rail .slotbox{width:46px;height:46px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
 .chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:radial-gradient(120% 120% at 30% 28%, #19d5cc, #0aa39a 60%);color:#052a29;font-weight:900;box-shadow:inset 0 2px 6px rgba(255,255,255,.18), inset 0 -6px 10px rgba(0,0,0,.25)}
 .chip--gold{background:radial-gradient(120% 120% at 30% 28%, #ffeeb4, #f4c655 60%); color:#241a05; box-shadow:inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
-.fchip{position:fixed;z-index:60;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
+.fchip{position:fixed;z-index:70;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
  background:radial-gradient(120% 120% at 30% 28%, #ffeeb4, #f4c655 60%);color:#241a05;box-shadow:inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
 .small{font-size:.85rem;opacity:.9}
 </style>
 </head>
 <body class="p-4">
   <header class="mb-2">
-    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • Studio Pro</h1>
+    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • Studio WOW</h1>
     <div class="brand text-lg">by ENOWEB</div>
   </header>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Premium-Simulation (neues System)</h2>
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (neues WOW-System)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="440"></canvas></div>
-        <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="440"></canvas></div>
+        <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="460"></canvas></div>
+        <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="460"></canvas></div>
       </div>
       <div class="mt-3 rail" id="rail">
         <div class="slotbox" data-slot="A1"></div>
@@ -64,7 +64,7 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv (bewährter Loader)</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div class="flex flex-wrap gap-2 mb-2">
         <button id="btnLoad" class="btn btn--green">📥 Laden</button>
@@ -95,14 +95,13 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
   </section>
 
 <script>
-/* ===== Utilities ===== */
 const $=s=>document.querySelector(s);
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
 const LS_ARCH='ej_enoweb_archive_v7';
 
-/* ===== Archiv Loader (gleich wie zuletzt funktionierend) ===== */
+/* ===== Archiv Loader ===== */
 let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
 async function ensureJSZip(){ return !!window.JSZip || new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(true); s.onerror=()=>res(false); document.head.appendChild(s) }); }
 async function fetchWithProxies(url){
@@ -116,7 +115,7 @@ async function fetchWithProxies(url){
         if(!(await ensureJSZip())) throw new Error('JSZip nicht verfügbar.');
         const blob=await res.blob(); const zip=await JSZip.loadAsync(blob);
         const entries=Object.values(zip.files);
-        const entry=entries.find(f=>/\.((txt)|(csv))$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.((txt)|(csv))$/i.test(f.name));
+        const entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
         if(!entry) throw new Error('ZIP ohne TXT/CSV.'); return await entry.async('string');
       }else{ return await res.text(); }
     }catch(e){ last=e; }
@@ -182,81 +181,78 @@ function pills(freq, maxN){ const vals=freq.slice(1,maxN+1); const max=Math.max(
   return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
 function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-/* ===== Neues Drum-System (Pro) ===== */
-class ProDrum{
+/* ===== WOW Drum ===== */
+class WowDrum{
   constructor(canvas, count){
     this.cv=canvas; this.ctx=canvas.getContext('2d');
     this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
     this.cx=this.W*0.5; this.cy=this.H*0.58; this.R=Math.min(this.W,this.H)*0.38;
-    this.r=Math.max(12, this.R*0.09);        // Ø≈4.5 cm (skaliert)
-    this.left=new Set(Array.from({length:count},(_,i)=>i+1)); // noch nicht gezogene Nummern
-    // Bälle sind gleichmäßig verteilt, jeder Ball trägt seine echte Nummer -> keine Duplikate möglich.
-    this.balls=[]; const rr=rng(Date.now());
-    Array.from(this.left).forEach(n=>{ this.balls.push({n, th: rr()*Math.PI*2, w:(rr()*2-1)*1.4, spin: rr()*Math.PI*2, dead:false}); });
-    // Profi-Look: 4 Paddel mit Motion Blur
-    this.arms=[0,Math.PI/2,Math.PI,-Math.PI/2]; this.armSpeed=1.6;
-    // Aufnahme & Rutsche
-    this.intake=-Math.PI*0.18+Math.PI/2; this.flap=0;
-    this.prev=null; this.tick=0;
-    this.running=true; this.loop=this.loop.bind(this); requestAnimationFrame(this.loop);
-    this.onDrop=null;
+    this.r=Math.max(12,this.R*0.09);
+    this.left=new Set(Array.from({length:count},(_,i)=>i+1));
+    const rr=rng(Date.now()); this.balls=[];
+    for(const n of this.left){ this.balls.push({n, a:rr()*Math.PI*2, rv:(rr()*2-1)*0.06, tv:(rr()*2-1)*2.4, spin:rr()*Math.PI*2, dead:false}); }
+    this.pads=[0,Math.PI/2,Math.PI,-Math.PI/2]; this.padSpeed=1.8;
+    this.intake=-Math.PI*0.14 + Math.PI/2; this.flap=0; this.prev=null; this.tick=0; this.shake=0; this.onDrop=null;
+    this.loop=this.loop.bind(this); requestAnimationFrame(this.loop);
   }
-  xy(th, rm=0.70){ return {x:this.cx+Math.cos(th)*(this.R*rm), y:this.cy+Math.sin(th)*(this.R*rm)}; }
-  nearest(){ const P=this.xy(this.intake,0.86); let best=null,bd=1e9; for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} } return best; }
-  glossy(p,r,color,num,spin){
+  polarToXY(a, rMul=0.72){ return {x:this.cx+Math.cos(a)*(this.R*rMul), y:this.cy+Math.sin(a)*(this.R*rMul)}; }
+  nearest(){ const P=this.polarToXY(this.intake,0.9); let best=null,bd=1e9; for(const b of this.balls){ if(b.dead) continue; const p=this.polarToXY(b.a); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} } return best; }
+  async eject(){
+    const b=this.nearest(); if(!b) return null;
+    for(let t=0;t<16;t++){ b.tv*=0.85; b.a += (this.intake - b.a)*0.16; b.spin+=0.5; this.shake=2; await sleep(22); }
+    this.flap=1; await sleep(200);
+    const p=this.polarToXY(this.intake,0.88);
+    if(this.onDrop){ this.onDrop({num:b.n, startPixel:p}); }
+    b.dead=true; this.left.delete(b.n);
+    await sleep(140); this.flap=0; return b.n;
+  }
+  update(dt){
+    const rr=(Math.sin(this.tick*0.08)+Math.cos(this.tick*0.05))*0.5;
+    for(const b of this.balls){
+      if(b.dead) continue;
+      b.tv += (Math.random()*2-1)*0.05 + rr*0.02;
+      b.tv = clamp(b.tv,-2.8,2.8);
+      b.a = (b.a + b.tv*dt + Math.PI*2)%(Math.PI*2);
+      b.rv += (Math.random()*2-1)*0.004;
+      b.rv = clamp(b.rv,-0.08,0.08);
+      b.rMul = clamp((b.rMul||0.72) + b.rv*dt, 0.64, 0.78);
+      b.spin += b.tv*0.4;
+    }
+    const alive=this.balls.filter(x=>!x.dead).sort((a,b)=>a.a-b.a);
+    const minGap=(Math.PI*2)/Math.max(alive.length,2)*0.25;
+    for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let gap=(B.a-A.a+Math.PI*2)%(Math.PI*2); if(gap<minGap){ const push=(minGap-gap)/2; A.a-=push; B.a+=push; A.tv-=push*0.6; B.tv+=push*0.6; } }
+    if(this.shake>0) this.shake*=0.85;
+  }
+  ball(p,r,color,num,spin){
     const ctx=this.ctx;
-    const g=ctx.createRadialGradient(p.x-r*0.35,p.y-r*0.4,r*0.1,p.x,p.y,r*1.1); g.addColorStop(0,'#1de2d8'); g.addColorStop(0.6,color); g.addColorStop(1,'#0b7670');
+    const g=ctx.createRadialGradient(p.x-r*0.35,p.y-r*0.4,r*0.1,p.x,p.y,r*1.1); g.addColorStop(0,'#1fe8dc'); g.addColorStop(0.6,color); g.addColorStop(1,'#0b7670');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.stroke();
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(spin); ctx.globalAlpha=.18; ctx.fillStyle='#fff'; ctx.fillRect(-r*0.8,-r*0.12,r*1.6,r*0.24); ctx.restore();
     ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(num).padStart(2,'0'),p.x,p.y); ctx.fillStyle='#eafffb'; ctx.fillText(String(num).padStart(2,'0'),p.x,p.y);
     ctx.globalAlpha=.35; ctx.beginPath(); ctx.ellipse(p.x-r*0.25,p.y-r*0.35,r*0.42,r*0.22,0,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1;
   }
-  motionPaddles(ctx){
-    ctx.save(); ctx.translate(this.cx,this.cy);
-    for(let k=0;k<3;k++){ ctx.save(); ctx.globalAlpha=0.12*(3-k); ctx.fillStyle='#20d3c2'; this.arms=this.arms.map(a=>a+(this.armSpeed*0.016)); for(const a of this.arms){ ctx.save(); ctx.rotate(a-k*0.08); roundRect(ctx,-9,-4,this.R*0.82,8,4); ctx.fill(); ctx.restore(); } ctx.restore(); }
-    ctx.restore();
-  }
-  async ejectOne(){
-    // Wähle echte Nummer (ball.n) – entferne aus Set -> garantiert einzigartig
-    const b=this.nearest(); if(!b) return null;
-    // Sog‑Phase
-    for(let t=0;t<14;t++){ b.w*=0.85; b.th += (this.intake - b.th)*0.14; b.spin+=0.45; await sleep(24); }
-    this.flap=1; await sleep(220);
-    const p=this.xy(this.intake,0.86);
-    if(this.onDrop){ this.onDrop({num:b.n, start:{x:p.x+90,y:p.y-6}}); }
-    b.dead=true; this.left.delete(b.n);
-    await sleep(140); this.flap=0;
-    return b.n;
-  }
-  update(dt){
-    // turbulentes Mischen ohne „Schlange“
-    const rnd=Math.sin(this.tick*0.07)*0.25;
-    for(const b of this.balls){
-      if(b.dead) continue;
-      b.w += (Math.random()*2-1)*0.04 + rnd;
-      b.w=clamp(b.w,-2.4,2.4);
-      b.th=(b.th + b.w*dt + Math.PI*2)%(Math.PI*2);
-      b.spin += b.w*0.38;
-    }
-    const alive=this.balls.filter(x=>!x.dead).sort((a,b)=>a.th-b.th);
-    if(alive.length>1){ const gap=(Math.PI*2)/alive.length*0.3; for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let g=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(g<gap){ const push=(gap-g)/2; A.th-=push; B.th+=push; } } }
-  }
   draw(){
     const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H);
-    // Maskierter Ring
-    ctx.save(); ctx.beginPath(); ctx.arc(this.cx,this.cy,this.R,0,Math.PI*2); ctx.clip();
-    // Boden-Vignette innen
-    const vg=ctx.createRadialGradient(this.cx,this.cy,this.R*0.2,this.cx,this.cy,this.R); vg.addColorStop(0,'rgba(0,0,0,.0)'); vg.addColorStop(1,'rgba(0,0,0,.28)'); ctx.fillStyle=vg; ctx.fillRect(this.cx-this.R,this.cy-this.R,this.R*2,this.R*2);
+    ctx.save(); ctx.translate((Math.random()-0.5)*this.shake,(Math.random()-0.5)*this.shake);
+    // Ring
+    ctx.save(); ctx.translate(this.cx,this.cy); ctx.lineWidth=22; const ringGrad=ctx.createLinearGradient(-this.R,0,this.R,0);
+    ringGrad.addColorStop(0,'rgba(20,240,200,.10)'); ringGrad.addColorStop(0.5,'rgba(255,255,255,.12)'); ringGrad.addColorStop(1,'rgba(20,240,200,.10)');
+    ctx.strokeStyle=ringGrad; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
     // Paddel
-    this.motionPaddles(ctx);
-    // Flap + Rutsche
-    const P=this.xy(this.intake,0.86);
-    ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intake+(this.flap?0.42:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.22)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+96,P.y+22); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.22)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
-    // Bälle
-    for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); this.glossy(p,this.r,'#10b5ac',b.n,b.spin); }
+    ctx.save(); ctx.translate(this.cx,this.cy);
+    for(let k=0;k<4;k++){ ctx.save(); ctx.globalAlpha=0.14*(4-k); ctx.fillStyle='#1bd6c7'; this.pads=this.pads.map(a=>a+this.padSpeed*0.016); for(const a of this.pads){ ctx.save(); ctx.rotate(a-k*0.08); roundRect(ctx,-10,-5,this.R*0.82,10,5); ctx.fill(); ctx.restore(); } ctx.restore(); }
+    ctx.restore();
+    // Intake & Rutsche
+    const P=this.polarToXY(this.intake,0.88);
+    ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intake);
+    ctx.fillStyle='rgba(120,255,230,.18)'; roundRect(ctx,-18,-74,36,148,12); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33);
+    ctx.fillStyle='rgba(120,255,230,.12)'; roundRect(ctx,0,0,160,14,7); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+98,P.y+22); ctx.rotate(-0.33);
+    ctx.fillStyle='rgba(120,255,230,.12)'; roundRect(ctx,0,0,190,14,7); ctx.fill(); ctx.restore();
+    // Balls
+    for(const b of this.balls){ if(b.dead) continue; const p=this.polarToXY(b.a, b.rMul||0.72); this.ball(p,this.r,'#10b5ac',b.n,b.spin); }
     ctx.restore();
   }
   frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16,0.6,1.6); this.prev=ts; this.tick++; this.update(dt*0.016); this.draw(); }
@@ -264,54 +260,55 @@ class ProDrum{
 }
 function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 
-/* ===== Ergebnis-Bahn ===== */
+/* ===== Ergebnisbahn ===== */
 const rail=document.getElementById('rail');
 function place(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
 function bez(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x+b*p1.x+c*p2.x, y:a*p0.y+b*p1.y+c*p2.y}; }
-async function rollTo(fromCanvas, startXY, slot, num, gold){
+async function rollTo(fromCanvas, startPixel, slot, num, gold){
   const slotEl=rail.querySelector(`[data-slot="${slot}"]`);
-  const s=fromCanvas.getBoundingClientRect(), e=slotEl.getBoundingClientRect();
-  const sx=s.left + startXY.x*(fromCanvas.clientWidth/fromCanvas.width), sy=s.top + startXY.y*(fromCanvas.clientHeight/fromCanvas.height);
-  const ex=e.left+e.width/2, ey=e.top+e.height/2;
+  const e=slotEl.getBoundingClientRect(); const sx=startPixel.x, sy=startPixel.y; const ex=e.left+e.width/2, ey=e.top+e.height/2;
   const ctrl={x:(sx+ex)/2 + 80, y:(sy+ey)/2 - 40};
   const chip=document.createElement('div'); chip.className='fchip'; chip.textContent=String(num).padStart(2,'0');
-  chip.style.left=(sx-19)+'px'; chip.style.top=(sy-19)+'px'; document.body.appendChild(chip);
-  const D=Math.hypot(ex-sx,ey-sy), dur=900+Math.min(600,D); let last={x:sx,y:sy};
-  await new Promise(res=>{ const t0=performance.now(); (function step(t){ const u=Math.min(1,(t-t0)/dur); const p=bez({x:sx,y:sy},ctrl,{x:ex,y:ey},u); const dx=p.x-last.x, dy=p.y-last.y;
-    const rot=Math.atan2(dy,dx); chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot + u*6*Math.PI}rad)`; last=p; if(u<1) requestAnimationFrame(step); else res(); })(t0); });
+  chip.style.left=(sx-19)+'px'; chip.style.top=(sy-19)+'px'; chip.style.boxShadow='0 0 18px rgba(255,220,120,.45), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)';
+  document.body.appendChild(chip);
+  burst(sx,sy);
+  const D=Math.hypot(ex-sx,ey-sy), dur=950+Math.min(600,D); let last={x:sx,y:sy};
+  await new Promise(res=>{ const t0=performance.now(); (function step(t){ const u=Math.min(1,(t-t0)/dur); const p=bez({x:sx,y:sy},ctrl,{x:ex,y:ey},u);
+    const dx=p.x-last.x, dy=p.y-last.y; const rot=Math.atan2(dy,dx); chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot + u*6*Math.PI}rad)`;
+    last=p; if(u<1) requestAnimationFrame(step); else res(); })(t0); });
   chip.remove(); place(slot,num,gold);
+}
+function burst(x,y){
+  for(let i=0;i<10;i++){ const s=document.createElement('div'); s.style.position='fixed'; s.style.left=x+'px'; s.style.top=y+'px'; s.style.width='6px'; s.style.height='6px'; s.style.borderRadius='999px';
+    s.style.background='rgba(255,240,150,.9)'; s.style.boxShadow='0 0 10px rgba(255,220,120,.7)'; s.style.pointerEvents='none'; s.style.zIndex='60';
+    document.body.appendChild(s); const a=Math.random()*Math.PI*2, d=30+Math.random()*60;
+    s.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`,opacity:0}],{duration:600+Math.random()*300,easing:'ease-out',fill:'forwards'}).onfinish=()=>s.remove(); }
 }
 
 /* ===== App ===== */
-const drumA=new ProDrum(document.getElementById('cvA'),50);
-const drumB=new ProDrum(document.getElementById('cvB'),12);
-
+const drumA=new WowDrum(document.getElementById('cvA'),50);
+const drumB=new WowDrum(document.getElementById('cvB'),12);
 let result={A:[],B:[],ts:null}, running=false;
 document.getElementById('btnReset').onclick=()=>location.reload();
-
-async function drawUnique(drum, count, slotPrefix, isEuro=false){
-  const taken=new Set(); // zusätzliche Sicherung
+async function drawN(drum,count,slotPrefix,isEuro=false){
+  const used=new Set();
   for(let i=0;i<count;i++){
-    let num=null;
-    // solange ziehen, bis neue Nummer
-    do{ num=await drum.ejectOne(); } while(num==null || taken.has(num));
-    taken.add(num);
-    const start=drum.xy(drum.intake,0.86);
-    await rollTo(drum.cv,{x:start.x,y:start.y}, `${slotPrefix}${i+1}`, num, isEuro);
-    (isEuro?result.B:result.A).push(num);
+    let n=null; do{ n=await drum.eject(); } while(n==null || used.has(n));
+    used.add(n);
+    const P=drum.polarToXY(drum.intake,0.88);
+    await rollTo(drum.cv,{x:P.x+90,y:P.y-6},`${slotPrefix}${i+1}`,n,isEuro);
+    (isEuro?result.B:result.A).push(n);
   }
 }
-
 document.getElementById('btnStart').onclick=async(e)=>{
   if(running) return; running=true; e.currentTarget.setAttribute('disabled','true');
   result={A:[],B:[],ts:new Date().toISOString()};
   await sleep(400);
-  await drawUnique(drumA,5,'A',false);
-  await drawUnique(drumB,2,'B',true); // <- absolut keine Duplikate möglich
-  // Sortierte Anzeige (EuroJackpot)
+  await drawN(drumA,5,'A',false);
+  await drawN(drumB,2,'B',true);
   result.A.sort((a,b)=>a-b); result.B.sort((a,b)=>a-b);
-  for(let i=0;i<5;i++) place('A'+(i+1), result.A[i], false);
-  for(let i=0;i<2;i++) place('B'+(i+1), result.B[i], true);
+  for(let i=0;i<5;i++) place('A'+(i+1),result.A[i],false);
+  for(let i=0;i<2;i++) place('B'+(i+1),result.B[i],true);
   document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${result.A.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.B.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${result.ts}</div>`;
   analyze();
   running=false; e.currentTarget.removeAttribute('disabled');
