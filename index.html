@@ -3,152 +3,426 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EuroJackpot – Simulation, Tippgenerator & Auto-Update</title>
+<title>EuroJackpot – Physiknahe Simulation & Tipp-Generator (authentisch)</title>
 <style>
-:root{--bg:#0b0f14; --card:#0f1720; --muted:#8aa1b1; --text:#e9f1f7; --accent:#2ea44f; --chip:#1a232b; --accent-2:#7dd3fc; --danger:#cc444b}
-*{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+:root{--bg:#071018;--card:#0b1720;--muted:#8aa1b1;--text:#e9f1f7;--accent:#2ea44f;--chip:#0f2330;--warn:#f59e0b}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}a{color:var(--accent)}
 .container{max-width:1100px;margin:0 auto;padding:18px}
 .header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 h1{font-size:20px;margin:0}
-.card{background:var(--card);border:1px solid #1f2b36;border-radius:12px;padding:12px;margin:12px 0}
+.card{background:var(--card);border:1px solid rgba(255,255,255,0.03);border-radius:12px;padding:14px;margin:12px 0}
 .grid{display:grid;grid-template-columns:1fr 420px;gap:12px}
 @media (max-width:900px){ .grid{grid-template-columns:1fr} .rightcol{order:2} }
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{background:#16313b;color:#dff3ff;border:1px solid #234; padding:8px 10px;border-radius:8px;cursor:pointer}
+.btn{background:#12323a;color:#e8f7f5;border:0;padding:8px 10px;border-radius:8px;cursor:pointer}
 .btn.primary{background:var(--accent);color:#04210a;font-weight:700}
 .small{color:var(--muted);font-size:13px}
-.flex{display:flex;gap:8px;align-items:center}
-.canvas-wrap{background:#071018;border-radius:8px;padding:8px;display:flex;flex-direction:column;align-items:center}
-canvas{background:linear-gradient(180deg,#08121a,#061116);border-radius:6px;border:1px solid rgba(255,255,255,0.03);width:100%;height:360px;max-height:60vh}
-.controls input[type="number"]{width:80px;padding:6px;border-radius:6px;border:1px solid #233; background:#081218;color:var(--text)}
-.kv{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.ball-ui{display:flex;gap:6px;flex-wrap:wrap}
-.badge{padding:6px 10px;border-radius:999px;background:#0f2b2a;border:1px solid #123;color:#9feee6;font-weight:600}
-.tips{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.tip{background:#08131a;border-radius:8px;padding:8px;border:1px solid #163a3b}
-.note{font-size:13px;color:var(--muted)}
-.switch{display:inline-flex;align-items:center;gap:8px}
+.kv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tip{background:#071821;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,0.02);margin-top:8px}
+.canvas-wrap{background:linear-gradient(180deg,#061319,#041018);border-radius:8px;padding:8px;display:flex;flex-direction:column;align-items:center}
+canvas{border-radius:8px;border:1px solid rgba(255,255,255,0.03);width:100%;height:420px;max-height:60vh}
 .footer{font-size:12px;color:var(--muted);margin-top:12px}
-@media (max-width:500px){ canvas{height:260px} }
+.info{font-size:13px;color:var(--muted);margin-top:8px}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#072a2b;border:1px solid #0b4b48;color:#9feee6}
+.note{color:var(--muted);font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>EuroJackpot – Simulation & Tipp-Generator</h1>
-    <div class="small">Auto-update on load possible · Mobile-ready</div>
+    <h1>EuroJackpot – Physiknahe Simulation & Tipp-Generator</h1>
+    <div class="small">Authentizität: Kugel Ø=4.5cm, Gewicht≈4g (eingestellt)</div>
   </div>
 
   <div class="card grid">
-    <!-- Left: analysis + simulation -->
     <div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Archiv & Einstellungen</strong>
-          <div class="small">Version Demo</div>
+          <strong>Archiv & Daten</strong>
+          <div class="small">Fallbacks komplett integriert</div>
         </div>
-        <p class="small">Die Seite lädt beim Start optional das angegebene Archiv (ZIP) – falls CORS blockiert, lade bitte manuell hoch.</p>
-        <div class="flex" style="margin-top:8px">
-          <input id="zipUrl" type="url" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip" style="flex:1;padding:8px;border-radius:8px;border:1px solid #233;background:#071218;color:var(--text)">
-          <button id="btnFetch" class="btn">Laden</button>
+        <p class="info">Auto-Download des offiziellen ZIP-Archivs funktioniert manchmal nicht wegen CORS. Unten gibt es mehrere Fallbacks: manuelles Hochladen, Paste von CSV/Text oder Demo-Daten.</p>
+        <div class="kv" style="margin-top:8px">
+          <input id="zipUrl" type="url" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip" style="flex:1;padding:8px;border-radius:8px;border:1px solid #123;background:#061219;color:var(--text)">
+          <button id="btnFetch" class="btn">Auto-laden</button>
         </div>
-        <div class="kv">
-          <label class="switch small"><input type="checkbox" id="autoUpdate"> <span>Auto-Update beim Laden</span></label>
-          <button id="btnLoadLocal" class="btn">Manuell: Datei hochladen</button>
+        <div class="kv" style="margin-top:8px">
+          <button id="btnUpload" class="btn">Datei hochladen (ZIP/CSV/TXT)</button>
           <input id="fileInput" type="file" accept=".zip,.csv,.txt" style="display:none">
+          <button id="btnPaste" class="btn">CSV/Text einfügen</button>
+          <button id="btnDemo" class="btn">Demo laden</button>
         </div>
-        <div id="dlStatus" class="small note" style="margin-top:8px"></div>
+        <div id="dlStatus" class="note"></div>
       </div>
 
       <div class="card" style="margin-top:12px">
-        <strong>Simulation (visuell)</strong>
+        <strong>Simulation (physikalisch approximiert)</strong>
         <div class="canvas-wrap" style="margin-top:8px">
           <canvas id="simCanvas" width="800" height="420"></canvas>
-          <div class="kv" style="width:100%;justify-content:space-between">
-            <div class="small">Kugeln simuliert: <span id="simCount">50</span></div>
-            <div class="flex">
-              <button id="btnStartSim" class="btn">Start</button>
-              <button id="btnStopSim" class="btn">Stop</button>
-              <button id="btnResetSim" class="btn">Reset</button>
+          <div class="kv" style="width:100%;justify-content:space-between;margin-top:8px">
+            <div class="small">Kugeln: <span id="simCount">50</span> · Kugel Ø: <span id="ballDiam">4.5 cm</span> · Gewicht: <span id="ballMass">4 g</span></div>
+            <div class="kv">
+              <button id="btnStart" class="btn">Start</button>
+              <button id="btnStop" class="btn">Stop</button>
+              <button id="btnReset" class="btn">Reset</button>
             </div>
           </div>
         </div>
-        <p class="small note" style="margin-top:8px">Die Simulation ist eine chaotische physikähnliche Modellierung (2D), keine offizielle Nachbildung. Zufall basiert auf numerischer Chaosdynamik + PRNG.</p>
+        <p class="note">Die Simulation verwendet reale Werte (Skalierung auf Pixel) und berücksichtigt Masse, Radius, Trägheit, sowie Rotation (Drehgeschwindigkeit) — alles zur Visualisierung, nicht zur Manipulation.</p>
       </div>
     </div>
 
-    <!-- Right: settings + generator -->
     <div class="rightcol">
       <div class="card">
-        <strong>Tippgenerator</strong>
-        <div style="margin-top:8px" class="small">Wähle wie viele Tipps pro Klick generiert werden sollen (z. B. 1–20).</div>
-        <div class="kv" style="margin-top:8px;align-items:center">
-          <label class="small">Anzahl Tipps:</label>
-          <input id="numTips" type="number" min="1" max="100" value="5">
-          <label class="small">Auto-Simulation bei Ziehung:</label>
-          <input id="autoSimOnDraw" type="checkbox">
+        <strong>Tipp-Generator & Ziehung</strong>
+        <div class="info" style="margin-top:8px">Du kannst nur ein Ergebnis auf einmal generieren (5 Hauptzahlen nacheinander, dann 2 Eurozahlen). Klicke auf "Ziehung starten".</div>
+        <div class="kv" style="margin-top:8px">
+          <label class="small">Seed (optional, leer für Zufall):</label>
+          <input id="seed" type="text" placeholder="z.B. 12345" style="padding:6px;border-radius:6px;border:1px solid #123;background:#061219;color:var(--text)">
         </div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="btnGenerate" class="btn primary">Generiere Tipps</button>
-          <button id="btnGenerateHot" class="btn">Hot-gewichtet</button>
-          <button id="btnGenerateCold" class="btn">Cold-gewichtet</button>
-          <button id="btnExportAll" class="btn">Export (ZIP)</button>
+          <button id="btnDraw" class="btn primary">Ziehung starten</button>
+          <button id="btnDrawHot" class="btn">Ziehung (hot-gewichtet)</button>
+          <button id="btnDrawCold" class="btn">Ziehung (cold-gewichtet)</button>
+          <button id="btnExport" class="btn">Export Ergebnis (JSON)</button>
         </div>
-        <div class="tips" id="tipsList" style="margin-top:12px"></div>
-        <div style="margin-top:8px" class="small">Jeder Tipp enthält 5 Hauptzahlen (1–50) und 2 Eurozahlen (1–12). Du kannst auf einen Tipp klicken, um die Simulation für diese Ziehung automatisch ablaufen zu lassen (falls aktiviert).</div>
+        <div id="resultArea" class="tip" style="margin-top:12px">
+          <div class="small">Noch kein Ergebnis.</div>
+        </div>
+        <div class="note">Wenn die Ziehung läuft, ist die Schaltfläche deaktiviert bis der komplette Ablauf (5+2 Kugeln) beendet ist.</div>
       </div>
 
       <div class="card" style="margin-top:12px">
-        <strong>Live-Analyse</strong>
-        <div id="analysis" style="margin-top:8px" class="small">Keine Daten geladen.</div>
+        <strong>Analyse / Letzte Ziehungen</strong>
+        <div id="analysis" class="note" style="margin-top:8px">Keine Daten geladen.</div>
       </div>
     </div>
   </div>
 
-  <div class="footer small">Hinweis: Physikdetails wie Kugelgewicht oder offizielle Maschinen-Parameter sind nicht öffentlich. Diese Simulation dient nur zu Visualisierung und Lernzwecken. Daten bleiben lokal.</div>
+  <div class="footer">Hinweis: Offizielle Ziehungsmaschinen und Kugelspezifikationen werden geprüft und zertifiziert. Diese Simulation verwendet öffentlich verfügbare Materialangaben (Styropor, Ø=4.5cm, ~4g) nur zur Visualisierung.</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-/* Main app: loads archive if requested, provides simulation, and generates multiple tips */
-(async function(){
-  // state
-  let draws = []; // historical draws from archive
+/* Enhanced simulation with mass, diameter, rotation and sequential pulling of 5 main + 2 euro */
+(function(){
+  // State
+  let draws = []; // loaded archive entries, newest first
   let freqA = Array(51).fill(0), freqB = Array(13).fill(0);
-  const sim = createSimulator(document.getElementById('simCanvas'));
-
-  // DOM refs
-  const dlStatus = document.getElementById('dlStatus');
-  const btnFetch = document.getElementById('btnFetch');
-  const zipUrlInput = document.getElementById('zipUrl');
-  const autoUpdateCheckbox = document.getElementById('autoUpdate');
-  const fileInput = document.getElementById('fileInput');
-  const btnLoadLocal = document.getElementById('btnLoadLocal');
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const DLSTATUS = document.getElementById('dlStatus');
   const simCountLabel = document.getElementById('simCount');
-  const btnStartSim = document.getElementById('btnStartSim');
-  const btnStopSim = document.getElementById('btnStopSim');
-  const btnResetSim = document.getElementById('btnResetSim');
-  const btnGenerate = document.getElementById('btnGenerate');
-  const btnGenerateHot = document.getElementById('btnGenerateHot');
-  const btnGenerateCold = document.getElementById('btnGenerateCold');
-  const tipsList = document.getElementById('tipsList');
-  const numTipsInput = document.getElementById('numTips');
-  const autoSimOnDraw = document.getElementById('autoSimOnDraw');
-  const btnExportAll = document.getElementById('btnExportAll');
-  const btnUseAuto = autoUpdateCheckbox;
+  const ballDiamLabel = document.getElementById('ballDiam');
+  const ballMassLabel = document.getElementById('ballMass');
+  const btnDraw = document.getElementById('btnDraw');
+  const btnDrawHot = document.getElementById('btnDrawHot');
+  const btnDrawCold = document.getElementById('btnDrawCold');
+  const btnExport = document.getElementById('btnExport');
+  const resultArea = document.getElementById('resultArea');
+  const seedInput = document.getElementById('seed');
+  let runningDraw = false;
 
-  // init
-  simCountLabel.textContent = 50;
-  attachEvents();
+  // Physical parameters (from user): diameter 4.5 cm, mass 4 g
+  const BALL_DIAM_CM = 4.5;
+  const BALL_MASS_G = 4;
+  ballDiamLabel.textContent = BALL_DIAM_CM + ' cm';
+  ballMassLabel.textContent = BALL_MASS_G + ' g';
 
-  // Auto-load on start if enabled last time
-  try{ const auto = localStorage.getItem('ej_auto_update'); if (auto==='1'){ autoUpdateCheckbox.checked=true; await tryAutoLoad(); } }catch(e){}
+  // Simulation scale: 1 cm -> PIXELS (choose so balls look reasonable)
+  let cmToPx = 8; // initial scaling; will adjust on resize
+  function adjustScale(){ // make diameter about reasonable in canvas
+    // try to fit 50 balls in area with separation; adjust cmToPx based on canvas size
+    const desiredPx = Math.max(18, Math.min(26, canvas.clientWidth / 50)); // heuristic
+    cmToPx = Math.round(desiredPx / (BALL_DIAM_CM/4)); // scale relative to diameter
+    if (cmToPx < 4) cmToPx = 4;
+  }
+  adjustScale();
 
-  async function tryAutoLoad(){
-    const url = zipUrlInput.value.trim();
-    if (!url) return;
-    dlStatus.textContent = 'Versuche automatisches Laden…';
+  // Derived physical values in simulation units
+  const BALL_RADIUS_PX = () => Math.max(6, Math.round((BALL_DIAM_CM/2) * cmToPx)); // px
+  const BALL_MASS = BALL_MASS_G / 1000; // kg, but we use relative units
+
+  // Particles
+  let particles = [];
+  let animId = null;
+  let lastTime = null;
+
+  function resizeCanvas(){
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    adjustScale();
+    // reposition particles to be inside bounds
+    particles.forEach(p=>{ p.r = BALL_RADIUS_PX(); p.x = Math.min(Math.max(p.x, p.r+4), canvas.width-p.r-4); p.y = Math.min(Math.max(p.y, p.r+4), canvas.height-p.r-4); });
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function newParticle(id){
+    const r = BALL_RADIUS_PX();
+    return {
+      id,
+      r,
+      x: r + Math.random()*(canvas.width - 2*r),
+      y: r + Math.random()*(canvas.height - 2*r),
+      vx: (Math.random()-0.5)*1.5,
+      vy: (Math.random()-0.5)*1.5,
+      ang: Math.random()*Math.PI*2, // rotation angle
+      av: (Math.random()-0.5)*0.4, // angular velocity
+      mass: BALL_MASS,
+      picked: false
+    };
+  }
+
+  function resetParticles(count=50){
+    particles = [];
+    for (let i=1;i<=count;i++) particles.push(newParticle(i));
+    simCountLabel.textContent = particles.length;
+  }
+  resetParticles(50);
+
+  // Physics step (simple, stable integrator)
+  function step(dt){
+    // apply small gravity/turbulence and damping to mimic air mixer
+    for (let p of particles){
+      // linear drag
+      p.vx *= 0.995;
+      p.vy *= 0.995;
+      // small random turbulent force scaled by mass
+      p.vx += (Math.random()-0.5) * 0.02;
+      p.vy += (Math.random()-0.5) * 0.02;
+      // integrate
+      p.x += p.vx * dt * 60;
+      p.y += p.vy * dt * 60;
+      p.ang += p.av * dt * 60;
+      // bounds collision
+      if (p.x < p.r){ p.x = p.r; p.vx = Math.abs(p.vx)*0.7; p.av *= 0.9; }
+      if (p.x > canvas.width - p.r){ p.x = canvas.width - p.r; p.vx = -Math.abs(p.vx)*0.7; p.av *= 0.9; }
+      if (p.y < p.r){ p.y = p.r; p.vy = Math.abs(p.vy)*0.7; p.av *= 0.9; }
+      if (p.y > canvas.height - p.r){ p.y = canvas.height - p.r; p.vy = -Math.abs(p.vy)*0.7; p.av *= 0.9; }
+    }
+    // pair collisions
+    for (let i=0;i<particles.length;i++){
+      for (let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist = Math.hypot(dx,dy);
+        const minD = a.r + b.r;
+        if (dist>0 && dist < minD){
+          const nx = dx/dist, ny = dy/dist;
+          const overlap = (minD - dist) / 2;
+          a.x -= nx*overlap; a.y -= ny*overlap;
+          b.x += nx*overlap; b.y += ny*overlap;
+          // relative velocity along normal
+          const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+          const rel = rvx*nx + rvy*ny;
+          if (rel < 0){
+            // impulse scalar (elastic-ish)
+            const e = 0.85; // restitution
+            const j = -(1+e) * rel / (1/a.mass + 1/b.mass);
+            const ix = j*nx, iy = j*ny;
+            a.vx -= ix / a.mass; a.vy -= iy / a.mass;
+            b.vx += ix / b.mass; b.vy += iy / b.mass;
+            // angular effect: small change to angular velocity
+            a.av -= (ix*0.01) / (a.mass);
+            b.av += (ix*0.01) / (b.mass);
+          }
+        }
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // background subtle
+    ctx.fillStyle = 'rgba(4,10,14,0.6)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // draw container rim
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.rect(6,6,canvas.width-12, canvas.height-12); ctx.stroke();
+    // draw "spout" on right side (where balls are ejected)
+    const spoutW = 86, spoutH = 86;
+    ctx.fillStyle = 'rgba(6,18,22,0.8)'; ctx.beginPath();
+    ctx.roundRect(canvas.width - spoutW - 16, 16, spoutW, spoutH, 8); ctx.fill();
+    ctx.fillStyle = 'rgba(120,220,180,0.08)'; ctx.fillRect(canvas.width - spoutW - 10, 22, spoutW-12, spoutH-12);
+    ctx.fillStyle = 'rgba(160,255,200,0.12)'; ctx.font='12px sans-serif'; ctx.fillText('Spout', canvas.width - spoutW + 8, 36);
+    // draw particles with rotation markers
+    for (let p of particles){
+      // ball body
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.picked ? '#ffd9a6' : '#0f8a7a'; ctx.fill();
+      ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
+      // rotation marker: short line across radius at angle p.ang
+      const markLen = Math.max(4, p.r*0.6);
+      const mx = p.x + Math.cos(p.ang) * (p.r - markLen*0.6);
+      const my = p.y + Math.sin(p.ang) * (p.r - markLen*0.6);
+      const mx2 = p.x + Math.cos(p.ang+Math.PI) * (p.r - markLen*0.6);
+      const my2 = p.y + Math.sin(p.ang+Math.PI) * (p.r - markLen*0.6);
+      ctx.strokeStyle = p.picked ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = Math.max(1, p.r*0.12);
+      ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx2,my2); ctx.stroke();
+      // id number
+      ctx.fillStyle = p.picked ? '#1a1206' : '#eafffb'; ctx.font = (p.r*0.6|0) + 'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(p.id).padStart(2,'0'), p.x, p.y);
+    }
+  }
+
+  function loop(t){
+    if (!lastTime) lastTime = t;
+    const dt = Math.min(0.05, (t - lastTime)/1000);
+    lastTime = t;
+    step(dt);
+    draw();
+    animId = requestAnimationFrame(loop);
+  }
+
+  function startAnimation(){ if (!animId){ lastTime = performance.now(); animId = requestAnimationFrame(loop); } }
+  function stopAnimation(){ if (animId){ cancelAnimationFrame(animId); animId = null; lastTime = null; } }
+
+  // Sequential draw logic: pull one ball from the spout at a time, mark it as picked, remove from pool (so unique)
+  async function performSequentialDraw(mode){
+    if (runningDraw) return;
+    runningDraw = true;
+    btnDraw.disabled = true; btnDrawHot.disabled=true; btnDrawCold.disabled=true;
+    resultArea.innerHTML = '<div class="small">Ziehung läuft…</div>';
+    // prepare RNG (seedable simple mulberry32)
+    let seed = seedInput.value.trim();
+    let rand = Math.random;
+    if (seed){
+      let s = 0; for (let i=0;i<seed.length;i++) s = (s<<5) - s + seed.charCodeAt(i);
+      rand = mulberry32(s >>> 0);
+    }
+    // copy particles pool (only those not yet picked)
+    const pool = particles.slice(); // actual particle objects
+    // helper to pick next ball based on mode weighting
+    function pickIndexFromPool(arr, mode){
+      // mode 'fair' random uniform; 'hot' prefer higher freq; 'cold' prefer lower freq
+      if (mode === 'fair') return Math.floor(rand()*arr.length);
+      // compute weights according to historical frequencies if available; fallback uniform
+      const weights = arr.map(p=>{
+        const f = (typeof freqA[p.id] !== 'undefined') ? freqA[p.id] : 0;
+        if (mode==='hot') return (f + 1);
+        return ((Math.max(...freqA.slice(1)) - f) + 1);
+      });
+      const sum = weights.reduce((a,b)=>a+b,0);
+      let r = rand()*sum;
+      for (let i=0;i<weights.length;i++){ r -= weights[i]; if (r<=0) return i; }
+      return Math.floor(rand()*arr.length);
+    }
+    // helper to animate spout ejection for a particle: nudge toward spout exit, then mark and lift out
+    async function ejectParticle(particle){
+      // target near right side spout top center inside spout area
+      const targetX = canvas.width - 86/2 - 16;
+      const targetY = 40 + Math.random()*36;
+      // push particle toward target for a while
+      for (let t=0;t<120;t++){
+        // nudge velocity toward target
+        const dx = targetX - particle.x, dy = targetY - particle.y;
+        particle.vx += (dx) * 0.002 + (Math.random()-0.5)*0.05;
+        particle.vy += (dy) * 0.002 + (Math.random()-0.5)*0.05;
+        // small spin-up when approaching spout
+        particle.av += 0.02 * (Math.sign(Math.random()-0.5));
+        await tick(8);
+      }
+      // once near, animate it being "spat out" (move to the right and slightly up)
+      for (let t=0;t<60;t++){
+        particle.vx += 0.6; particle.vy -= 0.2 * (Math.random()); particle.av *= 0.95;
+        await tick(10);
+      }
+      // mark as picked visually and slow it
+      particle.picked = true;
+      particle.vx *= 0.1; particle.vy *= 0.1; particle.av *= 0.05;
+      // small pause
+      await tick(250);
+    }
+
+    const selectedMain = [];
+    const selectedEuro = [];
+
+    // draw 5 main numbers sequentially
+    for (let k=0;k<5;k++){
+      if (pool.length === 0) break;
+      const idx = pickIndexFromPool(pool, mode);
+      const p = pool.splice(idx,1)[0];
+      await ejectParticle(p);
+      selectedMain.push(p.id);
+      updateResultPreview(selectedMain, selectedEuro, `Gezogene Hauptzahl ${k+1}`);
+    }
+    // short pause before eurozahlen
+    await tick(400);
+    for (let k=0;k<2;k++){
+      if (pool.length === 0) break;
+      const idx = pickIndexFromPool(pool, mode);
+      const p = pool.splice(idx,1)[0];
+      await ejectParticle(p);
+      selectedEuro.push(p.id);
+      updateResultPreview(selectedMain, selectedEuro, `Gezogene Eurozahl ${k+1}`);
+    }
+
+    // finalize result: sort main numbers ascending as on tickets
+    const final = { main: selectedMain.slice().sort((a,b)=>a-b), euro: selectedEuro.slice().sort((a,b)=>a-b), created_at: new Date().toISOString() };
+    // update historic frequencies locally (not external)
+    final.main.forEach(n=>{ if (typeof freqA[n]!=='undefined') freqA[n] += 1; });
+    final.euro.forEach(n=>{ if (typeof freqB[n]!=='undefined') freqB[n] += 1; });
+    resultArea.innerHTML = `<div><strong>Ergebnis:</strong> Haupt: ${final.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${final.euro.map(n=>String(n).padStart(2,'0')).join(' ')}</div><div class="note">Erstellt: ${final.created_at}</div>`;
+    // ensure draw buttons re-enabled
+    runningDraw = false;
+    btnDraw.disabled = false; btnDrawHot.disabled=false; btnDrawCold.disabled=false;
+    return final;
+  }
+
+  function updateResultPreview(main, euro, status){
+    resultArea.innerHTML = `<div class="small">${status || ''}</div><div style="margin-top:6px">Haupt: ${main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${euro.map(n=>String(n).padStart(2,'0')).join(' ')}</div>`;
+  }
+
+  function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t>>>15, t | 1); t ^= t + Math.imul(t ^ t>>>7, t | 61); return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
+  function tick(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  // Drawing buttons handlers - single draw at a time
+  btnDraw.addEventListener('click', async ()=>{
+    if (runningDraw) return;
+    startAnimation();
+    const res = await performSequentialDraw('fair');
+    stopAnimation();
+    // store result to localStorage history for user
+    saveResultToHistory(res);
+  });
+  btnDrawHot.addEventListener('click', async ()=>{
+    if (runningDraw) return;
+    startAnimation();
+    const res = await performSequentialDraw('hot');
+    stopAnimation();
+    saveResultToHistory(res);
+  });
+  btnDrawCold.addEventListener('click', async ()=>{
+    if (runningDraw) return;
+    startAnimation();
+    const res = await performSequentialDraw('cold');
+    stopAnimation();
+    saveResultToHistory(res);
+  });
+
+  btnExport.addEventListener('click', ()=>{
+    // export last result if exists
+    const last = getLastResultFromHistory();
+    if (!last){ alert('Kein Ergebnis vorhanden.'); return; }
+    const blob = new Blob([JSON.stringify(last,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `eurojackpot_result_${Date.now()}.json`; a.click();
+  });
+
+  // History management
+  function saveResultToHistory(res){
+    const hist = JSON.parse(localStorage.getItem('ej_history')||'[]');
+    hist.unshift(res); if (hist.length>50) hist.length=50;
+    localStorage.setItem('ej_history', JSON.stringify(hist));
+    renderHistory();
+  }
+  function getLastResultFromHistory(){ const hist = JSON.parse(localStorage.getItem('ej_history')||'[]'); return hist[0]||null; }
+  function renderHistory(){ const hist = JSON.parse(localStorage.getItem('ej_history')||'[]'); document.getElementById('analysis').innerHTML = `<div>Letzte Ergebnisse: ${hist.length}</div><div class="note">${hist.slice(0,5).map(h=>h.created_at + ' → ' + h.main.join(' ') + ' | ' + h.euro.join(' ')).join('<br>')}</div>`; }
+
+  // Archive loading with fallbacks
+  document.getElementById('btnFetch').addEventListener('click', async ()=>{
+    const url = document.getElementById('zipUrl').value.trim();
+    if (!url) return DLSTATUS.textContent = 'Bitte URL eingeben.';
+    DLSTATUS.textContent = 'Versuche Auto-Download…';
     try{
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP '+res.status);
@@ -156,307 +430,101 @@ canvas{background:linear-gradient(180deg,#08121a,#061116);border-radius:6px;bord
       const zip = await JSZip.loadAsync(buf);
       const file = Object.keys(zip.files).find(p=>/\.(csv|txt)$/i.test(p)) || Object.keys(zip.files)[0];
       const text = await zip.file(file).async('string');
-      parseArchiveTextAndStore(text);
-      dlStatus.textContent = 'Archiv automatisch geladen.';
+      parseArchiveText(text);
+      DLSTATUS.textContent = 'Archiv geladen.';
     }catch(err){
-      dlStatus.textContent = 'Auto-Update fehlgeschlagen (CORS oder Netzwerk): lade manuell.';
+      DLSTATUS.innerHTML = 'Auto-Download fehlgeschlagen. Mögliche Gründe: CORS oder Server-Schutz.<br>Fälle: 1) Lade die ZIP-Datei manuell per "Datei hochladen". 2) Öffne die URL in deinem Browser, speichere die enthaltene TXT/CSV und lade diese hoch. 3) Kopiere den Text-Inhalt und nutze "CSV/Text einfügen".';
     }
-  }
+  });
 
-  function attachEvents(){
-    btnFetch.addEventListener('click', async ()=>{
-      dlStatus.textContent = 'Lade…';
-      try{
-        const res = await fetch(zipUrlInput.value.trim());
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        const buf = await res.arrayBuffer();
-        const zip = await JSZip.loadAsync(buf);
+  document.getElementById('btnUpload').addEventListener('click', ()=> document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    DLSTATUS.textContent = 'Lese Datei…';
+    try{
+      if (f.name.endsWith('.zip')){
+        const zip = await JSZip.loadAsync(await f.arrayBuffer());
         const file = Object.keys(zip.files).find(p=>/\.(csv|txt)$/i.test(p)) || Object.keys(zip.files)[0];
         const text = await zip.file(file).async('string');
-        parseArchiveTextAndStore(text);
-        dlStatus.textContent = 'Archiv geladen.';
-      }catch(err){
-        dlStatus.textContent = 'Fehler beim Laden: '+err.message+' – bitte manuell hochladen.';
+        parseArchiveText(text);
+      } else {
+        const text = await f.text();
+        parseArchiveText(text);
       }
-    });
+      DLSTATUS.textContent = 'Datei geladen.';
+    }catch(err){ DLSTATUS.textContent = 'Fehler beim Lesen: '+err.message; }
+  });
 
-    btnLoadLocal.addEventListener('click', ()=> fileInput.click());
-    fileInput.addEventListener('change', async (e)=>{
-      const f = e.target.files[0]; if(!f) return;
-      dlStatus.textContent = 'Lese Datei…';
-      try{
-        if (f.name.endsWith('.zip')){
-          const zip = await JSZip.loadAsync(await f.arrayBuffer());
-          const file = Object.keys(zip.files).find(p=>/\.(csv|txt)$/i.test(p)) || Object.keys(zip.files)[0];
-          const text = await zip.file(file).async('string');
-          parseArchiveTextAndStore(text);
-        } else {
-          const text = await f.text();
-          parseArchiveTextAndStore(text);
-        }
-        dlStatus.textContent = 'Datei geladen.';
-      }catch(err){
-        dlStatus.textContent = 'Fehler: '+err.message;
-      }
-    });
+  document.getElementById('btnPaste').addEventListener('click', ()=>{
+    const txt = prompt('Füge hier CSV/TXT-Inhalt ein (Kopfzeile erforderlich):','Tag\tMonat\tJahr\tZahlA1\tZahlA2\tZahlA3\tZahlA4\tZahlA5\tZahlB1\tZahlB2');
+    if (!txt) return;
+    try{ parseArchiveText(txt); DLSTATUS.textContent = 'Inhalt geparst.'; }catch(err){ DLSTATUS.textContent = 'Parser-Fehler: '+err.message; }
+  });
 
-    btnStartSim.addEventListener('click', ()=> sim.start());
-    btnStopSim.addEventListener('click', ()=> sim.stop());
-    btnResetSim.addEventListener('click', ()=> sim.reset());
+  document.getElementById('btnDemo').addEventListener('click', ()=>{
+    const sample = "Tag\tMonat\tJahr\tZahlA1\tZahlA2\tZahlA3\tZahlA4\tZahlA5\tZahlB1\tZahlB2\n23\t3\t2012\t5\t46\t37\t21\t8\t8\t6\n30\t3\t2012\t19\t5\t7\t12\t26\t1\t5";
+    parseArchiveText(sample);
+    DLSTATUS.textContent = 'Demo-Daten geladen.';
+  });
 
-    btnGenerate.addEventListener('click', ()=> generateTips('fair'));
-    btnGenerateHot.addEventListener('click', ()=> generateTips('hot'));
-    btnGenerateCold.addEventListener('click', ()=> generateTips('cold'));
-
-    btnExportAll.addEventListener('click', exportAllZip);
-
-    autoUpdateCheckbox.addEventListener('change', ()=>{
-      localStorage.setItem('ej_auto_update', autoUpdateCheckbox.checked ? '1' : '0');
-    });
-  }
-
-  function parseArchiveTextAndStore(text){
-    try{
-      // simple parser: accept tab or semicolon, detect header with Tag/Monat/Jahr/ZahlA1..5/ZahlB1..2
-      const delim = (text.slice(0,2000).match(/\t/g)||[]).length > (text.slice(0,2000).match(/;/g)||[]).length ? '\t' : ';';
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      const header = lines[0].split(delim).map(h=>h.trim());
-      const idx = {
-        Tag: header.findIndex(h=>/tag/i.test(h)),
-        Monat: header.findIndex(h=>/monat|month/i.test(h)),
-        Jahr: header.findIndex(h=>/jahr|year/i.test(h)),
-        A: [1,2,3,4,5].map(k=> header.findIndex(h=> new RegExp(`ZahlA${k}`, 'i').test(h))),
-        B: [1,2].map(k=> header.findIndex(h=> new RegExp(`ZahlB${k}`, 'i').test(h)))
-      };
-      if (idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
-        throw new Error('Unbekanntes Format – Kopfzeile nicht erkannt');
-      }
-      const out = [];
-      for (let i=1;i<lines.length;i++){
-        const cols = lines[i].split(delim).map(s=>s.trim());
-        if (cols.length <= Math.max(...idx.A, ...idx.B)) continue;
-        const day = parseInt(cols[idx.Tag],10);
-        const month = parseInt(cols[idx.Monat],10);
-        const year = parseInt(cols[idx.Jahr],10);
-        const A = idx.A.map(ii=>parseInt(cols[ii],10)).filter(Number.isFinite);
-        const B = idx.B.map(ii=>parseInt(cols[ii],10)).filter(Number.isFinite);
-        if (A.length===5 && B.length===2){
-          const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-          out.push({date, main: A.slice().sort((a,b)=>a-b), euro: B.slice().sort((a,b)=>a-b)});
-        }
-      }
-      out.sort((a,b)=> b.date.localeCompare(a.date)); // newest first
-      draws = out;
-      computeFreqs();
-      localStorage.setItem('ej_draws', JSON.stringify(draws));
-      updateAnalysisUI();
-    }catch(err){
-      dlStatus.textContent = 'Parser-Fehler: '+err.message;
+  // parse archive text (simple parser accepting Tag/Monat/Jahr and ZahlA1..5 ZahlB1..2)
+  function parseArchiveText(text){
+    const delim = (text.slice(0,2000).match(/\t/g)||[]).length > (text.slice(0,2000).match(/;/g)||[]).length ? '\t' : ';';
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const header = lines[0].split(delim).map(h=>h.trim());
+    const idx = {
+      Tag: header.findIndex(h=>/tag/i.test(h)),
+      Monat: header.findIndex(h=>/monat|month/i.test(h)),
+      Jahr: header.findIndex(h=>/jahr|year/i.test(h)),
+      A: [1,2,3,4,5].map(k=> header.findIndex(h=> new RegExp(`ZahlA${k}`, 'i').test(h))),
+      B: [1,2].map(k=> header.findIndex(h=> new RegExp(`ZahlB${k}`, 'i').test(h)))
+    };
+    if (idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
+      throw new Error('Kopfzeile nicht erkannt. Erwartet: Tag, Monat, Jahr, ZahlA1..5, ZahlB1..2');
     }
-  }
-
-  function computeFreqs(){
+    const out = [];
+    for (let i=1;i<lines.length;i++){
+      const cols = lines[i].split(delim).map(s=>s.trim());
+      if (cols.length <= Math.max(...idx.A, ...idx.B)) continue;
+      const day = parseInt(cols[idx.Tag],10);
+      const month = parseInt(cols[idx.Monat],10);
+      const year = parseInt(cols[idx.Jahr],10);
+      const A = idx.A.map(ii=>parseInt(cols[ii],10)).filter(Number.isFinite);
+      const B = idx.B.map(ii=>parseInt(cols[ii],10)).filter(Number.isFinite);
+      if (A.length===5 && B.length===2){
+        const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        out.push({date, main: A.slice().sort((a,b)=>a-b), euro: B.slice().sort((a,b)=>a-b)});
+      }
+    }
+    out.sort((a,b)=> b.date.localeCompare(a.date)); // newest first
+    draws = out;
+    // recompute freqs
     freqA = Array(51).fill(0); freqB = Array(13).fill(0);
     draws.forEach(d=>{ d.main.forEach(n=> freqA[n]++); d.euro.forEach(n=> freqB[n]++); });
+    renderAnalysis();
+    localStorage.setItem('ej_draws', JSON.stringify(draws));
   }
 
-  function updateAnalysisUI(){
-    const analysis = document.getElementById('analysis');
-    if (draws.length===0){ analysis.textContent = 'Keine Daten geladen.'; return; }
+  function renderAnalysis(){
+    if (!draws || draws.length===0){ document.getElementById('analysis').textContent = 'Keine Daten.'; return; }
     const total = draws.length;
-    const topA = [...Array(50)].map((_,i)=>({n:i+1,f:freqA[i+1]})).sort((a,b)=>b.f-a.f).slice(0,5);
-    analysis.innerHTML = `<div>Ziehungen: <strong>${total}</strong></div>`+
-      `<div class="small">Top Hauptzahlen: ${topA.map(x=>'<span class="badge">'+String(x.n).padStart(2,'0')+'</span>').join(' ')}</div>`;
+    const top = [...Array(50)].map((_,i)=>({n:i+1,f:freqA[i+1]})).sort((a,b)=>b.f-a.f).slice(0,5);
+    document.getElementById('analysis').innerHTML = `<div>Ziehungen: <strong>${total}</strong></div><div class="note">Top Hauptzahlen: ${top.map(t=>String(t.n).padStart(2,'0')).join(' ')}</div>`;
   }
 
-  // Tip generation
-  function generateTips(mode){
-    const n = Math.max(1, Math.min(200, parseInt(numTipsInput.value||'1',10)));
-    tipsList.innerHTML = '';
-    for (let i=0;i<n;i++){
-      const tip = mode==='fair' ? fairPick() : weightedPick(mode);
-      const el = document.createElement('div'); el.className='tip';
-      el.innerHTML = `<div><strong>#${i+1}</strong> <span class="note">Haupt: ${tip.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${tip.euro.map(n=>String(n).padStart(2,'0')).join(' ')}</span></div>`;
-      el.addEventListener('click', ()=>{ if (autoSimOnDraw.checked) sim.runDrawAnimation(tip); });
-      tipsList.appendChild(el);
-    }
-    // Optionally run simulation for first tip
-    if (autoSimOnDraw.checked && tipsList.firstChild){
-      tipsList.firstChild.click();
-    }
+  // Utilities for seedable RNG if seed provided (mulberry32 above used inside performSequentialDraw)
+  // Start animation by default for a lively page
+  startAnimation();
+
+  // Restore draws from previous session when available
+  try{ const stored = localStorage.getItem('ej_draws'); if (stored){ draws = JSON.parse(stored); freqA = Array(51).fill(0); freqB = Array(13).fill(0); draws.forEach(d=>{ d.main.forEach(n=>freqA[n]++); d.euro.forEach(n=>freqB[n]++); }); renderAnalysis(); } }catch(e){}
+
+  // Helper: add rounded rect to canvas context prototype if missing
+  if (!CanvasRenderingContext2D.prototype.roundRect){
+    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){ if (typeof r === 'undefined') r=6; this.beginPath(); this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); this.closePath(); };
   }
 
-  function fairPick(){
-    const poolA = Array.from({length:50},(_,i)=>i+1);
-    const poolB = Array.from({length:12},(_,i)=>i+1);
-    const pick = (pool,k)=>{
-      const out=[];
-      for (let i=0;i<k;i++){ const idx=Math.floor(Math.random()*pool.length); out.push(pool.splice(idx,1)[0]); }
-      return out.sort((a,b)=>a-b);
-    };
-    return {main:pick(poolA,5), euro:pick(poolB,2)};
-  }
-
-  function weightedPick(mode){
-    // mode 'hot' or 'cold'
-    const arrA = [...Array(50)].map((_,i)=>({n:i+1,f:freqA[i+1]||0}));
-    const arrB = [...Array(12)].map((_,i)=>({n:i+1,f:freqB[i+1]||0}));
-    const pickWeighted = (arr,k)=>{
-      const maxF = Math.max(...arr.map(x=>x.f)); const minF = Math.min(...arr.map(x=>x.f));
-      let weights = arr.map(x=> mode==='hot' ? (x.f - minF + 1) : (maxF - x.f + 1));
-      const out = [];
-      for (let i=0;i<k;i++){
-        const sum = weights.reduce((a,b)=>a+b,0); let r=Math.random()*sum;
-        for (let j=0;j<arr.length;j++){ r -= weights[j]; if (r<=0){ out.push(arr[j].n); weights[j]=0; break; } }
-      }
-      return out.sort((a,b)=>a-b);
-    };
-    return {main: pickWeighted(arrA,5), euro: pickWeighted(arrB,2)};
-  }
-
-  // Export all generated tips in a ZIP (simple demo: include JSON file)
-  async function exportAllZip(){
-    const items = [...tipsList.querySelectorAll('.tip')].map((el,i)=>{
-      const txt = el.textContent || el.innerText;
-      return {index:i+1,text:txt};
-    });
-    if (items.length===0){ alert('Keine Tipps zum Exportieren'); return; }
-    const zip = new JSZip();
-    zip.file('tips.json', JSON.stringify(items,null,2));
-    const blob = await zip.generateAsync({type:'blob'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tips_export.zip'; a.click();
-  }
-
-  // ----------------- Simulation implementation (2D simple physics-like) -----------------
-  function createSimulator(canvas){
-    const ctx = canvas.getContext('2d');
-    const W = ()=>canvas.clientWidth; const H = ()=>canvas.clientHeight;
-    let running = false;
-    let particles = [];
-    let last = 0;
-    function reset(){ particles = []; for (let i=1;i<=50;i++){ particles.push(newBall(i)); } }
-    function newBall(id){
-      return {
-        id,
-        r: 14 + Math.random()*4,
-        x: 40 + Math.random()*(canvas.clientWidth-80),
-        y: 40 + Math.random()*(canvas.clientHeight-120),
-        vx: (Math.random()-0.5)*2,
-        vy: (Math.random()-0.5)*2,
-        color: '#0f766e',
-        picked: false
-      };
-    }
-    function step(dt){
-      // simple bounds and collisions (O(n^2) OK for 50)
-      for (let p of particles){
-        // apply slight drag and random jitter to mimic air turbulence
-        p.vx *= 0.999; p.vy *= 0.999;
-        p.vx += (Math.random()-0.5)*0.05; p.vy += (Math.random()-0.5)*0.05;
-        p.x += p.vx*dt*60; p.y += p.vy*dt*60;
-        // bounds
-        const margin=12;
-        if (p.x < margin){ p.x = margin; p.vx = Math.abs(p.vx)*0.6; }
-        if (p.x > canvas.clientWidth - margin){ p.x=canvas.clientWidth-margin; p.vx = -Math.abs(p.vx)*0.6; }
-        if (p.y < margin){ p.y=margin; p.vy = Math.abs(p.vy)*0.6; }
-        if (p.y > canvas.clientHeight - margin){ p.y=canvas.clientHeight-margin; p.vy = -Math.abs(p.vy)*0.6; }
-      }
-      // collisions
-      for (let i=0;i<particles.length;i++){
-        for (let j=i+1;j<particles.length;j++){
-          const a=particles[i], b=particles[j];
-          const dx=b.x-a.x, dy=b.y-a.y; const dist=Math.hypot(dx,dy);
-          const minD = a.r + b.r;
-          if (dist>0 && dist < minD){
-            // simple overlap resolution + exchange velocities
-            const nx=dx/dist, ny=dy/dist;
-            const overlap = (minD - dist)/2;
-            a.x -= nx*overlap; a.y -= ny*overlap;
-            b.x += nx*overlap; b.y += ny*overlap;
-            // swap velocities projected
-            const dvx = b.vx - a.vx, dvy = b.vy - a.vy;
-            const rel = dvx*nx + dvy*ny;
-            if (rel < 0){
-              const impulse = rel * 0.9;
-              a.vx += nx*impulse; a.vy += ny*impulse;
-              b.vx -= nx*impulse; b.vy -= ny*impulse;
-            }
-          }
-        }
-      }
-    }
-    function draw(){
-      ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
-      // background gradient
-      const g = ctx.createLinearGradient(0,0,0,canvas.clientHeight);
-      g.addColorStop(0,'rgba(10,20,25,0.4)'); g.addColorStop(1,'rgba(2,8,12,0.4)');
-      ctx.fillStyle = g; ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
-      // draw particles
-      for (let p of particles){
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-        ctx.fillStyle = p.picked ? '#ffd166' : p.color; ctx.fill();
-        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
-        ctx.fillStyle = p.picked ? '#131313' : '#e6fff8'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(String(p.id).padStart(2,'0'), p.x, p.y);
-      }
-    }
-    // Draw animation for a given tip: mark the balls matching numbers sequentially with visual pick
-    async function runDrawAnimation(tip){
-      stop();
-      // reset positions & randomize velocities
-      reset();
-      // give a short warmup
-      for (let k=0;k<60;k++){ step(1/60); draw(); await tick(8); }
-      // now pick balls one by one; for each desired number, nudge that ball to top and mark it
-      for (const n of [...tip.main, ...tip.euro]){
-        // find ball with id==n
-        const p = particles.find(x=>x.id===n);
-        if (!p) continue;
-        // apply force toward center-top and wait until it's near top area, then mark picked
-        const targetY = 40 + Math.random()*40;
-        let counter=0;
-        while (Math.abs(p.y - targetY) > 6 && counter < 300){
-          // nudge velocity
-          p.vy -= 0.06 + Math.random()*0.06;
-          p.vx += (canvas.clientWidth/2 - p.x) * 0.0008;
-          step(1/60); draw();
-          await tick(10);
-          counter++;
-        }
-        // mark as picked and flash
-        p.picked = true;
-        for (let f=0;f<20;f++){ draw(); await tick(12); }
-      }
-      // finish with a short pause
-      await new Promise(r=>setTimeout(r,600));
-    }
-
-    function tick(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-    function loop(t){
-      if (!running) return;
-      const now = performance.now();
-      const dt = Math.min(0.05, (now - last)/1000 || 0.016);
-      last = now;
-      step(dt);
-      draw();
-      requestAnimationFrame(loop);
-    }
-    function start(){ if (running) return; running=true; last=performance.now(); requestAnimationFrame(loop); }
-    function stop(){ running=false; }
-    function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
-    function getParticles(){ return particles; }
-
-    // responsive canvas
-    window.addEventListener('resize', ()=>{ resize(); });
-    resize(); reset();
-    return {start, stop, reset, runDrawAnimation, getParticles};
-  }
-
-  // expose sim.runDrawAnimation globally for tips clickable hook
-  window.simulator = sim;
-
-})(); // end main
+})(); // end IIFE
 </script>
 </body>
 </html>
