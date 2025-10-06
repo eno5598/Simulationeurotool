@@ -6,33 +6,38 @@
 <title>EuroJackpot • TV‑Style Ziehung (by ENOWEB)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <style>
-:root{ --cy:#00fff0; --mag:#ff5be8; --ink:#eaf7ff; --bg:#060712; }
-body{margin:0;background:
-  radial-gradient(1000px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
-  radial-gradient(1000px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%),
-  var(--bg); color:var(--ink); font-family:Inter,ui-sans-serif,system-ui;}
-.h1{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
+:root{ --ink:#eaf7ff; --bg:#060712; --panel:rgba(18,22,38,.82); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; --green:#18c47d; }
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
+  radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.10), transparent 60%),
+  radial-gradient(1200px 800px at 110% -10%, rgba(255,0,234,.10), transparent 60%),
+  linear-gradient(180deg,#060a12,#05070e 60%, #060a12);}
+.h1{background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent;font-weight:900}
 .brand{font-weight:900;letter-spacing:1px; display:inline-block; background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0); background-size:400% 100%;
   -webkit-background-clip:text; color:transparent; animation:gradmove 6s linear infinite}
 @keyframes gradmove{0%{background-position:0% 50%}100%{background-position:100% 50%}}
-.card{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; box-shadow:0 12px 40px rgba(0,0,0,.45)}
+.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 14px 44px rgba(0,0,0,.45)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
-.badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.2rem .6rem; font-size:.78rem;}
+.badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.25rem .65rem; font-size:.78rem;}
 .small{font-size:.85rem;opacity:.9}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+
 .simwrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#03070e}
-.simwrap canvas{width:100%;height:420px;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
+.simwrap canvas{width:100%;height:440px;max-height:65vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
 .simlabel{position:absolute;top:10px;left:12px}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
+
 .rail{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
-.rail .slotbox{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
-.sep{width:2px;height:28px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 .25rem}
-.floating-chip{position:fixed;z-index:50;min-width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
+.rail .slotbox{width:46px;height:46px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
+.sep{width:2px;height:30px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 .25rem}
+
+.floating-chip{position:fixed;z-index:60;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
   background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);font-weight:800}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);color:#042725;font-weight:900;letter-spacing:.5px}
 .chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05}
+
 table.heat{width:100%; border-collapse:separate; border-spacing:0 6px}
 table.heat td{padding:6px 8px; background:rgba(255,255,255,.05); border-radius:8px; text-align:center}
 td.hot{background:linear-gradient(180deg,rgba(30,200,160,.35),rgba(30,200,160,.12))}
@@ -47,17 +52,17 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln, Sog + Klappe + Rutsche)</h2>
+      <div class="grid2">
         <div class="simwrap">
           <div class="simlabel badge">Haupttrommel (1–50)</div>
           <div class="slot">Auswurf</div>
-          <canvas id="canvasA" width="680" height="420"></canvas>
+          <canvas id="cvA" width="680" height="440"></canvas>
         </div>
         <div class="simwrap">
           <div class="simlabel badge">Eurotrommel (1–12)</div>
           <div class="slot">Auswurf</div>
-          <canvas id="canvasB" width="680" height="420"></canvas>
+          <canvas id="cvB" width="680" height="440"></canvas>
         </div>
       </div>
       <div class="mt-3 rail" id="resultRail">
@@ -78,7 +83,7 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div id="statusText" class="text-sm mb-2">Starte Archiv‑Download…</div>
       <div class="grid grid-cols-3 gap-2 text-center my-2">
@@ -86,7 +91,7 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
         <div class="badge">Von: <b id="kpiFrom">–</b></div>
         <div class="badge">Bis: <b id="kpiTo">–</b></div>
       </div>
-      <div class="mt-2 small opacity-80">Wenn der Auto‑Download blockiert ist: ZIP oder TXT hier ziehen & ablegen.</div>
+      <div class="mt-2 small opacity-80">Falls der Online‑Abruf blockiert ist: ZIP/TXT hier laden oder Inhalt einfügen.</div>
       <input id="fileInput" type="file" class="mt-2 block w-full bg-gray-900 p-2 rounded" accept=".zip,.csv,.txt">
       <textarea id="pasteBox" class="mt-2 w-full h-24 bg-gray-900 p-2 rounded" placeholder="Oder CSV/TXT hier einfügen…"></textarea>
       <button id="btnParsePaste" class="btn btn--gray mt-2">CSV/TXT einlesen</button>
@@ -105,18 +110,21 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
 <script>
 const $=s=>document.querySelector(s);
-const LS_ARCH='ej_archive_hardened_v3';
+const LS_ARCH='ej_enoweb_archive_v4';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
+
+/* ===== ARCHIV LADEN ===== */
 window.__ej={draws:[],freqA:Array(51).fill(0),freqB:Array(13).fill(0)};
 
-/* ===== Robust auto-archive ===== */
-async function getTextFromRes(res, url){
+async function getTextFromRes(res,url){
   const blob=await res.blob();
   const ct=(res.headers.get('content-type')||'').toLowerCase();
-  // try ZIP
-  if(ct.includes('zip') || url.endsWith('.zip') || (await blob.slice(0,4).text()).startsWith('PK\\x03\\x04')){
-    try{ const zip=await JSZip.loadAsync(blob); let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ out+='\\n'+await f.async('string'); } } if(out.trim()) return out; }catch{}
+  const sig=await blob.slice(0,4).text().catch(()=>'');
+  if(ct.includes('zip') || url.endsWith('.zip') || sig.startsWith('PK')){
+    try{ const zip=await JSZip.loadAsync(blob); let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) out+='\\n'+await f.async('string'); } if(out.trim()) return out; }catch{}
   }
-  // else plain
   try{ return await (new Response(blob)).text(); }catch{return '';}
 }
 async function fetchWithProxies(url){
@@ -138,15 +146,20 @@ async function fetchWithProxies(url){
 function parseEuroArchive(txt){
   try{
     const t=txt.replace(/\\r\\n?/g,'\\n'); const lines=t.split('\\n').map(l=>l.trim()).filter(Boolean);
-    const head=lines[0]; const delim=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';
-    const H=head.split(delim).map(s=>s.trim());
-    const idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
+    const head=lines[0];
+    let delim=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';
+    let H=head.split(delim).map(s=>s.trim());
+    let idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
       A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
+    if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
+      idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
+      A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('Zahl'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('Euro'+k,'i').test(x)))};
+    }
     if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt.');
-
     const out=[];
     for(let i=1;i<lines.length;i++){
-      const c=lines[i].split(delim).map(s=>s.trim()); if(c.length<=Math.max(...idx.A,...idx.B)) continue;
+      const c=lines[i].split(delim).map(s=>s.trim());
+      if(c.length<=Math.max(...idx.A,...idx.B)) continue;
       const A=idx.A.map(ii=>+c[ii]).filter(Number.isFinite), B=idx.B.map(ii=>+c[ii]).filter(Number.isFinite);
       const day=+c[idx.Tag], mon=+c[idx.Monat], year=+c[idx.Jahr];
       if(A.length===5 && B.length===2){
@@ -168,21 +181,19 @@ async function autoLoadArchive(){
   $('#statusText').textContent='Lade Archiv…';
   try{
     const raw=await fetchWithProxies(url);
-    localStorage.setItem(LS_ARCH, raw);
+    localStorage.setItem(LS_ARCH,raw);
     parseEuroArchive(raw);
   }catch(e){
     const saved=localStorage.getItem(LS_ARCH);
     if(saved){ parseEuroArchive(saved); $('#statusText').textContent='Online blockiert – lokale Kopie geladen.'; }
-    else{ $('#statusText').textContent='Auto‑Download blockiert. Bitte ZIP ziehen/ablegen oder CSV einfügen.'; }
+    else{ $('#statusText').textContent='Auto‑Download blockiert. Bitte ZIP hochladen oder Inhalt einfügen.'; }
   }
 }
 autoLoadArchive();
-
-// Manual fallbacks
 $('#fileInput').addEventListener('change', async (ev)=>{
-  const f=ev.target.files[0]; if(!f) return;
-  if(f.name.endsWith('.zip')){ const zip=await JSZip.loadAsync(f); let txt=''; for(const file of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(file.name)) txt+='\\n'+await file.async('string'); } localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
-  else { const txt=await f.text(); localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
+  const file=ev.target.files[0]; if(!file) return;
+  if(file.name.endsWith('.zip')){ const zip=await JSZip.loadAsync(file); let txt=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) txt+='\\n'+await f.async('string'); } localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
+  else{ const txt=await file.text(); localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
 });
 $('#btnParsePaste').onclick=()=>{ const txt=$('#pasteBox').value; if(txt.trim()){ localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); } };
 
@@ -206,113 +217,120 @@ function renderHotCold(){
   table($('#hotEuro'),B,12);
 }
 
-/* ===== Simulation hardened ===== */
-const {Engine,Render,Runner,Bodies,Body,Constraint,Events,World,Vector}=Matter;
-function createDrum(canvas,count){
-  const engine=Engine.create({gravity:{x:0,y:0}}); const world=engine.world;
-  const W=canvas.clientWidth,H=canvas.clientHeight; canvas.width=W; canvas.height=H;
-  const render=Render.create({canvas,engine,options:{width:W,height:H,wireframes:false,background:'transparent',pixelRatio:Math.min(2,devicePixelRatio||1)}});
-  const cx=W*0.48, cy=H*0.58, R=Math.min(W,H)*0.38;
-
-  const segs=220, thick=36, segLen=(Math.PI*2*R)/segs+4;
-  const walls=[]; for(let i=0;i<segs;i++){ const a=i/segs*Math.PI*2, x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
-    walls.push(Bodies.rectangle(x,y,thick,segLen,{isStatic:true,angle:a+Math.PI/2,render:{fillStyle:'rgba(10,25,38,.96)'}})); }
-  World.add(world,walls);
-
-  // intake + flap + chute
-  const intakeAngle=-Math.PI*0.18+Math.PI/2; const intake={x:cx+Math.cos(intakeAngle)*(R-70),y:cy+Math.sin(intakeAngle)*(R-70)};
-  const flap=Bodies.rectangle(intake.x,intake.y+60,26,120,{chamfer:{radius:6},render:{fillStyle:'#136d68'},frictionAir:0.02}); Body.setAngle(flap,intakeAngle);
-  const hinge=Constraint.create({pointA:intake,bodyB:flap,pointB:{x:0,y:-60},stiffness:1,length:0}); World.add(world,[flap,hinge]);
-  const chute1=Bodies.rectangle(intake.x+60,intake.y-8,140,12,{isStatic:true,angle:-0.35,render:{fillStyle:'rgba(60,200,170,.20)'}});
-  const chute2=Bodies.rectangle(intake.x+120,intake.y+34,160,12,{isStatic:true,angle:-0.35,render:{fillStyle:'rgba(60,200,170,.20)'}});
-  World.add(world,[chute1,chute2]);
-
-  // paddles
-  const blade=(len,ang)=>Bodies.rectangle(cx,cy,len,14,{density:0.004,frictionAir:0.045,angle:ang,render:{fillStyle:'#17c3b2'}});
-  const arms=[blade(R*0.8,0),blade(R*0.8,Math.PI/3),blade(R*0.8,-Math.PI/3)];
-  arms.forEach(a=>World.add(world,[a,Constraint.create({pointA:{x:cx,y:cy},bodyB:a,length:0,stiffness:1})]));
-
-  // balls
-  const balls=[]; const rBall=Math.max(10,R*0.08);
-  for(let i=0;i<count;i++){
-    const ang=i/count*Math.PI*2 + Math.random()*0.05;
-    const x=cx+Math.cos(ang)*R*0.6, y=cy+Math.sin(ang)*R*0.6;
-    const b=Bodies.circle(x,y,rBall,{restitution:0.65,friction:0.02,frictionAir:0.035,density:0.0018,render:{fillStyle:'#13b3aa'}});
-    b.labelNum=i+1; balls.push(b);
+/* ===== Custom Premium Simulation ===== */
+class DrumSim{
+  constructor(canvas, count, seed=0){
+    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+    this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
+    this.cx=this.W*0.48; this.cy=this.H*0.58; this.R=Math.min(this.W,this.H)*0.38;
+    this.rBall=Math.max(12,this.R*0.08);
+    this.intakeAngle=-Math.PI*0.18+Math.PI/2;
+    this.intakePos=()=>({x:this.cx+Math.cos(this.intakeAngle)*(this.R-64), y:this.cy+Math.sin(this.intakeAngle)*(this.R-64)});
+    this.rng=(function(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; })(seed||Date.now());
+    this.balls=[]; for(let i=1;i<=count;i++){ const th=i/count*Math.PI*2 + this.rng()*0.2; const w=(this.rng()*2-1)*0.6; this.balls.push({n:i, th, w, alive:true}); }
+    this.target=null; this.flap=0; this.phase='mix';
+    this.arms=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.1;
+    this.anim=null; this.onEject=null; this.tick=0; this.prev=null;
+    this.loop=this.loop.bind(this); this.loop();
   }
-  World.add(world,balls);
-
-  // mask & numbers
-  function clip(ctx){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.clip(); } function unclip(ctx){ ctx.restore(); }
-  Events.on(render,'beforeRender',()=>clip(render.context));
-  Events.on(render,'afterRender',()=>{ const ctx=render.context; ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='800 14px Inter,system-ui';
-    for(const b of balls){ ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); ctx.fillStyle='#eafffb'; ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y); } unclip(ctx); });
-
-  const runner=Runner.create(); Render.run(render); Runner.run(runner,engine);
-
-  // radial keeper force always inward
-  function guard(b){ const dx=cx-b.position.x, dy=cy-b.position.y; const d=Math.hypot(dx,dy); const edge=R-16; if(d>edge){ Body.applyForce(b,b.position,{x:(dx/d)*0.03,y:(dy/d)*0.03}); } }
-
-  let t0=null,suctionActive=0;
-  Events.on(engine,'beforeUpdate',()=>{
-    const ts=engine.timing.timestamp/1000; if(!t0) t0=ts; const dt=ts-t0;
-    const speed=Math.min(1.9,0.45+dt*0.22);
-    arms.forEach((a,i)=>Body.setAngularVelocity(a,i%2?speed:-speed));
-    if(!suctionActive){ Body.setAngle(flap,intakeAngle); Body.setAngularVelocity(flap,0); }
-    balls.forEach(b=>{ b.velocity.x=Math.max(-9,Math.min(9,b.velocity.x)); b.velocity.y=Math.max(-9,Math.min(9,b.velocity.y)); guard(b); });
-  });
-
-  function nearestBall(){ let best=null,bd=1e9; for(const b of balls){ if(b.picked) continue; const dx=b.position.x-intake.x,dy=b.position.y-intake.y; const d=dx*dx+dy*dy; if(d<bd){bd=d;best=b;} } return best; }
-  async function suctionOne(){ const t=nearestBall(); if(!t) return null; suctionActive=1; const T=900, s=performance.now();
-    while(performance.now()-s<T){ const dx=intake.x-t.position.x,dy=intake.y-t.position.y,d=Math.hypot(dx,dy)+1e-6; Body.applyForce(t,t.position,{x:(dx/d)*0.02,y:(dy/d)*0.02}); await sleep(16); }
-    suctionActive=0; return t; }
-  async function openFlap(ms=420){ for(let i=0;i<10;i++){Body.rotate(flap,0.1); await sleep(10);} await sleep(ms); for(let i=0;i<10;i++){Body.rotate(flap,-0.1); await sleep(10);} Body.setAngle(flap,intakeAngle); }
-  function insideIntake(b){ return Math.abs(b.position.x-intake.x)<26 && Math.abs(b.position.y-intake.y)<26; }
-  function tryEject(b){ if(!b||b.picked) return null; if(insideIntake(b)){ Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3); b.picked=true; World.remove(world,b); return b; } return null; }
-  async function drawOne(){ const t=await suctionOne(); await openFlap(480); const s=performance.now(); while(performance.now()-s<1000){ const g=tryEject(t); if(g) return {body:g,ejection:{x:g.position.x,y:g.position.y}}; await sleep(16);} return null; }
-
-  return {drawOne, canvas};
+  nearestBall(){
+    const P=this.intakePos(); let best=null,bd=1e9;
+    for(const b of this.balls){ if(!b.alive) continue; const x=this.cx+Math.cos(b.th)*(this.R*0.62), y=this.cy+Math.sin(b.th)*(this.R*0.62);
+      const d=(x-P.x)**2+(y-P.y)**2; if(d<bd){bd=d; best=b;} } return best;
+  }
+  async drawOne(){
+    if(this.phase!=='mix') return null; this.target=this.nearestBall(); this.phase='suck'; await sleep(700); this.flap=1; await sleep(350);
+    const P=this.intakePos(); const pos={x:P.x+90,y:P.y-10}; const num=this.target?.n||0;
+    if(this.onEject && num){ this.onEject({num,pos}); }
+    if(this.target){ this.target.alive=false; }
+    await sleep(200); this.flap=0; this.phase='mix'; this.target=null; return num;
+  }
+  ballXY(th, rMul=0.62){ return {x:this.cx+Math.cos(th)*(this.R*rMul), y:this.cy+Math.sin(th)*(this.R*rMul)}; }
+  drawRing(){
+    const ctx=this.ctx; ctx.save(); ctx.translate(this.cx,this.cy);
+    ctx.lineWidth=22; ctx.strokeStyle='rgba(10,25,38,.96)'; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    const P=this.ballXY(this.intakeAngle,0.80);
+    ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intakeAngle+(this.flap?0.45:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+30,P.y-14); ctx.rotate(-0.35); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+100,P.y+24); ctx.rotate(-0.35); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
+  }
+  drawArms(dt){
+    const ctx=this.ctx; this.armSpeed=clamp(this.armSpeed+dt*0.05,0.9,1.8);
+    this.arms=this.arms.map(a=>a+(this.armSpeed*dt*(this.tick%2?1:-1)));
+    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2';
+    for(const a of this.arms){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4, this.R*0.8, 8, 4); ctx.fill(); ctx.restore(); } ctx.restore();
+  }
+  update(dt){
+    for(const b of this.balls){ if(!b.alive) continue; b.w += (this.rng()*2-1)*0.02; b.w = clamp(b.w, -1.5, 1.5); b.th += b.w*dt; }
+    const alive=this.balls.filter(b=>b.alive).sort((a,b)=>a.th-b.th);
+    if(alive.length>1){
+      const minGap = (Math.PI*2)/alive.length * 0.35;
+      for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length];
+        let gap=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(gap<minGap){ const push=(minGap-gap)/2; A.th-=push; B.th+=push; } }
+    }
+    if(this.phase==='suck' && this.target){ const P=this.intakePos(); const pos=this.ballXY(this.target.th);
+      const dx=P.x-pos.x, dy=P.y-pos.y, ang=Math.atan2(dy,dx); this.target.th += (ang - this.target.th) * 0.10; this.target.w *= 0.82; }
+  }
+  drawBalls(){
+    const ctx=this.ctx; ctx.save(); ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(const b of this.balls){ if(!b.alive && b!==this.target) continue; const p=this.ballXY(b===this.target? this.target.th : b.th);
+      ctx.beginPath(); ctx.arc(p.x,p.y,this.rBall+6,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.14)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,this.rBall,0,Math.PI*2); ctx.fillStyle= b===this.target ? '#f9d67a' : '#13b3aa'; ctx.fill();
+      ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.n).padStart(2,'0'),p.x,p.y);
+      ctx.fillStyle= b===this.target ? '#241a05' : '#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y); }
+    ctx.restore();
+  }
+  frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16, 0.5, 1.6); this.prev=ts; this.tick++;
+    const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H); this.drawRing(); this.update(dt*0.016); this.drawArms(dt*0.016); this.drawBalls(); }
+  loop(ts=performance.now()){ this.frame(ts); this.anim=requestAnimationFrame(this.loop); }
 }
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 
-const drumA=createDrum(document.getElementById('canvasA'),50);
-const drumB=createDrum(document.getElementById('canvasB'),12);
-
+/* Ergebnis-Rail */
 const rail=$('#resultRail');
 function placeStatic(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
 async function rollTo(fromCanvas, fromXY, slot, num, gold){
   const slotEl=rail.querySelector(`[data-slot="${slot}"]`);
   const s=fromCanvas.getBoundingClientRect(), e=slotEl.getBoundingClientRect();
-  const startX=s.left + fromXY.x*(fromCanvas.clientWidth/fromCanvas.width);
-  const startY=s.top + fromXY.y*(fromCanvas.clientHeight/fromCanvas.height);
+  const scaleX=fromCanvas.clientWidth/fromCanvas.width, scaleY=fromCanvas.clientHeight/fromCanvas.height;
+  const startX=s.left + fromXY.x*scaleX, startY=s.top + fromXY.y*scaleY;
   const endX=e.left+e.width/2, endY=e.top+e.height/2;
   const chip=document.createElement('div'); chip.className='floating-chip'; chip.textContent=String(num).padStart(2,'0');
-  chip.style.left=(startX-18)+'px'; chip.style.top=(startY-18)+'px'; document.body.appendChild(chip);
+  chip.style.left=(startX-19)+'px'; chip.style.top=(startY-19)+'px'; document.body.appendChild(chip);
   const dx=endX-startX, dy=endY-startY, dist=Math.hypot(dx,dy), rot=dist/60;
-  await chip.animate([{transform:'translate(0,0) rotate(0deg)'},{transform:`translate(${dx}px,${dy}px) rotate(${rot*360}deg)`}],{duration:850,easing:'cubic-bezier(.2,.8,.2,1)'}).finished;
+  await chip.animate([{transform:'translate(0,0) rotate(0deg)'},{transform:`translate(${dx}px,${dy}px) rotate(${rot*360}deg)`}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)'}).finished;
   chip.remove(); placeStatic(slot,num,gold);
 }
 
+/* App */
+const drumA=new DrumSim(document.getElementById('cvA'),50);
+const drumB=new DrumSim(document.getElementById('cvB'),12);
+const current={main:[],euro:[],created_at:null};
+drumA.onEject = ({num,pos})=>{ rollTo(drumA.canvas,pos,'A'+(current.main.length+1),num,false); current.main.push(num); };
+drumB.onEject = ({num,pos})=>{ rollTo(drumB.canvas,pos,'B'+(current.euro.length+1),num,true); current.euro.push(num); };
+
 document.getElementById('btnReset').onclick=()=>location.reload();
 document.getElementById('btnStart').onclick=async()=>{
-  const btn=document.getElementById('btnStart'); if(btn.disabled) return; btn.disabled=true;
-  const res={main:[],euro:[],created_at:new Date().toISOString()};
-  await sleep(700);
-  for(let i=0;i<5;i++){ const g=await drumA.drawOne(); if(!g) continue; res.main.push(g.body.labelNum); await rollTo(drumA.canvas,g.ejection,'A'+(i+1),g.body.labelNum,false); }
-  for(let i=0;i<2;i++){ const g=await drumB.drawOne(); if(!g) continue; res.euro.push(g.body.labelNum); await rollTo(drumB.canvas,g.ejection,'B'+(i+1),g.body.labelNum,true); }
-  res.main.sort((a,b)=>a-b); res.euro.sort((a,b)=>a-b);
-  $('#resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${res.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${res.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${res.created_at}</div>`;
-  analyze(res);
-  btn.disabled=false;
+  if(window.__running) return; window.__running=true;
+  current.main=[]; current.euro=[]; current.created_at=new Date().toISOString();
+  await sleep(600);
+  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(400); }
+  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(400); }
+  current.main.sort((a,b)=>a-b); current.euro.sort((a,b)=>a-b);
+  for(let i=0;i<5;i++) placeStatic('A'+(i+1), current.main[i], false);
+  for(let i=0;i<2;i++) placeStatic('B'+(i+1), current.euro[i], true);
+  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${current.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${current.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${current.created_at}</div>`;
+  analyze();
+  window.__running=false;
 };
 
-/* ===== Analyse ===== */
-function analyze(res){
+/* Analyse */
+function analyze(){
   const draws=window.__ej.draws; if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
   $('#analysisIntro').textContent=`Archiv berücksichtigt: ${draws.length} Ziehungen (komplette Historie)`;
-  const set=new Set(res.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
-  for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++; const me=d.euro.filter(n=>res.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
-  $('#comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
+  const set=new Set(current.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
+  for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++; const me=d.euro.filter(n=>current.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
+  document.getElementById('comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
 }
 </script>
 </body>
