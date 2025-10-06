@@ -3,79 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • TV‑Style Ziehung (by ENOWEB)</title>
+<title>EuroJackpot • Ziehung Pro (by ENOWEB)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-:root{ --ink:#eaf7ff; --bg:#060712; --panel:rgba(18,22,38,.82); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; --green:#18c47d; }
-*{box-sizing:border-box} html,body{height:100%}
+:root{ --ink:#eaf7ff; --bg:#060712; --panel:rgba(18,22,38,.82); --cy:#00fff0; --mag:#ff00ea; --gold:#f4c655; }
 body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
-  radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.10), transparent 60%),
-  radial-gradient(1200px 800px at 110% -10%, rgba(255,0,234,.10), transparent 60%),
-  linear-gradient(180deg,#060a12,#05070e 60%, #060a12);}
-.h1{background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent;font-weight:900}
-.brand{font-weight:900;letter-spacing:1px; display:inline-block; background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0); background-size:400% 100%;
-  -webkit-background-clip:text; color:transparent; animation:gradmove 6s linear infinite}
-@keyframes gradmove{0%{background-position:0% 50%}100%{background-position:100% 50%}}
-.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 14px 44px rgba(0,0,0,.45)}
+ radial-gradient(1000px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
+ radial-gradient(1000px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);}
+.h1{font-weight:900;background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent}
+.brand{font-weight:900;background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0);background-size:400% 100%;
+ -webkit-background-clip:text;color:transparent;animation:grad 6s linear infinite}
+@keyframes grad{0%{background-position:0 50%}100%{background-position:100% 50%}}
+.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.45)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
+.sim{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;background:#03070e}
+.sim canvas{width:100%;height:420px;max-height:65vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
 .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.25rem .65rem; font-size:.78rem;}
-.small{font-size:.85rem;opacity:.9}
-.grid2{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
-
-.simwrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#03070e}
-.simwrap canvas{width:100%;height:440px;max-height:65vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
-.simlabel{position:absolute;top:10px;left:12px}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
-
 .rail{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
 .rail .slotbox{width:46px;height:46px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
-.sep{width:2px;height:30px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 .25rem}
-
-.floating-chip{position:fixed;z-index:60;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
-  background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);color:#042725;font-weight:900;letter-spacing:.5px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);color:#042725;font-weight:900}
 .chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05}
-
-table.heat{width:100%; border-collapse:separate; border-spacing:0 6px}
-table.heat td{padding:6px 8px; background:rgba(255,255,255,.05); border-radius:8px; text-align:center}
-td.hot{background:linear-gradient(180deg,rgba(30,200,160,.35),rgba(30,200,160,.12))}
-td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.10))}
+.fchip{position:fixed;z-index:60;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
+ background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
+.small{font-size:.85rem;opacity:.9}
 </style>
 </head>
 <body class="p-4">
   <header class="mb-2">
-    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • TV‑Style Ziehung</h1>
+    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • Ziehung Pro</h1>
     <div class="brand text-lg">by ENOWEB</div>
   </header>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln, Sog + Klappe + Rutsche)</h2>
-      <div class="grid2">
-        <div class="simwrap">
-          <div class="simlabel badge">Haupttrommel (1–50)</div>
-          <div class="slot">Auswurf</div>
-          <canvas id="cvA" width="680" height="440"></canvas>
-        </div>
-        <div class="simwrap">
-          <div class="simlabel badge">Eurotrommel (1–12)</div>
-          <div class="slot">Auswurf</div>
-          <canvas id="cvB" width="680" height="440"></canvas>
-        </div>
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln – echtes „Trommeln“)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="420"></canvas></div>
+        <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="420"></canvas></div>
       </div>
-      <div class="mt-3 rail" id="resultRail">
+      <div class="mt-3 rail" id="rail">
         <div class="slotbox" data-slot="A1"></div>
         <div class="slotbox" data-slot="A2"></div>
         <div class="slotbox" data-slot="A3"></div>
         <div class="slotbox" data-slot="A4"></div>
         <div class="slotbox" data-slot="A5"></div>
-        <div class="sep"></div>
+        <div class="w-0.5 h-8 bg-white bg-opacity-20 rounded"></div>
         <div class="slotbox" data-slot="B1"></div>
         <div class="slotbox" data-slot="B2"></div>
       </div>
-      <div class="flex flex-wrap gap-2 mt-3">
+      <div class="flex gap-2 mt-3">
         <button id="btnStart" class="btn btn--green">Ziehung starten (5+2)</button>
         <button id="btnReset" class="btn btn--amber">Reset</button>
       </div>
@@ -83,15 +62,20 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv (bewährter Loader)</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
-      <div id="statusText" class="text-sm mb-2">Starte Archiv‑Download…</div>
+      <div class="flex flex-wrap gap-2 mb-2">
+        <button id="btnLoad" class="btn btn--green">📥 Laden</button>
+        <button id="btnSaveZip" class="btn btn--amber">⬇️ ZIP speichern</button>
+        <a id="direct" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
+      </div>
+      <div id="statusText" class="text-sm mb-2">Noch kein Archiv geladen.</div>
       <div class="grid grid-cols-3 gap-2 text-center my-2">
         <div class="badge">Ziehungen: <b id="kpiCount">–</b></div>
         <div class="badge">Von: <b id="kpiFrom">–</b></div>
         <div class="badge">Bis: <b id="kpiTo">–</b></div>
       </div>
-      <div class="mt-2 small opacity-80">Falls der Online‑Abruf blockiert ist: ZIP/TXT hier laden oder Inhalt einfügen.</div>
+      <div class="small">Falls blockiert: ZIP/TXT hier hochladen oder Inhalt einfügen.</div>
       <input id="fileInput" type="file" class="mt-2 block w-full bg-gray-900 p-2 rounded" accept=".zip,.csv,.txt">
       <textarea id="pasteBox" class="mt-2 w-full h-24 bg-gray-900 p-2 rounded" placeholder="Oder CSV/TXT hier einfügen…"></textarea>
       <button id="btnParsePaste" class="btn btn--gray mt-2">CSV/TXT einlesen</button>
@@ -100,283 +84,194 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
   <section class="card mt-3">
     <h2 class="font-bold text-xl mb-2">📊 Analyse</h2>
-    <div class="small mb-2" id="analysisIntro">Warte auf eine neue Ziehung…</div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div><div class="font-semibold mb-1">Hot & Cold (Hauptzahlen)</div><table class="heat" id="hotMain"></table></div>
-      <div><div class="font-semibold mb-1">Hot & Cold (Eurozahlen)</div><table class="heat" id="hotEuro"></table></div>
-      <div><div class="font-semibold mb-1">Kombinations‑Treffer</div><div id="comboStats" class="small">–</div></div>
+    <div id="analysisIntro" class="small">Warte auf Ziehung…</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+      <div><div class="font-semibold mb-1">Hot/Cold Haupt</div><div id="hotMain" class="text-sm opacity-90"></div></div>
+      <div><div class="font-semibold mb-1">Hot/Cold Euro</div><div id="hotEuro" class="text-sm opacity-90"></div></div>
+      <div><div class="font-semibold mb-1">Kombinationstreffer</div><div id="comboStats" class="text-sm">–</div></div>
     </div>
   </section>
 
 <script>
-const $=s=>document.querySelector(s);
-const LS_ARCH='ej_enoweb_archive_v5';
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
+const LS_ARCH='ej_enoweb_archive_v7';
 
-/* ===== ARCHIV LADEN (ultra-robust) ===== */
-window.__ej={draws:[],freqA:Array(51).fill(0),freqB:Array(13).fill(0)};
-
-async function getTextFromRes(res,url){
-  const blob=await res.blob();
-  const ct=(res.headers.get('content-type')||'').toLowerCase();
-  const sig=await blob.slice(0,4).text().catch(()=>'');
-  if(ct.includes('zip') || url.endsWith('.zip') || sig.startsWith('PK')){
-    try{
-      const zip=await JSZip.loadAsync(blob);
-      let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) out+='\\n'+await f.async('string'); }
-      if(out.trim()) return out;
-    }catch{}
-  }
-  try{ return await (new Response(blob)).text(); }catch{ return ''; }
-}
+/* ===== Archiv Loader (Proxy-Kette + Upload + Paste + Local) ===== */
+let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
+async function ensureJSZip(){ return !!window.JSZip || new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(true); s.onerror=()=>res(false); document.head.appendChild(s) }); }
 async function fetchWithProxies(url){
-  const chain=[
-    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
-    'https://corsproxy.io/?'+encodeURIComponent(url),
-    'https://cors.isomorphic-git.org/'+url,
-    'https://thingproxy.freeboard.io/fetch/'+url,
-    url
-  ];
-  for(const u of chain){
+  const trials=[ url, 'https://cors.isomorphic-git.org/'+url, 'https://api.allorigins.win/raw?url='+encodeURIComponent(url), 'https://thingproxy.freeboard.io/fetch/'+url, 'https://corsproxy.io/?'+encodeURIComponent(url) ];
+  let last=null;
+  for(const u of trials){
     try{
-      const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0;
-      const t=await getTextFromRes(r,url); if(t && t.trim()) return t;
-    }catch{}
-  }
-  throw new Error('Alle Quellen blockiert');
+      const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
+      const ct=res.headers.get('content-type')||'';
+      if(ct.includes('zip') || u.endsWith('.zip')){
+        if(!(await ensureJSZip())) throw new Error('JSZip nicht verfügbar.');
+        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob);
+        const entries=Object.values(zip.files);
+        const entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+        if(!entry) throw new Error('ZIP ohne TXT/CSV.'); return await entry.async('string');
+      }else{ return await res.text(); }
+    }catch(e){ last=e; }
+  } throw last||new Error('Download fehlgeschlagen');
 }
-
-function safeInt(x){ const n=parseInt(x,10); return Number.isFinite(n)?n:NaN; }
-function parseByHeader(lines){
-  const head=lines[0];
-  const delim=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';
-  const H=head.split(delim).map(s=>s.trim());
-  // Versuch A: Tag/Monat/Jahr + ZahlA1..5 + ZahlB1..2
-  let idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
-    A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
-  // Versuch B: Zahl1..5 + Euro1..2
-  if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
-    idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
-      A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('(^|[^A])Zahl\\s*'+k+'($|[^0-9])','i').test(x))), 
-      B:[1,2].map(k=>H.findIndex(x=>new RegExp('Euro\\s*'+k,'i').test(x)))};
-  }
-  // Versuch C: Datum als eine Spalte (dd.mm.yyyy)
-  let dateIdx=-1; if(idx.Tag<0||idx.Monat<0||idx.Jahr<0){ dateIdx = H.findIndex(x=>/datum|date/i.test(x)); }
-  if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){ return null; } // Header-Parsing gescheitert -> fallback
-  const out=[];
-  for(let i=1;i<lines.length;i++){
-    const cells=lines[i].split(delim).map(s=>s.trim()); if(!cells.length) continue;
-    let y,m,d;
-    if(dateIdx>=0){ const m1=cells[dateIdx].match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/); if(m1){ d=safeInt(m1[1]); m=safeInt(m1[2]); y=safeInt(m1[3]); } }
-    else{ d=safeInt(cells[idx.Tag]); m=safeInt(cells[idx.Monat]); y=safeInt(cells[idx.Jahr]); }
-    const A=idx.A.map(ii=>safeInt(cells[ii])).filter(n=>Number.isFinite(n));
-    const B=idx.B.map(ii=>safeInt(cells[ii])).filter(n=>Number.isFinite(n));
-    if(y && m && d && A.length===5 && B.length===2){
-      if(A.every(n=>n>=1&&n<=50) && B.every(n=>n>=1&&n<=12)){
-        const date=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
-        out.push({date, main:A.slice().sort((a,b)=>a-b), euro:B.slice().sort((a,b)=>a-b)});
-      }
-    }
-  }
-  return out.length?out:null;
-}
-function parseByAutodetect(lines){
-  const out=[];
-  for(const raw of lines){
-    const line=raw.trim(); if(!line) continue;
-    // 1) Date search
-    let y,m,d;
-    let m1=line.match(/(\\d{4})[.\\/-](\\d{1,2})[.\\/-](\\d{1,2})/);
-    if(m1){ y=safeInt(m1[1]); m=safeInt(m1[2]); d=safeInt(m1[3]); }
-    if(!y){ m1=line.match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/); if(m1){ d=safeInt(m1[1]); m=safeInt(m1[2]); y=safeInt(m1[3]); } }
-    // 2) Numbers
-    const nums=line.match(/\\d+/g)?.map(x=>parseInt(x,10))||[];
-    // Filter plausible numbers
-    const mains=nums.filter(n=>n>=1 && n<=50);
-    const euros=nums.filter(n=>n>=1 && n<=12);
-    // Try to take first 5 unique mains and last 2 euro after that
-    const uniqMain=[]; for(const n of mains){ if(!uniqMain.includes(n)) uniqMain.push(n); if(uniqMain.length===5) break; }
-    const uniqEuro=[]; for(const n of euros){ if(!uniqEuro.includes(n)) uniqEuro.push(n); if(uniqEuro.length===2) break; }
-    if(y&&m&&d && uniqMain.length===5 && uniqEuro.length===2){
-      const date=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
-      out.push({date, main:uniqMain.slice().sort((a,b)=>a-b), euro:uniqEuro.slice().sort((a,b)=>a-b)});
-    }
-  }
-  // Deduplicate by date
-  const map=new Map(); for(const d of out){ map.set(d.date, d); }
-  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
-}
-function parseEuroArchive(txt){
+function parseArchiveText(txt){
   try{
-    const t=txt.replace(/\\r\\n?/g,'\\n'); const lines=t.split('\\n').filter(Boolean);
-    let out=parseByHeader(lines);
-    if(!out){ out=parseByAutodetect(lines); }
-    if(!out || !out.length) throw new Error('Kopfzeile/Struktur unbekannt – auch Autodetect fand nichts.');
-    window.__ej.draws=out;
-    window.__ej.freqA=Array(51).fill(0); window.__ej.freqB=Array(13).fill(0);
-    out.forEach(d=>{ d.main.forEach(n=>window.__ej.freqA[n]++); d.euro.forEach(n=>window.__ej.freqB[n]++); });
-    $('#kpiCount').textContent=out.length; $('#kpiFrom').textContent=out[0].date; $('#kpiTo').textContent=out.at(-1).date;
+    const lines=txt.replace(/\r\n?/g,'\n').split('\n').map(l=>l.trim()).filter(Boolean);
+    const usable = lines.filter(l => (l.match(/\d+/g)||[]).length>=7);
+    const dmy=/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/, ymd=/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/;
+    function iso(y,m,d){ const t=new Date(+y,+m-1,+d); return isNaN(t)?null:t.toISOString().slice(0,10); }
+    function parseLine(l){
+      const t=l.split(/;|,|\t|\s+/).filter(Boolean); let date=null, rest=[];
+      if(t.length&&dmy.test(t[0])){ const m=t[0].match(dmy); date=iso(m[3],m[2],m[1]); rest=t.slice(1); }
+      else if(t.length&&ymd.test(t[0])){ const m=t[0].match(ymd); date=iso(m[1],m[2],m[3]); rest=t.slice(1); }
+      else{ rest=t.slice(0); }
+      const nums=rest.map(Number).filter(n=>Number.isFinite(n));
+      if(!date){ const only=(l.match(/\d+/g)||[]).map(Number); if(only.length>=7){ const [a,b,c]=only.slice(0,3); const dd=iso(c,b,a); if(dd) date=dd; } }
+      const main=nums.filter(n=>n>=1&&n<=50).slice(0,5).sort((a,b)=>a-b);
+      const euro=nums.filter(n=>n>=1&&n<=12).slice(0,2).sort((a,b)=>a-b);
+      if(!date||main.length!==5||euro.length!==2) return null;
+      return {date, main, euro};
+    }
+    draws=[]; freqA.fill(0); freqB.fill(0);
+    usable.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
+    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
+    draws.sort((a,b)=>a.date.localeCompare(b.date));
+    draws.forEach(d=>{ d.main.forEach(n=>freqA[n]++); d.euro.forEach(n=>freqB[n]++); });
+    localStorage.setItem(LS_ARCH, txt);
     $('#statusText').textContent='Archiv geladen ✔';
+    $('#kpiCount').textContent=draws.length; $('#kpiFrom').textContent=draws[0].date; $('#kpiTo').textContent=draws.at(-1).date;
     renderHotCold();
   }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
 }
-async function autoLoadArchive(){
+$('#btnLoad').onclick=async()=>{
+  const url=$('#archiveUrl').value.trim(); $('#statusText').textContent='Lade Archiv…';
+  try{ const text=await fetchWithProxies(url); parseArchiveText(text); }
+  catch(e){ const saved=localStorage.getItem(LS_ARCH); if(saved){ parseArchiveText(saved); $('#statusText').textContent='Online blockiert – lokale Kopie geladen.'; } else $('#statusText').textContent='Download blockiert – bitte Datei hochladen oder Text einfügen.'; }
+};
+$('#direct').href=$('#archiveUrl').value.trim();
+$('#btnSaveZip').onclick=async()=>{
   const url=$('#archiveUrl').value.trim();
-  $('#statusText').textContent='Lade Archiv…';
+  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
+  for(const u of trials){ try{ const r=await fetch(u); if(!r.ok) throw 0; const b=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='archiv_eurojackpot.zip'; a.click(); URL.revokeObjectURL(a.href); return; }catch{} }
+  alert('ZIP-Download nicht möglich.');
+};
+$('#fileInput').addEventListener('change', async (e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
   try{
-    const raw=await fetchWithProxies(url);
-    localStorage.setItem(LS_ARCH,raw);
-    parseEuroArchive(raw);
-  }catch(e){
-    const saved=localStorage.getItem(LS_ARCH);
-    if(saved){ parseEuroArchive(saved); $('#statusText').textContent='Online blockiert – lokale Kopie geladen.'; }
-    else{ $('#statusText').textContent='Auto‑Download blockiert. Bitte ZIP hochladen oder Inhalt einfügen.'; }
-  }
-}
-autoLoadArchive();
-$('#fileInput').addEventListener('change', async (ev)=>{
-  const file=ev.target.files[0]; if(!file) return;
-  if(file.name.endsWith('.zip')){ const zip=await JSZip.loadAsync(file); let txt=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) txt+='\\n'+await f.async('string'); } localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
-  else{ const txt=await file.text(); localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); }
+    if(f.name.toLowerCase().endsWith('.zip')){
+      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte TXT/CSV hochladen.'); return; }
+      const zip=await JSZip.loadAsync(f); const entries=Object.values(zip.files);
+      const entry=entries.find(x=>/\.(txt|csv)$/i.test(x.name) && /eurojackpot/i.test(x.name)) || entries.find(x=>/\.(txt|csv)$/i.test(x.name));
+      if(!entry) throw new Error('ZIP ohne TXT/CSV.'); const txt=await entry.async('string'); parseArchiveText(txt);
+    }else{ parseArchiveText(await f.text()); }
+  }catch(err){ $('#statusText').textContent='Fehler: '+err.message; }
 });
-$('#btnParsePaste').onclick=()=>{ const txt=$('#pasteBox').value; if(txt.trim()){ localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); } };
+$('#btnParsePaste').onclick=()=>{ const v=$('#pasteBox').value; if(v.trim()) parseArchiveText(v); };
+(()=>{ const saved=localStorage.getItem(LS_ARCH); if(saved){ try{ parseArchiveText(saved); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} } })();
 
-/* ===== HOT/COLD ===== */
-function renderHotCold(){
-  const A=window.__ej.freqA, B=window.__ej.freqB;
-  function table(el, arr, maxN){
-    const vals=arr.slice(1,maxN+1); const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
-    let html='';
-    for(let i=1;i<=maxN;i+=5){
-      html+='<tr>';
-      for(let j=i;j<i+5 && j<=maxN;j++){
-        const v=arr[j]||0; const cls = v>= (min + (max-min)*0.66) ? 'hot' : (v<= (min + (max-min)*0.33) ? 'cold' : '');
-        html+=`<td class="${cls}"><div class="text-xs opacity-75">${String(j).padStart(2,'0')}</div><div class="font-bold">${v}</div></td>`;
-      }
-      html+='</tr>';
-    }
-    el.innerHTML=html;
-  }
-  table($('#hotMain'),A,50);
-  table($('#hotEuro'),B,12);
-}
+/* ===== Hot/Cold Pills ===== */
+function pills(freq, maxN){
+  if(!freq) return '–'; const vals=freq.slice(1,maxN+1);
+  const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
+  return vals.map((v,i)=>{ const n=i+1; const hot=v>=(min+(max-min)*0.66), cold=v<=(min+(max-min)*0.33);
+    const bg=hot?'rgba(30,200,160,.25)':(cold?'rgba(90,120,255,.22)':'rgba(255,255,255,.06)');
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
+function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-/* ===== Premium Simulation (wie gehabt) ===== */
-class DrumSim{
-  constructor(canvas, count, seed=0){
-    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+/* ===== Drum Simulation (trommelt + rollt) ===== */
+class Drum{
+  constructor(canvas,count,seed=0){ this.cv=canvas; this.ct=canvas.getContext('2d');
     this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
-    this.cx=this.W*0.48; this.cy=this.H*0.58; this.R=Math.min(this.W,this.H)*0.38;
-    this.rBall=Math.max(12,this.R*0.08);
-    this.intakeAngle=-Math.PI*0.18+Math.PI/2;
-    this.intakePos=()=>({x:this.cx+Math.cos(this.intakeAngle)*(this.R-64), y:this.cy+Math.sin(this.intakeAngle)*(this.R-64)});
-    this.rng=rng(seed||Date.now());
-    this.balls=[]; for(let i=1;i<=count;i++){ const th=i/count*Math.PI*2 + this.rng()*0.2; const w=(this.rng()*2-1)*0.6; this.balls.push({n:i, th, w, alive:true}); }
-    this.target=null; this.flap=0; this.phase='mix';
-    this.arms=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.1;
-    this.anim=null; this.onEject=null; this.tick=0; this.prev=null;
-    this.loop=this.loop.bind(this); this.loop();
+    this.cx=this.W*0.5; this.cy=this.H*0.6; this.R=Math.min(this.W,this.H)*0.38; this.r=Math.max(12,this.R*0.09);
+    this.rng=rng(seed||Date.now()); this.balls=[];
+    for(let i=1;i<=count;i++){ const th=this.rng()*Math.PI*2; this.balls.push({n:i, th, w:(this.rng()*2-1)*1.2}); }
+    this.arms=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.4;
+    this.intake=-Math.PI*0.2 + Math.PI/2; this.flap=0; this.target=null;
+    this.prev=null; this.tick=0; this.loop=this.loop.bind(this); this.loop(); this.onDrop=null;
   }
-  nearestBall(){
-    const P=this.intakePos(); let best=null,bd=1e9;
-    for(const b of this.balls){ if(!b.alive) continue; const x=this.cx+Math.cos(b.th)*(this.R*0.62), y=this.cy+Math.sin(b.th)*(this.R*0.62);
-      const d=(x-P.x)**2+(y-P.y)**2; if(d<bd){bd=d; best=b;} } return best;
-  }
-  async drawOne(){
-    if(this.phase!=='mix') return null; this.target=this.nearestBall(); this.phase='suck'; await sleep(700); this.flap=1; await sleep(350);
-    const P=this.intakePos(); const pos={x:P.x+90,y:P.y-10}; const num=this.target?.n||0;
-    if(this.onEject && num){ this.onEject({num,pos}); }
-    if(this.target){ this.target.alive=false; }
-    await sleep(200); this.flap=0; this.phase='mix'; this.target=null; return num;
-  }
-  ballXY(th, rMul=0.62){ return {x:this.cx+Math.cos(th)*(this.R*rMul), y:this.cy+Math.sin(th)*(this.R*rMul)}; }
-  drawRing(){
-    const ctx=this.ctx; ctx.save(); ctx.translate(this.cx,this.cy);
-    ctx.lineWidth=22; ctx.strokeStyle='rgba(10,25,38,.96)'; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
-    const P=this.ballXY(this.intakeAngle,0.80);
-    ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intakeAngle+(this.flap?0.45:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+30,P.y-14); ctx.rotate(-0.35); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+100,P.y+24); ctx.rotate(-0.35); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
-  }
-  drawArms(dt){
-    const ctx=this.ctx; this.armSpeed=clamp(this.armSpeed+dt*0.05,0.9,1.8);
-    this.arms=this.arms.map(a=>a+(this.armSpeed*dt*(this.tick%2?1:-1)));
-    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2';
-    for(const a of this.arms){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4, this.R*0.8, 8, 4); ctx.fill(); ctx.restore(); } ctx.restore();
+  xy(th,rm=0.68){ return {x:this.cx+Math.cos(th)*(this.R*rm), y:this.cy+Math.sin(th)*(this.R*rm)}; }
+  nearest(){ const P=this.xy(this.intake,0.86); let best=null,bd=1e9; for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} } return best; }
+  async drawOne(){ if(this.target) return; this.target=this.nearest();
+    for(let t=0;t<14;t++){ this.target.w*=0.85; this.target.th += (this.intake - this.target.th)*0.14; await sleep(26); }
+    this.flap=1; await sleep(250); const p=this.xy(this.intake,0.86); if(this.onDrop){ this.onDrop({num:this.target.n, start:{x:p.x+90,y:p.y-6}}); }
+    this.target.dead=true; this.target=null; await sleep(150); this.flap=0;
   }
   update(dt){
-    for(const b of this.balls){ if(!b.alive) continue; b.w += (this.rng()*2-1)*0.02; b.w = clamp(b.w, -1.5, 1.5); b.th += b.w*dt; }
-    const alive=this.balls.filter(b=>b.alive).sort((a,b)=>a.th-b.th);
-    if(alive.length>1){
-      const minGap = (Math.PI*2)/alive.length * 0.35;
-      for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length];
-        let gap=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(gap<minGap){ const push=(minGap-gap)/2; A.th-=push; B.th+=push; } }
-    }
-    if(this.phase==='suck' && this.target){ const P=this.intakePos(); const pos=this.ballXY(this.target.th);
-      const dx=P.x-pos.x, dy=P.y-pos.y, ang=Math.atan2(dy,dx); this.target.th += (ang - this.target.th) * 0.10; this.target.w *= 0.82; }
+    const jitter=(this.tick%3===0)? (this.rng()*0.5-0.25) : 0;
+    for(const b of this.balls){ if(b.dead) continue; b.w += jitter + (this.rng()*2-1)*0.03; b.w=clamp(b.w,-2.2,2.2); b.th=(b.th+b.w*dt+Math.PI*2)%(Math.PI*2); }
+    const alive=this.balls.filter(b=>!b.dead).sort((a,b)=>a.th-b.th);
+    if(alive.length>1){ const gap=(Math.PI*2)/alive.length*0.32; for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let g=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(g<gap){ const push=(gap-g)/2; A.th-=push; B.th+=push; } } }
+    if(this.target){ this.target.th += (this.intake - this.target.th)*0.14; this.target.w*=0.82; }
   }
-  drawBalls(){
-    const ctx=this.ctx; ctx.save(); ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    for(const b of this.balls){ if(!b.alive && b!==this.target) continue; const p=this.ballXY(b===this.target? this.target.th : b.th);
-      ctx.beginPath(); ctx.arc(p.x,p.y,this.rBall+6,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.14)'; ctx.fill();
-      ctx.beginPath(); ctx.arc(p.x,p.y,this.rBall,0,Math.PI*2); ctx.fillStyle= b===this.target ? '#f9d67a' : '#13b3aa'; ctx.fill();
+  draw(){
+    const ctx=this.ct; ctx.clearRect(0,0,this.W,this.H);
+    ctx.save(); ctx.translate(this.cx,this.cy); ctx.lineWidth=22; ctx.strokeStyle='rgba(10,25,38,.96)'; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2'; this.arms=this.arms.map(a=>a+ this.armSpeed*0.016);
+    for(const a of this.arms){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4,this.R*0.78,8,4); ctx.fill(); ctx.restore(); } ctx.restore();
+    const P=this.xy(this.intake,0.86);
+    ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intake+(this.flap?0.42:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+96,P.y+22); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(const b of this.balls){ if(b.dead && b!==this.target) continue; const p=this.xy(b===this.target?this.target.th:b.th);
+      ctx.beginPath(); ctx.arc(p.x,p.y,this.r+6,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.14)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,this.r,0,Math.PI*2); ctx.fillStyle= b===this.target ? '#f9d67a' : '#13b3aa'; ctx.fill();
       ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.n).padStart(2,'0'),p.x,p.y);
-      ctx.fillStyle= b===this.target ? '#241a05' : '#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y); }
-    ctx.restore();
+      ctx.fillStyle= b===this.target ? '#241a05' : '#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y); } ctx.restore();
   }
-  frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16, 0.5, 1.6); this.prev=ts; this.tick++;
-    const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H); this.drawRing(); this.update(dt*0.016); this.drawArms(dt*0.016); this.drawBalls(); }
-  loop(ts=performance.now()){ this.frame(ts); this.anim=requestAnimationFrame(this.loop); }
+  frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16,0.6,1.6); this.prev=ts; this.tick++; this.update(dt*0.016); this.draw(); }
+  loop(ts=performance.now()){ this.frame(ts); requestAnimationFrame(this.loop); }
 }
 function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 
-/* Ergebnis-Rail */
-const rail=$('#resultRail');
-function placeStatic(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
-async function rollTo(fromCanvas, fromXY, slot, num, gold){
+/* Ergebnis-Rail: Bezier + Rotation */
+const rail=$('#rail');
+function place(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
+function bezier(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x + b*p1.x + c*p2.x, y:a*p0.y + b*p1.y + c*p2.y}; }
+async function rollTo(fromCanvas, startXY, slot, num, gold){
   const slotEl=rail.querySelector(`[data-slot="${slot}"]`);
   const s=fromCanvas.getBoundingClientRect(), e=slotEl.getBoundingClientRect();
-  const scaleX=fromCanvas.clientWidth/fromCanvas.width, scaleY=fromCanvas.clientHeight/fromCanvas.height;
-  const startX=s.left + fromXY.x*scaleX, startY=s.top + fromXY.y*scaleY;
-  const endX=e.left+e.width/2, endY=e.top+e.height/2;
-  const chip=document.createElement('div'); chip.className='floating-chip'; chip.textContent=String(num).padStart(2,'0');
-  chip.style.left=(startX-19)+'px'; chip.style.top=(startY-19)+'px'; document.body.appendChild(chip);
-  const dx=endX-startX, dy=endY-startY, dist=Math.hypot(dx,dy), rot=dist/60;
-  await chip.animate([{transform:'translate(0,0) rotate(0deg)'},{transform:`translate(${dx}px,${dy}px) rotate(${rot*360}deg)`}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)'}).finished;
-  chip.remove(); placeStatic(slot,num,gold);
+  const sx=s.left + startXY.x*(fromCanvas.clientWidth/fromCanvas.width), sy=s.top + startXY.y*(fromCanvas.clientHeight/fromCanvas.height);
+  const ex=e.left+e.width/2, ey=e.top+e.height/2;
+  const ctrl={x:(sx+ex)/2 + 80, y:(sy+ey)/2 - 40};
+  const chip=document.createElement('div'); chip.className='fchip'; chip.textContent=String(num).padStart(2,'0');
+  chip.style.left=(sx-19)+'px'; chip.style.top=(sy-19)+'px'; document.body.appendChild(chip);
+  const D=Math.hypot(ex-sx,ey-sy); const dur=900+Math.min(600,D); let last={x:sx,y:sy};
+  await new Promise(resolve=>{ const start=performance.now(); function step(now){ const t=Math.min(1,(now-start)/dur);
+    const p=bezier({x:sx,y:sy},ctrl,{x:ex,y:ey},t); const dx=p.x-last.x, dy=p.y-last.y; const rot=Math.atan2(dy,dx);
+    chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot + t*6*Math.PI}rad)`; last=p; if(t<1) requestAnimationFrame(step); else resolve();}
+    requestAnimationFrame(step);
+  });
+  chip.remove(); place(slot,num,gold);
 }
 
 /* App */
-const drumA=new DrumSim(document.getElementById('cvA'),50);
-const drumB=new DrumSim(document.getElementById('cvB'),12);
-const current={main:[],euro:[],created_at:null};
-drumA.onEject = ({num,pos})=>{ rollTo(drumA.canvas,pos,'A'+(current.main.length+1),num,false); current.main.push(num); };
-drumB.onEject = ({num,pos})=>{ rollTo(drumB.canvas,pos,'B'+(current.euro.length+1),num,true); current.euro.push(num); };
-
-document.getElementById('btnReset').onclick=()=>location.reload();
-document.getElementById('btnStart').onclick=async()=>{
-  if(window.__running) return; window.__running=true;
-  current.main=[]; current.euro=[]; current.created_at=new Date().toISOString();
-  await sleep(600);
-  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(380); }
-  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(380); }
-  current.main.sort((a,b)=>a-b); current.euro.sort((a,b)=>a-b);
-  for(let i=0;i<5;i++) placeStatic('A'+(i+1), current.main[i], false);
-  for(let i=0;i<2;i++) placeStatic('B'+(i+1), current.euro[i], true);
-  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${current.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${current.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${current.created_at}</div>`;
-  analyze();
-  window.__running=false;
+const drumA=new Drum($('#cvA'),50); const drumB=new Drum($('#cvB'),12);
+let cur={main:[],euro:[],ts:null}, running=false;
+drumA.onDrop=({num,start})=>{ rollTo(drumA.cv,start,'A'+(cur.main.length+1),num,false); cur.main.push(num); };
+drumB.onDrop=({num,start})=>{ rollTo(drumB.cv,start,'B'+(cur.euro.length+1),num,true); cur.euro.push(num); };
+$('#btnReset').onclick=()=>location.reload();
+$('#btnStart').onclick=async()=>{
+  if(running) return; running=true; cur={main:[],euro:[],ts:new Date().toISOString()};
+  await sleep(500); for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(350); } for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(350); }
+  cur.main.sort((a,b)=>a-b); cur.euro.sort((a,b)=>a-b);
+  for(let i=0;i<5;i++) place('A'+(i+1),cur.main[i],false); for(let i=0;i<2;i++) place('B'+(i+1),cur.euro[i],true);
+  $('#resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${cur.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${cur.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${cur.ts}</div>`;
+  analyze(); running=false;
 };
 
 /* Analyse */
 function analyze(){
-  const draws=window.__ej.draws; if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
-  $('#analysisIntro').textContent=`Archiv berücksichtigt: ${draws.length} Ziehungen (komplette Historie)`;
-  const set=new Set(current.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
-  for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++; const me=d.euro.filter(n=>current.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
-  document.getElementById('comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
+  if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
+  $('#analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
+  const set=new Set(cur.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
+  for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++;
+    const me=d.euro.filter(n=>cur.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
+  $('#comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
 }
 </script>
 </body>
