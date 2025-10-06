@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <style>
-:root{ --ink:#eaf7ff; --bg:#070a14; --panel:rgba(13,19,38,.78); --cy:#00fff0; --mag:#ff5be8; --green:#18c47d; --gold:#f4c655; }
+:root{ --ink:#eaf7ff; --bg:#070a14; --panel:rgba(13,19,38,.78); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; }
 *{box-sizing:border-box}
 body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
   radial-gradient(1200px 800px at -10% -10%, rgba(0,255,240,.10), transparent 60%),
@@ -27,21 +27,15 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 .label{position:absolute;top:10px;left:12px;font-size:14px;opacity:.85}
 .bubble{display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12)}
 .slot{position:absolute;right:10px;top:10px;width:92px;height:92px;border-radius:14px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9;box-shadow:inset 0 0 18px rgba(0,255,200,.08)}
-.badge{background:rgba(255,255,255,.06);border:1px solid rgba(140,170,255,.22);border-radius:999px;padding:.2rem .6rem;font-size:.78rem}
-.small{font-size:.85rem;opacity:.9}
-/* Result rail */
-.rail{position:relative;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
+.rail{display:flex;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
 .rail .slotbox{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
-.sep{width:2px;height:28px;background:rgba(255,255,255,.15);margin:0 .25rem;border-radius:2px}
-/* floating chip that rolls to slot */
+.sep{width:2px;height:28px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 .25rem}
 .floating-chip{position:fixed;z-index:50;min-width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
   background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
-/* static chips (after landing) */
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);box-shadow:inset 0 -6px 10px rgba(0,0,0,.2),0 10px 20px rgba(0,0,0,.35);font-weight:800}
-.chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
-/* analysis table */
-table.heat{width:100%; border-collapse:separate; border-spacing:0 6px}
-table.heat td{padding:6px 8px; background:rgba(255,255,255,.05); border-radius:8px; text-align:center}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);font-weight:800}
+.chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05}
+table.heat{width:100%;border-collapse:separate;border-spacing:0 6px}
+table.heat td{padding:6px 8px;background:rgba(255,255,255,.05);border-radius:8px;text-align:center}
 td.hot{background:linear-gradient(180deg,rgba(30,200,160,.35),rgba(30,200,160,.12))}
 td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.10))}
 </style>
@@ -55,7 +49,6 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
       <h2 class="font-bold text-xl mb-2">🌀 Simulation (Saug‑Rohr + Rutsche • 2 Trommeln)</h2>
-      <p class="small mb-2">5 aus 50 → 2 aus 12. Kugeln drehen, Rohr saugt je **eine** Kugel an, Klappe öffnet, die Kugel rutscht in den Auswurf. Danach rollt sie **nebeneinander** in die Ergebnisreihe.</p>
       <div class="grid2">
         <div class="simwrap">
           <div class="label"><span class="bubble">Haupttrommel (1–50)</span></div>
@@ -70,7 +63,6 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
       </div>
       <div class="mt-3">
         <div class="rail" id="resultRail">
-          <!-- 5 main slots + separator + 2 euro slots -->
           <div class="slotbox" data-slot="A1"></div>
           <div class="slotbox" data-slot="A2"></div>
           <div class="slotbox" data-slot="A3"></div>
@@ -81,24 +73,20 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
           <div class="slotbox" data-slot="B2"></div>
         </div>
       </div>
-
       <div class="flex flex-wrap gap-2 mt-3">
         <button id="btnStartDraw" class="btn btn--green">Ziehung starten (5+2)</button>
         <button id="btnStop" class="btn btn--gray">Stop</button>
         <button id="btnReset" class="btn btn--amber">Reset</button>
       </div>
-
-      <div id="resultText" class="mt-3 text-lg"><span class="badge">Noch kein Ergebnis</span></div>
+      <div id="resultText" class="mt-3 text-lg"><span class="bubble">Noch kein Ergebnis</span></div>
     </section>
 
     <section class="card">
       <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
-      <div class="mb-2">
-        <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
-      </div>
+      <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div class="grid grid-cols-2 gap-2 text-center my-2">
-        <div class="badge">Ziehungen: <b id="kpiCount">–</b></div>
-        <div class="badge">Bis: <b id="kpiTo">–</b></div>
+        <div class="bubble">Ziehungen: <b id="kpiCount">–</b></div>
+        <div class="bubble">Bis: <b id="kpiTo">–</b></div>
       </div>
       <div id="statusText" class="text-xs opacity-80">Starte Archiv‑Download…</div>
     </section>
@@ -106,43 +94,48 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
   <section class="card mt-3">
     <h2 class="font-bold text-xl mb-2">📊 Analyse der aktuellen Ziehung</h2>
-    <div id="analysisIntro" class="small mb-2">Warte auf neues Ergebnis…</div>
+    <div id="analysisIntro" class="text-sm mb-2">Warte auf neues Ergebnis…</div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div>
-        <div class="font-semibold mb-1">Hot & Cold (Hauptzahlen)</div>
-        <table class="heat" id="hotcoldMain"></table>
-      </div>
-      <div>
-        <div class="font-semibold mb-1">Hot & Cold (Eurozahlen)</div>
-        <table class="heat" id="hotcoldEuro"></table>
-      </div>
-      <div>
-        <div class="font-semibold mb-1">Kombinations‑Treffer</div>
-        <div id="comboStats" class="small">–</div>
-      </div>
+      <div><div class="font-semibold mb-1">Hot & Cold (Hauptzahlen)</div><table class="heat" id="hotcoldMain"></table></div>
+      <div><div class="font-semibold mb-1">Hot & Cold (Eurozahlen)</div><table class="heat" id="hotcoldEuro"></table></div>
+      <div><div class="font-semibold mb-1">Kombinations‑Treffer</div><div id="comboStats" class="text-sm">–</div></div>
     </div>
   </section>
 
 <script>
-/* =================== Archiv: automatischer Loader (bewährte Version) =================== */
-const LS_ARCH='ej_archive_final_v1', $=s=>document.querySelector(s);
-window.__ej = {draws:[], freqA:Array(51).fill(0), freqB:Array(13).fill(0)};
+/* ======= ARCHIV: automatisch online + Fallback auf LocalStorage ======= */
+const LS_ARCH='ej_archive_finaltool_v1', $=s=>document.querySelector(s);
+window.__ej={draws:[],freqA:Array(51).fill(0),freqB:Array(13).fill(0)};
 
-async function fetchWithProxies(url){
-  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
-  for(const u of trials){
-    try{
-      const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw 0;
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip')||u.endsWith('.zip')){
-        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob); let combo='';
-        for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ combo+='\\n'+await f.async('string'); } }
-        return combo;
-      } else { return await res.text(); }
-    }catch{ /* try next */ }
+async function getTextFromResponse(res, url){
+  const blob=await res.blob();
+  const ct=(res.headers.get('content-type')||'').toLowerCase();
+  // Try zip first if likely
+  if(ct.includes('zip') || ct.includes('octet-stream') || url.endsWith('.zip')){
+    try{ const zip=await JSZip.loadAsync(blob); let combo=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ combo+='\\n'+await f.async('string'); } } return combo; }catch{ /* fall-through */ }
   }
-  throw new Error('Download fehlgeschlagen (alle Proxies).');
+  // Try as text
+  try{ return await (new Response(blob)).text(); }catch{ return ''; }
 }
+
+async function fetchWithFallbacks(url){
+  const chain=[
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://cors.isomorphic-git.org/'+url,
+    'https://corsproxy.io/?'+encodeURIComponent(url),
+    'https://thingproxy.freeboard.io/fetch/'+url,
+    url
+  ];
+  for(const u of chain){
+    try{
+      const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0;
+      const text=await getTextFromResponse(r,url);
+      if(text && text.trim().length>0) return text;
+    }catch{}
+  }
+  throw new Error('Alle Quellen fehlgeschlagen');
+}
+
 function parseArchive(txt){
   try{
     const t=txt.replace(/\\r\\n?/g,'\\n'), head=t.slice(0,2000);
@@ -151,15 +144,16 @@ function parseArchive(txt){
     const h=lines[0].split(delim).map(x=>x.trim());
     const idx={Tag:h.findIndex(x=>/tag/i.test(x)), Monat:h.findIndex(x=>/monat|month/i.test(x)), Jahr:h.findIndex(x=>/jahr|year/i.test(x)),
       A:[1,2,3,4,5].map(k=>h.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>h.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
-    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt (Tag,Monat,Jahr,ZahlA1..5,ZahlB1..2).');
+    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt.');
     const out=[];
     for(let i=1;i<lines.length;i++){
-      const c=lines[i].split(delim).map(s=>s.trim()); if(c.length<=Math.max(...idx.A, ...idx.B)) continue;
+      const c=lines[i].split(delim).map(s=>s.trim());
+      if(c.length<=Math.max(...idx.A,...idx.B)) continue;
       const A=idx.A.map(ii=>+c[ii]).filter(Number.isFinite), B=idx.B.map(ii=>+c[ii]).filter(Number.isFinite);
       const day=+c[idx.Tag], mon=+c[idx.Monat], year=+c[idx.Jahr];
       if(A.length===5 && B.length===2){
         const date=new Date(Date.UTC(year,mon-1,day)).toISOString().slice(0,10);
-        out.push({date, main:A.slice().sort((a,b)=>a-b), euro:B.slice().sort((a,b)=>a-b)});
+        out.push({date,main:A.slice().sort((a,b)=>a-b),euro:B.slice().sort((a,b)=>a-b)});
       }
     }
     out.sort((a,b)=>a.date.localeCompare(b.date));
@@ -167,246 +161,169 @@ function parseArchive(txt){
     out.forEach(d=>{ d.main.forEach(n=>window.__ej.freqA[n]++); d.euro.forEach(n=>window.__ej.freqB[n]++); });
     $('#kpiCount').textContent=out.length; $('#kpiTo').textContent=out.at(-1)?.date||'–'; $('#statusText').textContent='Archiv geladen ✔';
     renderHotCold();
-  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
+  }catch(e){ $('#statusText').textContent='Fehler beim Lesen des Archivs.'; }
 }
+
 async function autoLoadArchive(){
   const url=$('#archiveUrl').value.trim();
-  $('#statusText').textContent='Archiv wird automatisch geladen…';
+  $('#statusText').textContent='Lade Archiv online…';
   try{
-    const raw=await fetchWithProxies(url);
-    localStorage.setItem(LS_ARCH, raw);
-    parseArchive(raw);
+    const text=await fetchWithFallbacks(url);
+    localStorage.setItem(LS_ARCH,text);
+    parseArchive(text);
   }catch(e){
     const saved=localStorage.getItem(LS_ARCH);
     if(saved){ parseArchive(saved); $('#statusText').textContent='Online fehlgeschlagen – lokale Kopie geladen.'; }
-    else{ $('#statusText').textContent='Kein Archiv verfügbar (online und lokal fehlgeschlagen).'; }
+    else{ $('#statusText').textContent='Kein Archiv verfügbar.'; }
   }
 }
-autoLoadArchive(); // automatisch beim Start
+autoLoadArchive();
 
-/* =================== Hot/Cold Render =================== */
+/* ======= Hot/Cold Tabellen ======= */
 function renderHotCold(){
-  const A=window.__ej.freqA, B=window.__ej.freqB;
-  function build(table, arr, maxN){
-    const vals=arr.slice(1,maxN+1); const max=Math.max(...vals), min=Math.min(...vals.filter(v=>v>0));
+  const A=window.__ej.freqA,B=window.__ej.freqB;
+  function build(el,arr,maxN){
+    const vals=arr.slice(1,maxN+1); const max=Math.max(1,...vals), min=Math.min(...vals.filter(v=>v>0), max);
     let html='';
     for(let i=1;i<=maxN;i+=5){
       html+='<tr>';
       for(let j=i;j<i+5 && j<=maxN;j++){
         const v=arr[j]||0; const cls = v>= (min + (max-min)*0.66) ? 'hot' : (v<= (min + (max-min)*0.33) ? 'cold' : '');
-        html+=`<td class="${cls}"><div class="text-xs opacity-80">${String(j).padStart(2,'0')}</div><div class="font-bold">${v}</div></td>`;
+        html+=`<td class="${cls}"><div class="text-xs opacity-70">${String(j).padStart(2,'0')}</div><div class="font-bold">${v}</div></td>`;
       }
       html+='</tr>';
     }
-    table.innerHTML=html;
+    el.innerHTML=html;
   }
-  build($('#hotcoldMain'), A, 50);
-  build($('#hotcoldEuro'), B, 12);
+  build($('#hotcoldMain'),A,50);
+  build($('#hotcoldEuro'),B,12);
 }
 
-/* =================== Simulation: TV-Style suction + rolling results =================== */
-const {Engine, Render, Runner, Bodies, Body, Constraint, Events, World} = Matter;
+/* ======= Simulation A: realistische Physik mit starker Containment ======= */
+const {Engine, Render, Runner, Bodies, Body, Constraint, Events, World, Vector}=Matter;
 
 function createDrum(canvas, count){
-  const engine=Engine.create({gravity:{x:0,y:0}});
-  const world=engine.world; const W=canvas.clientWidth,H=canvas.clientHeight; canvas.width=W; canvas.height=H;
+  const engine=Engine.create({gravity:{x:0,y:0}}); const world=engine.world;
+  const W=canvas.clientWidth,H=canvas.clientHeight; canvas.width=W; canvas.height=H;
   const render=Render.create({canvas,engine,options:{width:W,height:H,wireframes:false,background:"transparent",pixelRatio:Math.min(2,devicePixelRatio||1)}});
 
   const cx=W*0.48, cy=H*0.58, R=Math.min(W,H)*0.38;
-  // ring walls
-  const segs=80, thick=26, segLen=(Math.PI*2*R)/segs+2;
+
+  // Dichte Rundwand + Außenbounds
+  const segs=160, thick=30, segLen=(Math.PI*2*R)/segs+3;
   const walls=[]; for(let i=0;i<segs;i++){ const a=i/segs*Math.PI*2, x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
-    walls.push(Bodies.rectangle(x,y,thick,segLen,{isStatic:true,angle:a+Math.PI/2,slop:0.05,render:{fillStyle:"rgba(10,25,38,.96)"}})); }
+    walls.push(Bodies.rectangle(x,y,thick,segLen,{isStatic:true,angle:a+Math.PI/2,slop:0.005,render:{fillStyle:"rgba(10,25,38,.96)"}}));}
   World.add(world,walls);
-  World.add(world,[Bodies.rectangle(W/2,-100,W+600,200,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W/2,H+100,W+600,200,{isStatic:true,render:{visible:false}}),Bodies.rectangle(-100,H/2,200,H+600,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W+100,H/2,200,H+600,{isStatic:true,render:{visible:false}})]);
+  World.add(world,[Bodies.rectangle(W/2,-200,W+1000,400,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W/2,H+200,W+1000,400,{isStatic:true,render:{visible:false}}),Bodies.rectangle(-200,H/2,400,H+1000,{isStatic:true,render:{visible:false}}),Bodies.rectangle(W+200,H/2,400,H+1000,{isStatic:true,render:{visible:false}})]);
 
-  // intake position
-  const intakeAngle = -Math.PI*0.18 + Math.PI/2;
-  const intake = {x: cx + Math.cos(intakeAngle)*(R-70), y: cy + Math.sin(intakeAngle)*(R-70)};
-
-  // flap & chute
-  const flap=Bodies.rectangle(intake.x, intake.y+60, 26, 120, {chamfer:{radius:6}, render:{fillStyle:"#136d68"}, frictionAir:0.02}); Body.setAngle(flap, intakeAngle);
-  const hinge=Constraint.create({pointA:intake, bodyB:flap, pointB:{x:0,y:-60}, stiffness:1, length:0}); World.add(world,[flap, hinge]);
+  // Gate + Rutsche
+  const intakeAngle=-Math.PI*0.18+Math.PI/2; const intake={x:cx+Math.cos(intakeAngle)*(R-70), y:cy+Math.sin(intakeAngle)*(R-70)};
+  const flap=Bodies.rectangle(intake.x,intake.y+60,26,120,{chamfer:{radius:6},render:{fillStyle:"#136d68"},frictionAir:0.02}); Body.setAngle(flap,intakeAngle);
+  const hinge=Constraint.create({pointA:intake,bodyB:flap,pointB:{x:0,y:-60},stiffness:1,length:0}); World.add(world,[flap,hinge]);
   const chute1=Bodies.rectangle(intake.x+60,intake.y-8,140,12,{isStatic:true,angle:-0.35,render:{fillStyle:"rgba(60,200,170,.20)"}});
   const chute2=Bodies.rectangle(intake.x+120,intake.y+34,160,12,{isStatic:true,angle:-0.35,render:{fillStyle:"rgba(60,200,170,.20)"}});
   World.add(world,[chute1,chute2]);
 
-  // paddles
-  const blade=(len,ang)=>Bodies.rectangle(cx,cy,len,14,{density:0.004,frictionAir:0.035,angle:ang,render:{fillStyle:"#17c3b2"}});
-  const arms=[blade(R*0.8,0), blade(R*0.8,Math.PI/3), blade(R*0.8,-Math.PI/3)];
+  // Rührwerk (3 Arme)
+  const blade=(len,ang)=>Bodies.rectangle(cx,cy,len,14,{density:0.004,frictionAir:0.045,angle:ang,render:{fillStyle:"#17c3b2"}});
+  const arms=[blade(R*0.8,0),blade(R*0.8,Math.PI/3),blade(R*0.8,-Math.PI/3)];
   arms.forEach(a=>World.add(world,[a,Constraint.create({pointA:{x:cx,y:cy},bodyB:a,length:0,stiffness:1})]));
 
-  // balls on ring
+  // Kugeln kreisförmig
   const balls=[]; const rBall=Math.max(10,R*0.08);
   for(let i=0;i<count;i++){
-    const ang=i/count*Math.PI*2 + Math.random()*0.1;
-    const x=cx + Math.cos(ang)*R*0.6, y=cy + Math.sin(ang)*R*0.6;
-    const b=Bodies.circle(x,y,rBall,{restitution:0.84,friction:0.018,frictionAir:0.02,density:0.0016,slop:0.01,render:{fillStyle:"#13b3aa",strokeStyle:"rgba(255,255,255,.08)",lineWidth:1}});
+    const ang=i/count*Math.PI*2 + Math.random()*0.05;
+    const x=cx+Math.cos(ang)*R*0.6, y=cy+Math.sin(ang)*R*0.6;
+    const b=Bodies.circle(x,y,rBall,{restitution:0.68,friction:0.02,frictionAir:0.035,density:0.0018,slop:0.003,render:{fillStyle:"#13b3aa"}});
     b.labelNum=i+1; balls.push(b);
   }
   World.add(world,balls);
 
-  // draw numbers
+  // Clip-Maske + Zahlen (alles nur innerhalb der Trommel zeichnen)
+  function clip(ctx){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.clip(); }
+  function unclip(ctx){ ctx.restore(); }
+  Events.on(render,"beforeRender",()=>clip(render.context));
   Events.on(render,"afterRender",()=>{
     const ctx=render.context; ctx.save(); ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="800 14px Inter,system-ui";
-    for(const b of balls){
-      ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.strokeText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y);
-      ctx.fillStyle=(b.render.fillStyle==="#f9d67a")?"#241a05":"#eafffb"; ctx.fillText(String(b.labelNum).padStart(2,'0'), b.position.x,b.position.y);
-    }
-    ctx.restore();
+    for(const b of balls){ ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.strokeText(String(b.labelNum).padStart(2,'0'),b.position.x,b.position.y); ctx.fillStyle="#eafffb"; ctx.fillText(String(b.labelNum).padStart(2,'0'),b.position.x,b.position.y); }
+    unclip(ctx);
   });
 
   const runner=Runner.create(); Render.run(render); Runner.run(runner,engine);
 
-  // mixing & caps
-  let t0=null; let suctionActive=0;
+  // Sicherheits-„Wächter“: sanft zur Mitte drücken, falls zu nah an Außenkante
+  function guard(b){ const d=Math.hypot(b.position.x-cx,b.position.y-cy); if(d>R-18){ const dir=Vector.normalise({x:cx-b.position.x,y:cy-b.position.y}); Body.applyForce(b,b.position,{x:dir.x*0.02,y:dir.y*0.02}); } }
+
+  // Spin + Dämpfung
+  let t0=null,suctionActive=0;
   Events.on(engine,"beforeUpdate",()=>{
     const ts=engine.timing.timestamp/1000; if(!t0) t0=ts; const dt=ts-t0;
-    const speed = Math.min(2.2, 0.4 + dt*0.25);
-    arms.forEach((a,i)=>Body.setAngularVelocity(a, i%2?speed:-speed));
+    const speed=Math.min(2.0,0.4+dt*0.22);
+    arms.forEach((a,i)=>Body.setAngularVelocity(a,i%2?speed:-speed));
     if(!suctionActive){ Body.setAngle(flap,intakeAngle); Body.setAngularVelocity(flap,0); }
-    balls.forEach(b=>{ b.velocity.x=Math.max(-12,Math.min(12,b.velocity.x)); b.velocity.y=Math.max(-12,Math.min(12,b.velocity.y)); });
+    balls.forEach(b=>{ b.velocity.x=Math.max(-10,Math.min(10,b.velocity.x)); b.velocity.y=Math.max(-10,Math.min(10,b.velocity.y)); guard(b); });
   });
 
-  function nearestBall(){
-    let best=null, bestD=1e9;
-    for(const b of balls){ if(b.picked) continue; const dx=b.position.x-intake.x, dy=b.position.y-intake.y; const d=dx*dx+dy*dy; if(d<bestD){ bestD=d; best=b; } }
-    return best;
-  }
-  async function suctionOne(){
-    const target=nearestBall(); if(!target) return null;
-    suctionActive=1;
-    const T=900; const start=performance.now();
-    while(performance.now()-start < T){
-      const dx=intake.x-target.position.x, dy=intake.y-target.position.y, dist=Math.hypot(dx,dy)+1e-6;
-      Body.applyForce(target, target.position, {x:(dx/dist)*0.015, y:(dy/dist)*0.015});
-      await sleep(16);
-    }
-    suctionActive=0;
-    return target;
-  }
-  async function openFlap(ms=480){
-    for(let t=0;t<10;t++){ Body.rotate(flap,0.10); await sleep(12); }
-    await sleep(ms);
-    for(let t=0;t<10;t++){ Body.rotate(flap,-0.10); await sleep(12); }
-    Body.setAngle(flap,intakeAngle);
-  }
+  function nearestBall(){ let best=null,bd=1e9; for(const b of balls){ if(b.picked) continue; const dx=b.position.x-intake.x,dy=b.position.y-intake.y; const d=dx*dx+dy*dy; if(d<bd){bd=d;best=b;} } return best; }
+  async function suctionOne(){ const t=nearestBall(); if(!t) return null; suctionActive=1; const T=900, s=performance.now();
+    while(performance.now()-s<T){ const dx=intake.x-t.position.x,dy=intake.y-t.position.y,d=Math.hypot(dx,dy)+1e-6; Body.applyForce(t,t.position,{x:(dx/d)*0.02,y:(dy/d)*0.02}); await sleep(16); }
+    suctionActive=0; return t; }
+  async function openFlap(ms=420){ for(let i=0;i<10;i++){Body.rotate(flap,0.1); await sleep(10);} await sleep(ms); for(let i=0;i<10;i++){Body.rotate(flap,-0.1); await sleep(10);} Body.setAngle(flap,intakeAngle); }
   function insideIntake(b){ return Math.abs(b.position.x-intake.x)<26 && Math.abs(b.position.y-intake.y)<26; }
-  function tryEject(b){
-    if(!b || b.picked) return null;
-    if(insideIntake(b)){
-      Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3);
-      b.picked=true; b.render.fillStyle="#f9d67a";
-      return b;
-    }
-    return null;
-  }
-  async function drawOne(){
-    const target=await suctionOne();
-    await openFlap(520);
-    const t0=performance.now();
-    while(performance.now()-t0<1000){
-      const got=tryEject(target); if(got) return {body:got, ejection:{x:got.position.x, y:got.position.y}};
-      await sleep(16);
-    }
-    return null;
-  }
-  return {drawOne, engine, balls, canvas, rBall};
-}
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  function tryEject(b){ if(!b||b.picked) return null; if(insideIntake(b)){ Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3); b.picked=true; return b; } return null; }
+  async function drawOne(){ const t=await suctionOne(); await openFlap(480); const s=performance.now(); while(performance.now()-s<1000){ const g=tryEject(t); if(g) return {body:g,ejection:{x:g.position.x,y:g.position.y}}; await sleep(16);} return null; }
 
-// Build drums
+  return {drawOne, canvas};
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// Trommeln erstellen
 const drumA=createDrum(document.getElementById('canvasA'),50);
 const drumB=createDrum(document.getElementById('canvasB'),12);
 
-// Rolling chips into result rail
+// Roll-Animation in Ergebnis-Reihe
 const rail=$('#resultRail');
-function placeStaticChip(slotEl, num, isEuro){
-  slotEl.innerHTML=`<span class="chip ${isEuro?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`;
-}
-async function rollToSlot(fromCanvas, fromXY, slotSelector, num, isEuro){
-  const slotEl = rail.querySelector(`[data-slot="${slotSelector}"]`);
-  const rectStart = fromCanvas.getBoundingClientRect();
-  const startX = rectStart.left + fromXY.x * (fromCanvas.clientWidth / fromCanvas.width);
-  const startY = rectStart.top + fromXY.y * (fromCanvas.clientHeight / fromCanvas.height);
-  const rectEnd = slotEl.getBoundingClientRect();
-  const endX = rectEnd.left + rectEnd.width/2;
-  const endY = rectEnd.top + rectEnd.height/2;
-
-  const chip=document.createElement('div');
-  chip.className='floating-chip';
-  chip.textContent=String(num).padStart(2,'0');
-  chip.style.left=(startX-18)+'px';
-  chip.style.top=(startY-18)+'px';
-  document.body.appendChild(chip);
-
-  const dx=endX-startX, dy=endY-startY;
-  const dist=Math.hypot(dx,dy);
-  const rotTurns = dist/60; // rough
-  await chip.animate([
-    { transform:'translate(0,0) rotate(0deg)' },
-    { transform:`translate(${dx}px,${dy}px) rotate(${rotTurns*360}deg)` }
-  ], {duration:900, easing:'cubic-bezier(.2,.8,.2,1)'}).finished;
-
-  chip.remove();
-  placeStaticChip(slotEl, num, isEuro);
+function placeStatic(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
+async function rollTo(fromCanvas, fromXY, slot, num, gold){
+  const slotEl=rail.querySelector(`[data-slot="${slot}"]`);
+  const s=fromCanvas.getBoundingClientRect(), e=slotEl.getBoundingClientRect();
+  const startX=s.left + fromXY.x*(fromCanvas.clientWidth/fromCanvas.width);
+  const startY=s.top + fromXY.y*(fromCanvas.clientHeight/fromCanvas.height);
+  const endX=e.left+e.width/2, endY=e.top+e.height/2;
+  const chip=document.createElement('div'); chip.className='floating-chip'; chip.textContent=String(num).padStart(2,'0');
+  chip.style.left=(startX-18)+'px'; chip.style.top=(startY-18)+'px'; document.body.appendChild(chip);
+  const dx=endX-startX, dy=endY-startY, dist=Math.hypot(dx,dy), rot=dist/60;
+  await chip.animate([{transform:'translate(0,0) rotate(0deg)'},{transform:`translate(${dx}px,${dy}px) rotate(${rot*360}deg)`}],{duration:850,easing:'cubic-bezier(.2,.8,.2,1)'}).finished;
+  chip.remove(); placeStatic(slot,num,gold);
 }
 
-// Controls: sequential draw with rolling chips + analysis
-document.getElementById('btnStop').onclick=()=>{ drumA.engine.enabled=false; drumB.engine.enabled=false; };
+// Buttons
+document.getElementById('btnStop').onclick=()=>{ /* lassen laufen */ };
 document.getElementById('btnReset').onclick=()=>location.reload();
 document.getElementById('btnStartDraw').onclick=async()=>{
   const btn=document.getElementById('btnStartDraw'); if(btn.disabled) return; btn.disabled=true;
-  const res={main:[], euro:[], created_at:new Date().toISOString()};
-
-  await sleep(1000); // warm-up
-  for(let i=0;i<5;i++){
-    const got=await drumA.drawOne(); if(!got) continue;
-    res.main.push(got.body.labelNum);
-    await rollToSlot(drumA.canvas, got.ejection, 'A'+(i+1), got.body.labelNum, false);
-  }
-  for(let i=0;i<2;i++){
-    const got=await drumB.drawOne(); if(!got) continue;
-    res.euro.push(got.body.labelNum);
-    await rollToSlot(drumB.canvas, got.ejection, 'B'+(i+1), got.body.labelNum, true);
-  }
-
+  const res={main:[],euro:[],created_at:new Date().toISOString()};
+  await sleep(800);
+  for(let i=0;i<5;i++){ const g=await drumA.drawOne(); if(!g) continue; res.main.push(g.body.labelNum); await rollTo(drumA.canvas,g.ejection,'A'+(i+1),g.body.labelNum,false); }
+  for(let i=0;i<2;i++){ const g=await drumB.drawOne(); if(!g) continue; res.euro.push(g.body.labelNum); await rollTo(drumB.canvas,g.ejection,'B'+(i+1),g.body.labelNum,true); }
   res.main.sort((a,b)=>a-b); res.euro.sort((a,b)=>a-b);
-  $('#resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${res.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${res.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${res.created_at}</div>`;
-  analyzeResult(res);
+  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${res.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${res.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${res.created_at}</div>`;
+  analyze(res);
   btn.disabled=false;
 };
 
-/* =================== Analyse =================== */
-function analyzeResult(res){
-  const draws=window.__ej.draws||[]; if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
+/* ======= Analyse ======= */
+function analyze(res){
+  const draws=window.__ej.draws; if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
   $('#analysisIntro').textContent=`Archiv berücksichtigt: ${draws.length} Ziehungen (komplette Historie)`;
-
-  function lastSeen(num, kind){
-    for(let i=draws.length-1;i>=0;i--){
-      if(kind==='A' && draws[i].main.includes(num)) return draws[i].date;
-      if(kind==='B' && draws[i].euro.includes(num)) return draws[i].date;
-    }
-    return '–';
-  }
-  const setMain=new Set(res.main); let m5=0,m4=0,m3=0; let e2=0,e1=0;
+  const set=new Set(res.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
   for(const d of draws){
-    const mm=d.main.filter(n=>setMain.has(n)).length;
+    const mm=d.main.filter(n=>set.has(n)).length;
     if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++;
     const me=d.euro.filter(n=>res.euro.includes(n)).length;
     if(me===2)e2++; else if(me===1)e1++;
   }
-  $('#comboStats').innerHTML = `
-    <div>Hauptzahlen – Treffer in Archiv:</div>
-    <div class="mt-1">🎯 <b>5 aus 5</b>: ${m5}× · <b>4 aus 5</b>: ${m4}× · <b>3 aus 5</b>: ${m3}×</div>
-    <div class="mt-2">Eurozahlen – Treffer in Archiv:</div>
-    <div>⭐ <b>2 aus 2</b>: ${e2}× · <b>1 aus 2</b>: ${e1}×</div>
-    <hr class="my-2 opacity-20">
-    <div class="small opacity-80">„x aus y“ bedeutet: so viele deiner aktuellen Zahlen tauchten in derselben früheren Ziehung gemeinsam auf.</div>
-    <div class="small mt-2 opacity-90">Zuletzt gesehen: ${
-      [...res.main.map(n=>`A${String(n).padStart(2,'0')}: ${lastSeen(n,'A')}`), ...res.euro.map(n=>`B${String(n).padStart(2,'0')}: ${lastSeen(n,'B')}`)].join(' · ')
-    }</div>
-  `;
+  document.getElementById('comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
 }
 </script>
 </body>
