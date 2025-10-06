@@ -3,24 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Ziehung Pro (by ENOWEB)</title>
+<title>EuroJackpot • Studio Pro (by ENOWEB)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-:root{ --ink:#eaf7ff; --bg:#060712; --panel:rgba(18,22,38,.82); --cy:#00fff0; --mag:#ff00ea; --gold:#f4c655; }
+:root{ --ink:#eaf7ff; --bg:#0a0d16; --panel:rgba(13,20,35,.86); --cy:#00fff0; --mag:#ff5be8; --gold:#f4c655; --green:#15c37a }
 body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;background:
- radial-gradient(1000px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
- radial-gradient(1000px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);}
+ radial-gradient(1100px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
+ radial-gradient(1100px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);}
 .h1{font-weight:900;background:linear-gradient(90deg,var(--cy),var(--mag));-webkit-background-clip:text;color:transparent}
 .brand{font-weight:900;background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0);background-size:400% 100%;
  -webkit-background-clip:text;color:transparent;animation:grad 6s linear infinite}
 @keyframes grad{0%{background-position:0 50%}100%{background-position:100% 50%}}
-.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.45)}
+.card{background:var(--panel);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.45)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
-.btn[disabled]{opacity:.6;cursor:not-allowed}
-.sim{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;background:#03070e}
-.sim canvas{width:100%;height:420px;max-height:65vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.sim{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;background:#03070e}
+.sim canvas{width:100%;height:440px;max-height:65vh;background:
+ radial-gradient(80% 100% at 50% 35%, #0b1626, #081425 60%, #06101f)}
 .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.25rem .65rem; font-size:.78rem;}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
 .rail{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
@@ -34,16 +35,16 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 </head>
 <body class="p-4">
   <header class="mb-2">
-    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • Ziehung Pro</h1>
+    <h1 class="h1 text-3xl md:text-4xl">EuroJackpot • Studio Pro</h1>
     <div class="brand text-lg">by ENOWEB</div>
   </header>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln – trommeln & rollen)</h2>
+      <h2 class="font-bold text-xl mb-2">🌀 Premium-Simulation (neues System)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="420"></canvas></div>
-        <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="420"></canvas></div>
+        <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="440"></canvas></div>
+        <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="440"></canvas></div>
       </div>
       <div class="mt-3 rail" id="rail">
         <div class="slotbox" data-slot="A1"></div>
@@ -63,7 +64,7 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv (bewährter Loader)</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div class="flex flex-wrap gap-2 mb-2">
         <button id="btnLoad" class="btn btn--green">📥 Laden</button>
@@ -94,13 +95,14 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
   </section>
 
 <script>
+/* ===== Utilities ===== */
 const $=s=>document.querySelector(s);
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
 const LS_ARCH='ej_enoweb_archive_v7';
 
-/* ===== ARCHIV (identisch wie funktionierend) ===== */
+/* ===== Archiv Loader (gleich wie zuletzt funktionierend) ===== */
 let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
 async function ensureJSZip(){ return !!window.JSZip || new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(true); s.onerror=()=>res(false); document.head.appendChild(s) }); }
 async function fetchWithProxies(url){
@@ -114,7 +116,7 @@ async function fetchWithProxies(url){
         if(!(await ensureJSZip())) throw new Error('JSZip nicht verfügbar.');
         const blob=await res.blob(); const zip=await JSZip.loadAsync(blob);
         const entries=Object.values(zip.files);
-        const entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+        const entry=entries.find(f=>/\.((txt)|(csv))$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.((txt)|(csv))$/i.test(f.name));
         if(!entry) throw new Error('ZIP ohne TXT/CSV.'); return await entry.async('string');
       }else{ return await res.text(); }
     }catch(e){ last=e; }
@@ -174,109 +176,95 @@ $('#fileInput').addEventListener('change', async (e)=>{
 });
 $('#btnParsePaste').onclick=()=>{ const v=$('#pasteBox').value; if(v.trim()) parseArchiveText(v); };
 (()=>{ const saved=localStorage.getItem(LS_ARCH); if(saved){ try{ parseArchiveText(saved); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} } })();
-
-/* ===== Hot/Cold ===== */
-function pills(freq, maxN){
-  const vals=freq.slice(1,maxN+1); const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
+function pills(freq, maxN){ const vals=freq.slice(1,maxN+1); const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
   return vals.map((v,i)=>{ const n=i+1; const hot=v>=(min+(max-min)*0.66), cold=v<=(min+(max-min)*0.33);
-    const bg=hot?'rgba(30,200,160,.25)':(cold?'rgba(90,120,255,.22)':'rgba(255,255,255,.06)');
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join('');
-}
+  const bg=hot?'rgba(30,200,160,.25)':(cold?'rgba(90,120,255,.22)':'rgba(255,255,255,.06)');
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
 function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-/* ===== Simulation ===== */
-class Drum{
-  constructor(canvas,count,seed=0){
+/* ===== Neues Drum-System (Pro) ===== */
+class ProDrum{
+  constructor(canvas, count){
     this.cv=canvas; this.ctx=canvas.getContext('2d');
     this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
-    this.cx=this.W*0.5; this.cy=this.H*0.6; this.R=Math.min(this.W,this.H)*0.38;
-    // Ø=4.5 cm, m≈4 g -> in Pixel skaliert
-    this.ballR=Math.max(12,this.R*0.09);
-    this.rng=rng(seed||Date.now());
-    this.balls=[];
-    for(let i=1;i<=count;i++){
-      const th=this.rng()*Math.PI*2;
-      this.balls.push({n:i, th, w:(this.rng()*2-1)*1.2, spin:this.rng()*Math.PI*2, dead:false});
-    }
-    this.armAngles=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.4;
-    this.intake=-Math.PI*0.2 + Math.PI/2; this.flap=0;
-    this.target=null; this.ejecting=false;
+    this.cx=this.W*0.5; this.cy=this.H*0.58; this.R=Math.min(this.W,this.H)*0.38;
+    this.r=Math.max(12, this.R*0.09);        // Ø≈4.5 cm (skaliert)
+    this.left=new Set(Array.from({length:count},(_,i)=>i+1)); // noch nicht gezogene Nummern
+    // Bälle sind gleichmäßig verteilt, jeder Ball trägt seine echte Nummer -> keine Duplikate möglich.
+    this.balls=[]; const rr=rng(Date.now());
+    Array.from(this.left).forEach(n=>{ this.balls.push({n, th: rr()*Math.PI*2, w:(rr()*2-1)*1.4, spin: rr()*Math.PI*2, dead:false}); });
+    // Profi-Look: 4 Paddel mit Motion Blur
+    this.arms=[0,Math.PI/2,Math.PI,-Math.PI/2]; this.armSpeed=1.6;
+    // Aufnahme & Rutsche
+    this.intake=-Math.PI*0.18+Math.PI/2; this.flap=0;
     this.prev=null; this.tick=0;
-    this.loop=this.loop.bind(this); this.loop();
+    this.running=true; this.loop=this.loop.bind(this); requestAnimationFrame(this.loop);
     this.onDrop=null;
   }
-  xy(th,rm=0.68){ return {x:this.cx+Math.cos(th)*(this.R*rm), y:this.cy+Math.sin(th)*(this.R*rm)}; }
-  nearest(){
-    const P=this.xy(this.intake,0.86);
-    let best=null,bd=1e9;
-    for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} }
-    return best;
+  xy(th, rm=0.70){ return {x:this.cx+Math.cos(th)*(this.R*rm), y:this.cy+Math.sin(th)*(this.R*rm)}; }
+  nearest(){ const P=this.xy(this.intake,0.86); let best=null,bd=1e9; for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} } return best; }
+  glossy(p,r,color,num,spin){
+    const ctx=this.ctx;
+    const g=ctx.createRadialGradient(p.x-r*0.35,p.y-r*0.4,r*0.1,p.x,p.y,r*1.1); g.addColorStop(0,'#1de2d8'); g.addColorStop(0.6,color); g.addColorStop(1,'#0b7670');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.stroke();
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(spin); ctx.globalAlpha=.18; ctx.fillStyle='#fff'; ctx.fillRect(-r*0.8,-r*0.12,r*1.6,r*0.24); ctx.restore();
+    ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(num).padStart(2,'0'),p.x,p.y); ctx.fillStyle='#eafffb'; ctx.fillText(String(num).padStart(2,'0'),p.x,p.y);
+    ctx.globalAlpha=.35; ctx.beginPath(); ctx.ellipse(p.x-r*0.25,p.y-r*0.35,r*0.42,r*0.22,0,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1;
   }
-  async drawOne(){
-    if(this.ejecting) return;
-    this.ejecting=true;
-    this.target=this.nearest();
-    if(!this.target){ this.ejecting=false; return; }
-    for(let t=0;t<14;t++){ this.target.w*=0.85; this.target.th += (this.intake - this.target.th)*0.14; this.target.spin+=0.4; await sleep(26); }
-    this.flap=1; await sleep(240);
+  motionPaddles(ctx){
+    ctx.save(); ctx.translate(this.cx,this.cy);
+    for(let k=0;k<3;k++){ ctx.save(); ctx.globalAlpha=0.12*(3-k); ctx.fillStyle='#20d3c2'; this.arms=this.arms.map(a=>a+(this.armSpeed*0.016)); for(const a of this.arms){ ctx.save(); ctx.rotate(a-k*0.08); roundRect(ctx,-9,-4,this.R*0.82,8,4); ctx.fill(); ctx.restore(); } ctx.restore(); }
+    ctx.restore();
+  }
+  async ejectOne(){
+    // Wähle echte Nummer (ball.n) – entferne aus Set -> garantiert einzigartig
+    const b=this.nearest(); if(!b) return null;
+    // Sog‑Phase
+    for(let t=0;t<14;t++){ b.w*=0.85; b.th += (this.intake - b.th)*0.14; b.spin+=0.45; await sleep(24); }
+    this.flap=1; await sleep(220);
     const p=this.xy(this.intake,0.86);
-    if(this.onDrop){ this.onDrop({num:this.target.n, start:{x:p.x+90, y:p.y-6}}); }
-    this.target.dead=true;
-    this.target=null; await sleep(140); this.flap=0;
-    this.ejecting=false;
+    if(this.onDrop){ this.onDrop({num:b.n, start:{x:p.x+90,y:p.y-6}}); }
+    b.dead=true; this.left.delete(b.n);
+    await sleep(140); this.flap=0;
+    return b.n;
   }
   update(dt){
-    const jitter=(this.tick%3===0)? (this.rng()*0.5-0.25) : 0;
+    // turbulentes Mischen ohne „Schlange“
+    const rnd=Math.sin(this.tick*0.07)*0.25;
     for(const b of this.balls){
       if(b.dead) continue;
-      b.w += jitter + (this.rng()*2-1)*0.03;
-      b.w=clamp(b.w,-2.2,2.2);
+      b.w += (Math.random()*2-1)*0.04 + rnd;
+      b.w=clamp(b.w,-2.4,2.4);
       b.th=(b.th + b.w*dt + Math.PI*2)%(Math.PI*2);
-      b.spin += b.w*0.35;
+      b.spin += b.w*0.38;
     }
-    const alive=this.balls.filter(b=>!b.dead).sort((a,b)=>a.th-b.th);
-    if(alive.length>1){ const gap=(Math.PI*2)/alive.length*0.32; for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let g=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(g<gap){ const push=(gap-g)/2; A.th-=push; B.th+=push; } } }
-    if(this.target){ this.target.th += (this.intake - this.target.th)*0.14; this.target.w*=0.82; this.target.spin += 0.5; }
-  }
-  glossyBall(p,r,color,num,spin,highlight=true){
-    const ctx=this.ctx;
-    // body
-    const grad=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.4,r*0.1,p.x,p.y,r*1.1);
-    grad.addColorStop(0,'#1ce2d7'); grad.addColorStop(0.6,color); grad.addColorStop(1,'#08706a');
-    ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
-    // rim
-    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.stroke();
-    // seam stripe (rotating)
-    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(spin); ctx.globalAlpha=0.18; ctx.fillStyle='#fff';
-    ctx.fillRect(-r*0.8,-r*0.12,r*1.6,r*0.24); ctx.restore(); ctx.globalAlpha=1;
-    // label
-    ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(num).padStart(2,'0'),p.x,p.y);
-    ctx.fillStyle='#eafffb'; ctx.fillText(String(num).padStart(2,'0'),p.x,p.y);
-    // specular highlight
-    if(highlight){ ctx.globalAlpha=0.35; ctx.beginPath(); ctx.ellipse(p.x-r*0.25,p.y-r*0.35,r*0.42,r*0.22,0,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1; }
+    const alive=this.balls.filter(x=>!x.dead).sort((a,b)=>a.th-b.th);
+    if(alive.length>1){ const gap=(Math.PI*2)/alive.length*0.3; for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let g=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(g<gap){ const push=(gap-g)/2; A.th-=push; B.th+=push; } } }
   }
   draw(){
     const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H);
-    // ring
-    ctx.save(); ctx.translate(this.cx,this.cy); ctx.lineWidth=22; ctx.strokeStyle='rgba(10,25,38,.96)'; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
-    // paddles
-    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2'; this.armAngles=this.armAngles.map(a=>a+this.armSpeed*0.016);
-    for(const a of this.armAngles){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4,this.R*0.78,8,4); ctx.fill(); ctx.restore(); } ctx.restore();
-    // flap & chute
+    // Maskierter Ring
+    ctx.save(); ctx.beginPath(); ctx.arc(this.cx,this.cy,this.R,0,Math.PI*2); ctx.clip();
+    // Boden-Vignette innen
+    const vg=ctx.createRadialGradient(this.cx,this.cy,this.R*0.2,this.cx,this.cy,this.R); vg.addColorStop(0,'rgba(0,0,0,.0)'); vg.addColorStop(1,'rgba(0,0,0,.28)'); ctx.fillStyle=vg; ctx.fillRect(this.cx-this.R,this.cy-this.R,this.R*2,this.R*2);
+    // Paddel
+    this.motionPaddles(ctx);
+    // Flap + Rutsche
     const P=this.xy(this.intake,0.86);
     ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intake+(this.flap?0.42:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.translate(P.x+96,P.y+22); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
-    // balls
-    for(const b of this.balls){ if(b.dead && b!==this.target) continue; const p=this.xy(b===this.target?this.target.th:b.th); const col='#10b5ac'; this.glossyBall(p,this.ballR,col,b.n,b.spin,true); }
+    ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.22)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(P.x+96,P.y+22); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.22)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
+    // Bälle
+    for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); this.glossy(p,this.r,'#10b5ac',b.n,b.spin); }
+    ctx.restore();
   }
   frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16,0.6,1.6); this.prev=ts; this.tick++; this.update(dt*0.016); this.draw(); }
   loop(ts=performance.now()){ this.frame(ts); requestAnimationFrame(this.loop); }
 }
 function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 
-/* Ergebnis-Rail (Bezier + Rotation) */
+/* ===== Ergebnis-Bahn ===== */
 const rail=document.getElementById('rail');
 function place(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
 function bez(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x+b*p1.x+c*p2.x, y:a*p0.y+b*p1.y+c*p2.y}; }
@@ -294,37 +282,48 @@ async function rollTo(fromCanvas, startXY, slot, num, gold){
   chip.remove(); place(slot,num,gold);
 }
 
-/* App */
-const drumA=new Drum(document.getElementById('cvA'),50);
-const drumB=new Drum(document.getElementById('cvB'),12);
-let current={main:[],euro:[],ts:null}, running=false;
-drumA.onDrop=({num,start})=>{ rollTo(drumA.cv,start,'A'+(current.main.length+1),num,false); current.main.push(num); };
-drumB.onDrop=({num,start})=>{ rollTo(drumB.cv,start,'B'+(current.euro.length+1),num,true); current.euro.push(num); };
+/* ===== App ===== */
+const drumA=new ProDrum(document.getElementById('cvA'),50);
+const drumB=new ProDrum(document.getElementById('cvB'),12);
+
+let result={A:[],B:[],ts:null}, running=false;
 document.getElementById('btnReset').onclick=()=>location.reload();
+
+async function drawUnique(drum, count, slotPrefix, isEuro=false){
+  const taken=new Set(); // zusätzliche Sicherung
+  for(let i=0;i<count;i++){
+    let num=null;
+    // solange ziehen, bis neue Nummer
+    do{ num=await drum.ejectOne(); } while(num==null || taken.has(num));
+    taken.add(num);
+    const start=drum.xy(drum.intake,0.86);
+    await rollTo(drum.cv,{x:start.x,y:start.y}, `${slotPrefix}${i+1}`, num, isEuro);
+    (isEuro?result.B:result.A).push(num);
+  }
+}
+
 document.getElementById('btnStart').onclick=async(e)=>{
-  if(running) return;
-  running=true; e.currentTarget.setAttribute('disabled','true');
-  current={main:[],euro:[],ts:new Date().toISOString()};
-  await sleep(500);
-  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(350); }
-  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(350); }
-  // Sicherheit: Duplikate abfangen (sollte nie passieren; Guard falls User doppelt klickt etc.)
-  current.main=[...new Set(current.main)].slice(0,5).sort((a,b)=>a-b);
-  current.euro=[...new Set(current.euro)].slice(0,2).sort((a,b)=>a-b);
-  for(let i=0;i<5;i++) place('A'+(i+1),current.main[i],false);
-  for(let i=0;i<2;i++) place('B'+(i+1),current.euro[i],true);
-  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${current.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${current.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${current.ts}</div>`;
+  if(running) return; running=true; e.currentTarget.setAttribute('disabled','true');
+  result={A:[],B:[],ts:new Date().toISOString()};
+  await sleep(400);
+  await drawUnique(drumA,5,'A',false);
+  await drawUnique(drumB,2,'B',true); // <- absolut keine Duplikate möglich
+  // Sortierte Anzeige (EuroJackpot)
+  result.A.sort((a,b)=>a-b); result.B.sort((a,b)=>a-b);
+  for(let i=0;i<5;i++) place('A'+(i+1), result.A[i], false);
+  for(let i=0;i<2;i++) place('B'+(i+1), result.B[i], true);
+  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${result.A.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.B.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${result.ts}</div>`;
   analyze();
   running=false; e.currentTarget.removeAttribute('disabled');
 };
 
-/* Analyse */
+/* ===== Analyse ===== */
 function analyze(){
   if(!draws.length){ document.getElementById('analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
   document.getElementById('analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
-  const set=new Set(current.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
+  const set=new Set(result.A); let m5=0,m4=0,m3=0,e2=0,e1=0;
   for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++;
-    const me=d.euro.filter(n=>current.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
+    const me=d.euro.filter(n=>result.B.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
   document.getElementById('comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
 }
 </script>
