@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Realistischere Ziehungs-Simulation (Matter.js)</title>
+<title>EuroJackpot • Realistischere Ziehung (Matter.js + Gate-Klappe)</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <style>
-:root{ --ink:#eaf7ff; --bg:#060712; --cy:#00fff0; --mag:#ff00ea; --ok:#39ff88; --bad:#ff6b94; --amber:#f59e0b; --panel:rgba(18,22,40,.75); }
+:root{ --ink:#eaf7ff; --bg:#060712; --cy:#00fff0; --mag:#ff00ea; --ok:#39ff88; --amber:#f59e0b; --panel:rgba(18,22,40,.75); }
 body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.08), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.08), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
 .h1{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
 .card{background:var(--panel); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.4);}
@@ -26,11 +26,11 @@ body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.08), t
 </style>
 </head>
 <body class="p-4">
-  <h1 class="h1 text-3xl md:text-4xl mb-3">EuroJackpot • Realistischere Ziehungs-Simulation</h1>
+  <h1 class="h1 text-3xl md:text-4xl mb-3">EuroJackpot • Realistischere Ziehung</h1>
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
     <section class="card lg:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln, Matter.js)</h2>
-      <p class="text-sm opacity-80 mb-2">Physik-Engine mit Kollisionen, Rotation, Paddeln & Auswurf-Schacht. Haupttrommel (1–50), Eurotrommel (1–12). Kugeln: Styropor, Ø≈4.5 cm, m≈4 g (skaliert).</p>
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln, Gate‑Klappe)</h2>
+      <p class="text-sm opacity-80 mb-2">Physik-Engine (Matter.js) mit Kollisionen, rotierenden Paddeln, **Klappe am Gate** und kontrolliertem Auswurf. Haupt 1–50 (5 Kugeln), Euro 1–12 (2 Kugeln). Start schießt nichts mehr heraus – Gate bleibt zu bis zur Ziehung.</p>
       <div class="grid2">
         <div class="simwrap">
           <div class="label"><span class="bubble">Haupttrommel (1–50)</span></div>
@@ -44,7 +44,6 @@ body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.08), t
         </div>
       </div>
       <div class="flex flex-wrap gap-2 mt-2">
-        <input id="seed" placeholder="Seed (optional)" class="bg-gray-900 p-2 rounded">
         <button id="btnStartDraw" class="btn btn--green">Ziehung starten (5+2)</button>
         <button id="btnStop" class="btn btn--gray">Simulation stoppen</button>
         <button id="btnReset" class="btn btn--amber">Simulation reset</button>
@@ -77,40 +76,34 @@ body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.08), t
   </div>
 
 <script>
-/* ---------- Archiv: robust auto-downloader mit Proxies ---------- */
-const LS_ARCH='ej_archive_v4', LS_LASTCHECK='ej_last_check_v4';
+/* ---------- Archiv: robust auto-downloader (wie zuvor) ---------- */
+const LS_ARCH='ej_archive_v5', LS_LASTCHECK='ej_last_check_v5';
 const $ = s=>document.querySelector(s);
 function parseText(txt){
   try{
     const t=txt.replace(/\r\n?/g,'\n'), head=t.slice(0,2000);
-    const delim = (head.match(/\t/g)||[]).length>(head.match(/;/g)||[]).length ? '\t' : (head.match(/;/g)||[]).length? ';' : ',';
-    const lines=t.split('\n').map(l=>l.trim()).filter(Boolean);
+    const delim = (head.match(/\t/g)||[]).length>(head.match(/;/g)||[]).length ? '\\t' : (head.match(/;/g)||[]).length? ';' : ',';
+    const lines=t.split('\\n').map(l=>l.trim()).filter(Boolean);
     const h=lines[0].split(delim).map(x=>x.trim());
     const idx={
-      Tag:h.findIndex(x=>/tag/i.test(x)),
-      Monat:h.findIndex(x=>/monat|month/i.test(x)),
-      Jahr:h.findIndex(x=>/jahr|year/i.test(x)),
-      A:[1,2,3,4,5].map(k=>h.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))),
-      B:[1,2].map(k=>h.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))
+      Tag:h.findIndex(x=>/tag/i.test(x)), Monat:h.findIndex(x=>/monat|month/i.test(x)), Jahr:h.findIndex(x=>/jahr|year/i.test(x)),
+      A:[1,2,3,4,5].map(k=>h.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>h.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))
     };
     if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt. Erwartet: Tag, Monat, Jahr, ZahlA1..5, ZahlB1..2');
     const out=[];
     for(let i=1;i<lines.length;i++){
-      const c=lines[i].split(delim).map(s=>s.trim());
+      const c=lines[i].split(h.includes(';')?';':(h.includes('\\t')?'\\t':',')).map(s=>s.trim());
       if(c.length <= Math.max(...idx.A, ...idx.B)) continue;
-      const d={
-        day:+c[idx.Tag], mon:+c[idx.Monat], year:+c[idx.Jahr],
-        A: idx.A.map(ii=>+c[ii]).filter(Number.isFinite),
-        B: idx.B.map(ii=>+c[ii]).filter(Number.isFinite),
-      };
-      if(d.A.length===5 && d.B.length===2){
-        const date = new Date(Date.UTC(d.year, d.mon-1, d.day)).toISOString().slice(0,10);
-        out.push({date, main:d.A.slice().sort((a,b)=>a-b), euro:d.B.slice().sort((a,b)=>a-b)});
+      const A = idx.A.map(ii=>+c[ii]).filter(Number.isFinite);
+      const B = idx.B.map(ii=>+c[ii]).filter(Number.isFinite);
+      const day=+c[idx.Tag], mon=+c[idx.Monat], year=+c[idx.Jahr];
+      if(A.length===5 && B.length===2){
+        const date=new Date(Date.UTC(year,mon-1,day)).toISOString().slice(0,10);
+        out.push({date, main:A.slice().sort((a,b)=>a-b), euro:B.slice().sort((a,b)=>a-b)});
       }
     }
     out.sort((a,b)=>a.date.localeCompare(b.date));
-    $('#kpiCount').textContent = out.length;
-    $('#kpiTo').textContent = out.at(-1)?.date || '–';
+    $('#kpiCount').textContent = out.length; $('#kpiTo').textContent = out.at(-1)?.date || '–';
     $('#statusText').textContent = 'Archiv geladen ✔';
     return out;
   }catch(e){ $('#statusText').textContent = 'Fehler: '+e.message; return []; }
@@ -124,10 +117,10 @@ async function fetchWithProxies(url){
       const ct=res.headers.get('content-type')||'';
       if(ct.includes('zip')||u.endsWith('.zip')){
         const blob=await res.blob(); const zip=await JSZip.loadAsync(blob); let combo='';
-        for(const f of Object.values(zip.files)){ if(/\.(txt|csv)$/i.test(f.name)){ combo += "\n" + await f.async('string'); } }
+        for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)){ combo += "\\n" + await f.async('string'); } }
         return combo;
       }else{ return await res.text(); }
-    }catch(e){ /* try next */ }
+    }catch(e){}
   }
   throw new Error('Download fehlgeschlagen (alle Proxies).');
 }
@@ -152,23 +145,19 @@ $('#forceDlBtn').addEventListener('click', async ()=>{
 });
 $('#directDl').href=$('#archiveUrl').value.trim();
 $('#zipInput').addEventListener('change', async (e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  $('#fileName').textContent = f.name;
-  if(f.name.endsWith('.zip')){
-    const zip=await JSZip.loadAsync(f); let combo=''; for(const file of Object.values(zip.files)){ if(/\.(txt|csv)$/i.test(file.name)){ combo += "\n"+await file.async('string'); } }
-    parseText(combo); localStorage.setItem(LS_ARCH, combo);
-  }else{ const txt=await f.text(); parseText(txt); localStorage.setItem(LS_ARCH, txt); }
+  const f=e.target.files[0]; if(!f) return; $('#fileName').textContent=f.name;
+  if(f.name.endsWith('.zip')){ const zip=await JSZip.loadAsync(f); let combo=''; for(const file of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(file.name)){ combo+="\\n"+await file.async('string'); } } parseText(combo); localStorage.setItem(LS_ARCH, combo); }
+  else { const txt=await f.text(); parseText(txt); localStorage.setItem(LS_ARCH, txt); }
 });
 $('#pasteBtn').addEventListener('click', ()=>{
-  const sample="Tag\tMonat\tJahr\tZahlA1\tZahlA2\tZahlA3\tZahlA4\tZahlA5\tZahlB1\tZahlB2\n23\t3\t2012\t5\t46\t37\t21\t8\t8\t6";
+  const sample="Tag\\tMonat\\tJahr\\tZahlA1\\tZahlA2\\tZahlA3\\tZahlA4\\tZahlA5\\tZahlB1\\tZahlB2\\n23\\t3\\t2012\\t5\\t46\\t37\\t21\\t8\\t8\\t6";
   const t=prompt('Füge CSV/TXT-Inhalt (mit Kopfzeile) ein:', sample); if(!t) return; parseText(t); localStorage.setItem(LS_ARCH, t);
 });
-// Auto-load on first open
 (function(){ const saved=localStorage.getItem(LS_ARCH); if(saved){ parseText(saved);} else { loadLatest(); } })();
 
 
-/* ---------- SIMULATION mit Matter.js: 2 Trommeln ---------- */
-const {Engine, Render, Runner, Bodies, Body, Composite, Composites, Constraint, Events, World, Vector} = Matter;
+/* ---------- Simulation mit Matter.js: 2 Trommeln + Gate‑Klappe ---------- */
+const {Engine, Render, Runner, Bodies, Body, Composite, Constraint, Events, World, Vector} = Matter;
 
 function createDrum(canvas, opts){
   const engine = Engine.create({gravity:{x:0,y:0}});
@@ -176,154 +165,139 @@ function createDrum(canvas, opts){
   const W = canvas.clientWidth, H = canvas.clientHeight;
   canvas.width=W; canvas.height=H;
 
-  // Renderer
-  const render = Render.create({
-    canvas, engine, options:{
-      width:W, height:H, wireframes:false, background:"transparent", pixelRatio:Math.min(2, window.devicePixelRatio||1)
-    }
-  });
+  const render = Render.create({ canvas, engine, options:{ width:W, height:H, wireframes:false, background:"transparent", pixelRatio:Math.min(2, window.devicePixelRatio||1) } });
 
-  // Drum geometry
-  const cx=W*0.5, cy=H*0.55;
+  const cx=W*0.48, cy=H*0.58;
   const radius = Math.min(W,H)*0.38;
-  const wallThickness = 20;
-  const segs = 28; // wall segments to approximate circle
+  const wallThickness = 22;
+  const segs = 28;
   const walls=[];
+  const openStart = -Math.PI*0.18, openEnd = Math.PI*0.05; // Gate-Sektor (geschlossen durch Klappe)
   for(let i=0;i<segs;i++){
-    // leave an opening (gate) between two segments at ~top-right
-    const angle = (i/segs)*Math.PI*2;
-    const openStart = -Math.PI*0.2, openEnd = Math.PI*0.05; // opening range (radians) relative to -x?
-    const aNorm = angle - Math.PI/2; // rotate so opening near top-right looks good
-    if(aNorm>openStart && aNorm<openEnd) continue; // skip to make a gate
-    const x=cx + Math.cos(angle)*radius;
-    const y=cy + Math.sin(angle)*radius;
+    const angle=(i/segs)*Math.PI*2, aNorm=angle - Math.PI/2;
+    // wir bauen überall Wände, auch im Gate – die Klappe überdeckt / öffnet das Fenster
+    const x=cx + Math.cos(angle)*radius, y=cy + Math.sin(angle)*radius;
     const rect = Bodies.rectangle(x,y, wallThickness, (Math.PI*2*radius)/segs + 2, {isStatic:true, angle:angle+Math.PI/2, render:{fillStyle:"#0b1e2a"}});
     walls.push(rect);
   }
+  // "Fenster" wird als dünne Wand markiert, die von der Klappe überlappt wird – für Exit wird Klappe wegschwenken und die dünne Wand transparent sein
   World.add(world, walls);
 
-  // Spinner paddles (cross) to stir balls
-  const bladeLen = radius*0.8;
-  const spinnerA = Bodies.rectangle(cx, cy, bladeLen, 12, {density:0.004, frictionAir:0.05, render:{fillStyle:"#17c3b2"}});
-  const spinnerB = Bodies.rectangle(cx, cy, 12, bladeLen, {density:0.004, frictionAir:0.05, render:{fillStyle:"#17c3b2"}});
+  // Klappe (Gate flap): um Scharnier drehen, deckt Öffnung ab
+  const gateAngle = (openStart+openEnd)/2 + Math.PI/2;
+  const flapW = wallThickness*1.2, flapH = radius*0.5;
+  const flapX = cx + Math.cos(gateAngle)*(radius - flapH/2);
+  const flapY = cy + Math.sin(gateAngle)*(radius - flapH/2);
+  const flap = Bodies.rectangle(flapX, flapY, flapW, flapH, { chamfer:{radius:4}, render:{fillStyle:"#164a49"}, frictionAir:0.02 });
+  const hinge = Constraint.create({ pointA:{x: cx + Math.cos(gateAngle)*(radius - flapH), y: cy + Math.sin(gateAngle)*(radius - flapH)}, bodyB: flap, pointB:{x:0, y:-flapH/2+2}, length:0, stiffness:1 });
+  World.add(world, [flap, hinge]);
+
+  // Paddel (rühren)
+  const bladeLen = radius*0.82;
+  const spinnerA = Bodies.rectangle(cx, cy, bladeLen, 12, {density:0.004, frictionAir:0.04, render:{fillStyle:"#17c3b2"}});
+  const spinnerB = Bodies.rectangle(cx, cy, 12, bladeLen, {density:0.004, frictionAir:0.04, render:{fillStyle:"#17c3b2"}});
   const pivot = Constraint.create({pointA:{x:cx,y:cy}, bodyB:spinnerA, length:0, stiffness:1});
   const pivot2= Constraint.create({pointA:{x:cx,y:cy}, bodyB:spinnerB, length:0, stiffness:1});
   World.add(world,[spinnerA, spinnerB, pivot, pivot2]);
 
-  // Add balls
-  const balls=[];
-  const n=opts.count;
-  const labels=opts.labels;
-  const rBall=Math.max(10, radius*0.08); // scaled by drum
-  for(let i=0;i<n;i++){
-    const angle = (i/n)*Math.PI*2;
-    const rr = radius*0.6*Math.random();
-    const x = cx + Math.cos(angle)*rr;
-    const y = cy + Math.sin(angle)*rr;
-    const b = Bodies.circle(x,y, rBall, {
-      restitution:0.85, friction:0.01, frictionAir:0.02, density:0.0015,
-      render:{fillStyle:"#0ba5a4", strokeStyle:"rgba(255,255,255,0.06)", lineWidth:1}
-    });
-    b.labelNum = labels[i];
-    balls.push(b);
+  // Unsichtbare Außenbox, damit nichts entkommt
+  const bounds= [
+    Bodies.rectangle(W/2,-50,W+200,100,{isStatic:true, render:{visible:false}}),
+    Bodies.rectangle(W/2,H+50,W+200,100,{isStatic:true, render:{visible:false}}),
+    Bodies.rectangle(-50,H/2,100,H+200,{isStatic:true, render:{visible:false}}),
+    Bodies.rectangle(W+50,H/2,100,H+200,{isStatic:true, render:{visible:false}}),
+  ];
+  World.add(world, bounds);
+
+  // Kugeln non-overlapping spawnen (Hex-Gitter)
+  const balls=[]; const n=opts.count; const labels=opts.labels;
+  const rBall=Math.max(10, radius*0.08);
+  const cols=Math.ceil(Math.sqrt(n)), rows=Math.ceil(n/cols);
+  let idx=0;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(idx>=n) break;
+      const jitter=()=> (Math.random()-0.5)*rBall*0.4;
+      const ang=(r*cols+c)/n*Math.PI*2;
+      const rr = radius*0.55;
+      const x=cx + Math.cos(ang)*rr + jitter();
+      const y=cy + Math.sin(ang)*rr + jitter();
+      const b=Bodies.circle(x,y,rBall,{ restitution:0.82, friction:0.02, frictionAir:0.02, density:0.0015, render:{fillStyle:"#0ba5a4", strokeStyle:"rgba(255,255,255,0.06)", lineWidth:1} });
+      b.labelNum = labels[idx++];
+      balls.push(b);
+    }
   }
   World.add(world, balls);
 
-  // draw number overlays via afterRender
-  Render.lookAt(render, {min:{x:0,y:0}, max:{x:W,y:H}});
-
-  // Runner
   const runner = Runner.create();
 
-  // Gate area to "eject"
-  const gateCenter = {x: cx + radius*0.9, y: cy - radius*0.45};
-  const gateBox = {x1: gateCenter.x-20, y1: gateCenter.y-20, x2: gateCenter.x+40, y2: gateCenter.y+40};
+  // Gate-Bereich für Erkennung (rechte obere Zone)
+  const gateBox = (()=>{
+    const gx = cx + Math.cos(gateAngle)*(radius-20);
+    const gy = cy + Math.sin(gateAngle)*(radius-20);
+    return {x1:gx-22,y1:gy-22,x2:gx+40,y2:gy+40};
+  })();
 
   let mixing=true;
-  let drawn=[];
-
-  function start(){
-    Render.run(render);
-    Runner.run(runner, engine);
-  }
-  function stop(){
-    Render.stop(render); Runner.stop(runner); // keep state but stop RAF
-  }
-  function reset(){
-    stop();
-    // remove all
-    World.clear(world,false);
-    Engine.clear(engine);
-  }
-
-  // Stir by applying torque to paddles regularly
+  function setMixing(m){ mixing=m; }
   Events.on(runner, "beforeUpdate", ()=>{
-    if(mixing){
-      Body.setAngularVelocity(spinnerA, 1.8);
-      Body.setAngularVelocity(spinnerB, -1.6);
-    } else {
-      Body.setAngularVelocity(spinnerA, 0.2);
-      Body.setAngularVelocity(spinnerB, -0.2);
-    }
+    Body.setAngularVelocity(spinnerA, mixing?1.8:0.4);
+    Body.setAngularVelocity(spinnerB, mixing?-1.6:-0.3);
+    // Klappe standardmäßig geschlossen: ziehe sie per kleiner Gegenkraft zu
+    Body.setAngle(flap, gateAngle); Body.setAngularVelocity(flap, 0);
   });
 
-  // Detect ball reaching gate area -> eject
+  function start(){ Render.run(render); Runner.run(runner, engine); }
+  function stop(){ Render.stop(render); Runner.stop(runner); }
+  function reset(){ stop(); World.clear(world,false); Engine.clear(engine); }
+
+  // Zahlen overlayn
+  Events.on(render,"afterRender",()=>{
+    const ctx=render.context; ctx.save(); ctx.font="bold 14px system-ui"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    for(const b of balls){ ctx.fillStyle = (b.render.fillStyle==="#f9d67a")?"#1a1206":"#eafffb"; ctx.fillText(String(b.labelNum).padStart(2,"0"), b.position.x, b.position.y); }
+    // Gate-Markierung
+    ctx.strokeStyle="rgba(140,255,220,.25)"; ctx.strokeRect(gateBox.x1, gateBox.y1, gateBox.x2-gateBox.x1, gateBox.y2-gateBox.y1);
+    ctx.restore();
+  });
+
+  // Klappe öffnen → kurze Zeit offen halten → wieder schließen
+  async function openFlap(msOpen=600){
+    // swing open by rotating around hinge point (simulate with small offset impulses)
+    for(let t=0;t<10;t++){ Body.rotate(flap, 0.09); await sleep(12); }
+    await sleep(msOpen);
+    for(let t=0;t<10;t++){ Body.rotate(flap, -0.09); await sleep(12); }
+    Body.setAngle(flap, gateAngle);
+  }
+
   function checkGate(){
     for(const b of balls){
-      if(drawn.includes(b)) continue;
+      if(b.picked) continue;
       if(b.position.x>gateBox.x1 && b.position.x<gateBox.x2 && b.position.y>gateBox.y1 && b.position.y<gateBox.y2){
-        // Eject: give strong push to the right/up and mark as drawn
-        Body.setVelocity(b, {x:8, y:-2});
-        Body.setAngularVelocity(b, 3);
-        drawn.push(b);
-        // Gold color for drawn balls
-        b.render.fillStyle = "#f9d67a";
-        return b;
+        // nach rechts oben "raus" schubsen
+        Body.setVelocity(b,{x:10,y:-2}); Body.setAngularVelocity(b,3);
+        b.picked=true; b.render.fillStyle="#f9d67a"; return b;
       }
     }
     return null;
   }
 
-  function stepUntilOneDrawn(maxSteps=180){
-    return new Promise(resolve=>{
-      let steps=0, got=null;
-      function tick(){
-        steps++;
-        got = checkGate();
-        if(got || steps>maxSteps){ resolve(got); }
-        else { setTimeout(tick, 16); }
-      }
-      tick();
-    });
-  }
-
-  function getNumbers(arr){ return arr.map(b=>b.labelNum).sort((a,b)=>a-b); }
-
-  function overlayNumbers(){
-    const ctx = render.context;
-    ctx.save();
-    ctx.font = "bold 14px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for(const b of balls){
-      ctx.fillStyle = b.render.fillStyle === "#f9d67a" ? "#1a1206" : "#eafffb";
-      ctx.fillText(String(b.labelNum).padStart(2,"0"), b.position.x, b.position.y);
+  async function drawOne(){ // öffnet Klappe, wartet, nimmt 1 Kugel
+    await openFlap(500);
+    const t0=performance.now();
+    while(performance.now()-t0 < 1500){
+      const got = checkGate();
+      if(got) return got;
+      await sleep(16);
     }
-    ctx.restore();
+    return null;
   }
-  Events.on(render, "afterRender", overlayNumbers);
 
-  return {
-    start, stop, reset,
-    engine, world, render, balls, spinnerA, spinnerB, gateBox,
-    stepUntilOneDrawn, getNumbers,
-    markMixing:(m)=>{ mixing=m; },
-    takeDrawn:()=>drawn.slice(),
-    clearDrawn:()=>{ drawn.length=0; },
-  };
+  return { start, stop, reset, drawOne, setMixing, getNumbers:()=>balls.filter(b=>b.picked).map(b=>b.labelNum).sort((a,b)=>a-b) };
 }
 
-// Build both drums
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// Trommeln bauen
 const drumA = createDrum(document.getElementById('canvasA'), {count:50, labels:[...Array(50)].map((_,i)=>i+1)});
 const drumB = createDrum(document.getElementById('canvasB'), {count:12, labels:[...Array(12)].map((_,i)=>i+1)});
 drumA.start(); drumB.start();
@@ -332,37 +306,19 @@ drumA.start(); drumB.start();
 document.getElementById('btnStop').addEventListener('click', ()=>{ drumA.stop(); drumB.stop(); });
 document.getElementById('btnReset').addEventListener('click', ()=>{ location.reload(); });
 
-// Sequential draw: 5 from A, then 2 from B
+// Ziehung 5 + 2
 document.getElementById('btnStartDraw').addEventListener('click', async ()=>{
-  const btn = document.getElementById('btnStartDraw');
-  if(btn.disabled) return;
-  btn.disabled = true;
-
-  drumA.markMixing(true); drumB.markMixing(true);
-  const result = { main:[], euro:[], created_at:new Date().toISOString() };
-  // warm-up
-  await new Promise(r=>setTimeout(r, 1000));
-
-  // Draw 5 from A
-  for(let i=0;i<5;i++){
-    const got = await drumA.stepUntilOneDrawn(600);
-    if(got){ result.main.push(got.labelNum); }
-    await new Promise(r=>setTimeout(r, 400));
-  }
-  // Draw 2 from B
-  for(let i=0;i<2;i++){
-    const got = await drumB.stepUntilOneDrawn(600);
-    if(got){ result.euro.push(got.labelNum); }
-    await new Promise(r=>setTimeout(r, 400));
-  }
-
-  result.main.sort((a,b)=>a-b);
-  result.euro.sort((a,b)=>a-b);
-  document.getElementById('result').innerHTML = `<b>Ergebnis:</b> Haupt: ${result.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.euro.map(n=>String(n).padStart(2,'0')).join(' ')}<div class="text-xs opacity-80">${result.created_at}</div>`;
-  localStorage.setItem('ej_last_result', JSON.stringify(result));
-  btn.disabled = false;
+  const btn = document.getElementById('btnStartDraw'); if(btn.disabled) return; btn.disabled=true;
+  drumA.setMixing(true); drumB.setMixing(true);
+  const result={main:[], euro:[], created_at:new Date().toISOString()};
+  await sleep(800); // warm-up
+  for(let i=0;i<5;i++){ const b=await drumA.drawOne(); if(b) result.main.push(b.labelNum); await sleep(300); }
+  await sleep(600);
+  for(let i=0;i<2;i++){ const b=await drumB.drawOne(); if(b) result.euro.push(b.labelNum); await sleep(300); }
+  result.main.sort((a,b)=>a-b); result.euro.sort((a,b)=>a-b);
+  document.getElementById('result').innerHTML=`<b>Ergebnis:</b> Haupt: ${result.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.euro.map(n=>String(n).padStart(2,'0')).join(' ')}<div class="text-xs opacity-80">${result.created_at}</div>`;
+  btn.disabled=false;
 });
-
 </script>
 </body>
 </html>
