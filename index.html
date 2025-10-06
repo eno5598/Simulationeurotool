@@ -18,16 +18,17 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 .card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.45)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
 .btn--green{background:#15803d;color:#fff}.btn--amber{background:#b45309;color:#fff}.btn--gray{background:#374151;color:#fff}
+.btn[disabled]{opacity:.6;cursor:not-allowed}
 .sim{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;background:#03070e}
 .sim canvas{width:100%;height:420px;max-height:65vh;background:radial-gradient(70% 90% at 50% 35%, #0b1626, #071220, #050c18)}
 .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.25rem .65rem; font-size:.78rem;}
 .slot{position:absolute;right:10px;top:10px;width:96px;height:96px;border-radius:16px;border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));display:flex;align-items:center;justify-content:center;font-size:12px;color:#8bffc9}
 .rail{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.5rem .75rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
 .rail .slotbox{width:46px;height:46px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800}
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:linear-gradient(180deg,#0fd5c6,#0aa39a);color:#042725;font-weight:900}
-.chip--gold{background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;border-radius:999px;background:radial-gradient(120% 120% at 30% 28%, #19d5cc, #0aa39a 60%);color:#052a29;font-weight:900;box-shadow:inset 0 2px 6px rgba(255,255,255,.18), inset 0 -6px 10px rgba(0,0,0,.25)}
+.chip--gold{background:radial-gradient(120% 120% at 30% 28%, #ffeeb4, #f4c655 60%); color:#241a05; box-shadow:inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
 .fchip{position:fixed;z-index:60;min-width:38px;height:38px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;
- background:linear-gradient(180deg,#ffe7a2,#f4c655);color:#241a05;box-shadow:inset 0 -6px 10px rgba(0,0,0,.15),0 10px 22px rgba(255,220,130,.25)}
+ background:radial-gradient(120% 120% at 30% 28%, #ffeeb4, #f4c655 60%);color:#241a05;box-shadow:inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
 .small{font-size:.85rem;opacity:.9}
 </style>
 </head>
@@ -39,7 +40,7 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
     <section class="card xl:col-span-2">
-      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln – echtes „Trommeln“)</h2>
+      <h2 class="font-bold text-xl mb-2">🌀 Simulation (2 Trommeln – trommeln & rollen)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div class="sim"><div class="badge absolute m-2">Haupttrommel (1–50)</div><div class="slot">Auswurf</div><canvas id="cvA" width="680" height="420"></canvas></div>
         <div class="sim"><div class="badge absolute m-2">Eurotrommel (1–12)</div><div class="slot">Auswurf</div><canvas id="cvB" width="680" height="420"></canvas></div>
@@ -62,7 +63,7 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
     </section>
 
     <section class="card">
-      <h2 class="font-bold text-xl mb-2">📂 Archiv (bewährter Loader)</h2>
+      <h2 class="font-bold text-xl mb-2">📂 Archiv (Auto + Fallback)</h2>
       <input id="archiveUrl" class="bg-gray-900 p-2 rounded w-full mb-2" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
       <div class="flex flex-wrap gap-2 mb-2">
         <button id="btnLoad" class="btn btn--green">📥 Laden</button>
@@ -93,12 +94,13 @@ body{margin:0;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui;backgro
   </section>
 
 <script>
-const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
+const $=s=>document.querySelector(s);
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
 const LS_ARCH='ej_enoweb_archive_v7';
 
-/* ===== Archiv Loader (Proxy-Kette + Upload + Paste + Local) ===== */
+/* ===== ARCHIV (identisch wie funktionierend) ===== */
 let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
 async function ensureJSZip(){ return !!window.JSZip || new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(true); s.onerror=()=>res(false); document.head.appendChild(s) }); }
 async function fetchWithProxies(url){
@@ -173,65 +175,111 @@ $('#fileInput').addEventListener('change', async (e)=>{
 $('#btnParsePaste').onclick=()=>{ const v=$('#pasteBox').value; if(v.trim()) parseArchiveText(v); };
 (()=>{ const saved=localStorage.getItem(LS_ARCH); if(saved){ try{ parseArchiveText(saved); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} } })();
 
-/* ===== Hot/Cold Pills ===== */
+/* ===== Hot/Cold ===== */
 function pills(freq, maxN){
-  if(!freq) return '–'; const vals=freq.slice(1,maxN+1);
-  const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
+  const vals=freq.slice(1,maxN+1); const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
   return vals.map((v,i)=>{ const n=i+1; const hot=v>=(min+(max-min)*0.66), cold=v<=(min+(max-min)*0.33);
     const bg=hot?'rgba(30,200,160,.25)':(cold?'rgba(90,120,255,.22)':'rgba(255,255,255,.06)');
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join('');
+}
 function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-/* ===== Drum Simulation (trommelt + rollt) ===== */
+/* ===== Simulation ===== */
 class Drum{
-  constructor(canvas,count,seed=0){ this.cv=canvas; this.ct=canvas.getContext('2d');
+  constructor(canvas,count,seed=0){
+    this.cv=canvas; this.ctx=canvas.getContext('2d');
     this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
-    this.cx=this.W*0.5; this.cy=this.H*0.6; this.R=Math.min(this.W,this.H)*0.38; this.r=Math.max(12,this.R*0.09);
-    this.rng=rng(seed||Date.now()); this.balls=[];
-    for(let i=1;i<=count;i++){ const th=this.rng()*Math.PI*2; this.balls.push({n:i, th, w:(this.rng()*2-1)*1.2}); }
-    this.arms=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.4;
-    this.intake=-Math.PI*0.2 + Math.PI/2; this.flap=0; this.target=null;
-    this.prev=null; this.tick=0; this.loop=this.loop.bind(this); this.loop(); this.onDrop=null;
+    this.cx=this.W*0.5; this.cy=this.H*0.6; this.R=Math.min(this.W,this.H)*0.38;
+    // Ø=4.5 cm, m≈4 g -> in Pixel skaliert
+    this.ballR=Math.max(12,this.R*0.09);
+    this.rng=rng(seed||Date.now());
+    this.balls=[];
+    for(let i=1;i<=count;i++){
+      const th=this.rng()*Math.PI*2;
+      this.balls.push({n:i, th, w:(this.rng()*2-1)*1.2, spin:this.rng()*Math.PI*2, dead:false});
+    }
+    this.armAngles=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.4;
+    this.intake=-Math.PI*0.2 + Math.PI/2; this.flap=0;
+    this.target=null; this.ejecting=false;
+    this.prev=null; this.tick=0;
+    this.loop=this.loop.bind(this); this.loop();
+    this.onDrop=null;
   }
   xy(th,rm=0.68){ return {x:this.cx+Math.cos(th)*(this.R*rm), y:this.cy+Math.sin(th)*(this.R*rm)}; }
-  nearest(){ const P=this.xy(this.intake,0.86); let best=null,bd=1e9; for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} } return best; }
-  async drawOne(){ if(this.target) return; this.target=this.nearest();
-    for(let t=0;t<14;t++){ this.target.w*=0.85; this.target.th += (this.intake - this.target.th)*0.14; await sleep(26); }
-    this.flap=1; await sleep(250); const p=this.xy(this.intake,0.86); if(this.onDrop){ this.onDrop({num:this.target.n, start:{x:p.x+90,y:p.y-6}}); }
-    this.target.dead=true; this.target=null; await sleep(150); this.flap=0;
+  nearest(){
+    const P=this.xy(this.intake,0.86);
+    let best=null,bd=1e9;
+    for(const b of this.balls){ if(b.dead) continue; const p=this.xy(b.th); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} }
+    return best;
+  }
+  async drawOne(){
+    if(this.ejecting) return;
+    this.ejecting=true;
+    this.target=this.nearest();
+    if(!this.target){ this.ejecting=false; return; }
+    for(let t=0;t<14;t++){ this.target.w*=0.85; this.target.th += (this.intake - this.target.th)*0.14; this.target.spin+=0.4; await sleep(26); }
+    this.flap=1; await sleep(240);
+    const p=this.xy(this.intake,0.86);
+    if(this.onDrop){ this.onDrop({num:this.target.n, start:{x:p.x+90, y:p.y-6}}); }
+    this.target.dead=true;
+    this.target=null; await sleep(140); this.flap=0;
+    this.ejecting=false;
   }
   update(dt){
     const jitter=(this.tick%3===0)? (this.rng()*0.5-0.25) : 0;
-    for(const b of this.balls){ if(b.dead) continue; b.w += jitter + (this.rng()*2-1)*0.03; b.w=clamp(b.w,-2.2,2.2); b.th=(b.th+b.w*dt+Math.PI*2)%(Math.PI*2); }
+    for(const b of this.balls){
+      if(b.dead) continue;
+      b.w += jitter + (this.rng()*2-1)*0.03;
+      b.w=clamp(b.w,-2.2,2.2);
+      b.th=(b.th + b.w*dt + Math.PI*2)%(Math.PI*2);
+      b.spin += b.w*0.35;
+    }
     const alive=this.balls.filter(b=>!b.dead).sort((a,b)=>a.th-b.th);
     if(alive.length>1){ const gap=(Math.PI*2)/alive.length*0.32; for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length]; let g=(B.th-A.th+Math.PI*2)%(Math.PI*2); if(g<gap){ const push=(gap-g)/2; A.th-=push; B.th+=push; } } }
-    if(this.target){ this.target.th += (this.intake - this.target.th)*0.14; this.target.w*=0.82; }
+    if(this.target){ this.target.th += (this.intake - this.target.th)*0.14; this.target.w*=0.82; this.target.spin += 0.5; }
+  }
+  glossyBall(p,r,color,num,spin,highlight=true){
+    const ctx=this.ctx;
+    // body
+    const grad=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.4,r*0.1,p.x,p.y,r*1.1);
+    grad.addColorStop(0,'#1ce2d7'); grad.addColorStop(0.6,color); grad.addColorStop(1,'#08706a');
+    ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
+    // rim
+    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.stroke();
+    // seam stripe (rotating)
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(spin); ctx.globalAlpha=0.18; ctx.fillStyle='#fff';
+    ctx.fillRect(-r*0.8,-r*0.12,r*1.6,r*0.24); ctx.restore(); ctx.globalAlpha=1;
+    // label
+    ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(num).padStart(2,'0'),p.x,p.y);
+    ctx.fillStyle='#eafffb'; ctx.fillText(String(num).padStart(2,'0'),p.x,p.y);
+    // specular highlight
+    if(highlight){ ctx.globalAlpha=0.35; ctx.beginPath(); ctx.ellipse(p.x-r*0.25,p.y-r*0.35,r*0.42,r*0.22,0,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1; }
   }
   draw(){
-    const ctx=this.ct; ctx.clearRect(0,0,this.W,this.H);
+    const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H);
+    // ring
     ctx.save(); ctx.translate(this.cx,this.cy); ctx.lineWidth=22; ctx.strokeStyle='rgba(10,25,38,.96)'; ctx.beginPath(); ctx.arc(0,0,this.R,0,Math.PI*2); ctx.stroke(); ctx.restore();
-    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2'; this.arms=this.arms.map(a=>a+ this.armSpeed*0.016);
-    for(const a of this.arms){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4,this.R*0.78,8,4); ctx.fill(); ctx.restore(); } ctx.restore();
+    // paddles
+    ctx.save(); ctx.translate(this.cx,this.cy); ctx.fillStyle='#17c3b2'; this.armAngles=this.armAngles.map(a=>a+this.armSpeed*0.016);
+    for(const a of this.armAngles){ ctx.save(); ctx.rotate(a); roundRect(ctx,-8,-4,this.R*0.78,8,4); ctx.fill(); ctx.restore(); } ctx.restore();
+    // flap & chute
     const P=this.xy(this.intake,0.86);
     ctx.save(); ctx.translate(P.x,P.y); ctx.rotate(this.intake+(this.flap?0.42:0)); ctx.fillStyle='#136d68'; roundRect(ctx,-16,-70,32,140,10); ctx.fill(); ctx.restore();
     ctx.save(); ctx.translate(P.x+26,P.y-12); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,160,12,6); ctx.fill(); ctx.restore();
     ctx.save(); ctx.translate(P.x+96,P.y+22); ctx.rotate(-0.33); ctx.fillStyle='rgba(60,200,170,.18)'; roundRect(ctx,0,0,180,12,6); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    for(const b of this.balls){ if(b.dead && b!==this.target) continue; const p=this.xy(b===this.target?this.target.th:b.th);
-      ctx.beginPath(); ctx.arc(p.x,p.y,this.r+6,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,.14)'; ctx.fill();
-      ctx.beginPath(); ctx.arc(p.x,p.y,this.r,0,Math.PI*2); ctx.fillStyle= b===this.target ? '#f9d67a' : '#13b3aa'; ctx.fill();
-      ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.n).padStart(2,'0'),p.x,p.y);
-      ctx.fillStyle= b===this.target ? '#241a05' : '#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y); } ctx.restore();
+    // balls
+    for(const b of this.balls){ if(b.dead && b!==this.target) continue; const p=this.xy(b===this.target?this.target.th:b.th); const col='#10b5ac'; this.glossyBall(p,this.ballR,col,b.n,b.spin,true); }
   }
   frame(ts){ if(!this.prev) this.prev=ts; const dt=clamp((ts-this.prev)/16,0.6,1.6); this.prev=ts; this.tick++; this.update(dt*0.016); this.draw(); }
   loop(ts=performance.now()){ this.frame(ts); requestAnimationFrame(this.loop); }
 }
 function roundRect(ctx,x,y,w,h,r){const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 
-/* Ergebnis-Rail: Bezier + Rotation */
-const rail=$('#rail');
+/* Ergebnis-Rail (Bezier + Rotation) */
+const rail=document.getElementById('rail');
 function place(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'chip--gold':''}">${String(num).padStart(2,'0')}</span>`; }
-function bezier(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x + b*p1.x + c*p2.x, y:a*p0.y + b*p1.y + c*p2.y}; }
+function bez(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x+b*p1.x+c*p2.x, y:a*p0.y+b*p1.y+c*p2.y}; }
 async function rollTo(fromCanvas, startXY, slot, num, gold){
   const slotEl=rail.querySelector(`[data-slot="${slot}"]`);
   const s=fromCanvas.getBoundingClientRect(), e=slotEl.getBoundingClientRect();
@@ -240,38 +288,44 @@ async function rollTo(fromCanvas, startXY, slot, num, gold){
   const ctrl={x:(sx+ex)/2 + 80, y:(sy+ey)/2 - 40};
   const chip=document.createElement('div'); chip.className='fchip'; chip.textContent=String(num).padStart(2,'0');
   chip.style.left=(sx-19)+'px'; chip.style.top=(sy-19)+'px'; document.body.appendChild(chip);
-  const D=Math.hypot(ex-sx,ey-sy); const dur=900+Math.min(600,D); let last={x:sx,y:sy};
-  await new Promise(resolve=>{ const start=performance.now(); function step(now){ const t=Math.min(1,(now-start)/dur);
-    const p=bezier({x:sx,y:sy},ctrl,{x:ex,y:ey},t); const dx=p.x-last.x, dy=p.y-last.y; const rot=Math.atan2(dy,dx);
-    chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot + t*6*Math.PI}rad)`; last=p; if(t<1) requestAnimationFrame(step); else resolve();}
-    requestAnimationFrame(step);
-  });
+  const D=Math.hypot(ex-sx,ey-sy), dur=900+Math.min(600,D); let last={x:sx,y:sy};
+  await new Promise(res=>{ const t0=performance.now(); (function step(t){ const u=Math.min(1,(t-t0)/dur); const p=bez({x:sx,y:sy},ctrl,{x:ex,y:ey},u); const dx=p.x-last.x, dy=p.y-last.y;
+    const rot=Math.atan2(dy,dx); chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot + u*6*Math.PI}rad)`; last=p; if(u<1) requestAnimationFrame(step); else res(); })(t0); });
   chip.remove(); place(slot,num,gold);
 }
 
 /* App */
-const drumA=new Drum($('#cvA'),50); const drumB=new Drum($('#cvB'),12);
-let cur={main:[],euro:[],ts:null}, running=false;
-drumA.onDrop=({num,start})=>{ rollTo(drumA.cv,start,'A'+(cur.main.length+1),num,false); cur.main.push(num); };
-drumB.onDrop=({num,start})=>{ rollTo(drumB.cv,start,'B'+(cur.euro.length+1),num,true); cur.euro.push(num); };
-$('#btnReset').onclick=()=>location.reload();
-$('#btnStart').onclick=async()=>{
-  if(running) return; running=true; cur={main:[],euro:[],ts:new Date().toISOString()};
-  await sleep(500); for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(350); } for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(350); }
-  cur.main.sort((a,b)=>a-b); cur.euro.sort((a,b)=>a-b);
-  for(let i=0;i<5;i++) place('A'+(i+1),cur.main[i],false); for(let i=0;i<2;i++) place('B'+(i+1),cur.euro[i],true);
-  $('#resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${cur.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${cur.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${cur.ts}</div>`;
-  analyze(); running=false;
+const drumA=new Drum(document.getElementById('cvA'),50);
+const drumB=new Drum(document.getElementById('cvB'),12);
+let current={main:[],euro:[],ts:null}, running=false;
+drumA.onDrop=({num,start})=>{ rollTo(drumA.cv,start,'A'+(current.main.length+1),num,false); current.main.push(num); };
+drumB.onDrop=({num,start})=>{ rollTo(drumB.cv,start,'B'+(current.euro.length+1),num,true); current.euro.push(num); };
+document.getElementById('btnReset').onclick=()=>location.reload();
+document.getElementById('btnStart').onclick=async(e)=>{
+  if(running) return;
+  running=true; e.currentTarget.setAttribute('disabled','true');
+  current={main:[],euro:[],ts:new Date().toISOString()};
+  await sleep(500);
+  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(350); }
+  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(350); }
+  // Sicherheit: Duplikate abfangen (sollte nie passieren; Guard falls User doppelt klickt etc.)
+  current.main=[...new Set(current.main)].slice(0,5).sort((a,b)=>a-b);
+  current.euro=[...new Set(current.euro)].slice(0,2).sort((a,b)=>a-b);
+  for(let i=0;i<5;i++) place('A'+(i+1),current.main[i],false);
+  for(let i=0;i<2;i++) place('B'+(i+1),current.euro[i],true);
+  document.getElementById('resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${current.main.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${current.euro.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="text-xs opacity-80">${current.ts}</div>`;
+  analyze();
+  running=false; e.currentTarget.removeAttribute('disabled');
 };
 
 /* Analyse */
 function analyze(){
-  if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
-  $('#analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
-  const set=new Set(cur.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
+  if(!draws.length){ document.getElementById('analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
+  document.getElementById('analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
+  const set=new Set(current.main); let m5=0,m4=0,m3=0,e2=0,e1=0;
   for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++;
-    const me=d.euro.filter(n=>cur.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
-  $('#comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
+    const me=d.euro.filter(n=>current.euro.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
+  document.getElementById('comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
 }
 </script>
 </body>
