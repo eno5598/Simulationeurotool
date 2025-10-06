@@ -110,12 +110,12 @@ td.cold{background:linear-gradient(180deg,rgba(90,120,255,.28),rgba(90,120,255,.
 
 <script>
 const $=s=>document.querySelector(s);
-const LS_ARCH='ej_enoweb_archive_v4';
+const LS_ARCH='ej_enoweb_archive_v5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function rng(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; }
 
-/* ===== ARCHIV LADEN ===== */
+/* ===== ARCHIV LADEN (ultra-robust) ===== */
 window.__ej={draws:[],freqA:Array(51).fill(0),freqB:Array(13).fill(0)};
 
 async function getTextFromRes(res,url){
@@ -123,9 +123,13 @@ async function getTextFromRes(res,url){
   const ct=(res.headers.get('content-type')||'').toLowerCase();
   const sig=await blob.slice(0,4).text().catch(()=>'');
   if(ct.includes('zip') || url.endsWith('.zip') || sig.startsWith('PK')){
-    try{ const zip=await JSZip.loadAsync(blob); let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) out+='\\n'+await f.async('string'); } if(out.trim()) return out; }catch{}
+    try{
+      const zip=await JSZip.loadAsync(blob);
+      let out=''; for(const f of Object.values(zip.files)){ if(/\\.(txt|csv)$/i.test(f.name)) out+='\\n'+await f.async('string'); }
+      if(out.trim()) return out;
+    }catch{}
   }
-  try{ return await (new Response(blob)).text(); }catch{return '';}
+  try{ return await (new Response(blob)).text(); }catch{ return ''; }
 }
 async function fetchWithProxies(url){
   const chain=[
@@ -143,33 +147,75 @@ async function fetchWithProxies(url){
   }
   throw new Error('Alle Quellen blockiert');
 }
-function parseEuroArchive(txt){
-  try{
-    const t=txt.replace(/\\r\\n?/g,'\\n'); const lines=t.split('\\n').map(l=>l.trim()).filter(Boolean);
-    const head=lines[0];
-    let delim=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';
-    let H=head.split(delim).map(s=>s.trim());
-    let idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
-      A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
-    if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
-      idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
-      A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('Zahl'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('Euro'+k,'i').test(x)))};
-    }
-    if(idx.Tag<0||idx.Monat<0||idx.Jahr<0||idx.A.some(i=>i<0)||idx.B.some(i=>i<0)) throw new Error('Kopfzeile nicht erkannt.');
-    const out=[];
-    for(let i=1;i<lines.length;i++){
-      const c=lines[i].split(delim).map(s=>s.trim());
-      if(c.length<=Math.max(...idx.A,...idx.B)) continue;
-      const A=idx.A.map(ii=>+c[ii]).filter(Number.isFinite), B=idx.B.map(ii=>+c[ii]).filter(Number.isFinite);
-      const day=+c[idx.Tag], mon=+c[idx.Monat], year=+c[idx.Jahr];
-      if(A.length===5 && B.length===2){
-        const date=new Date(Date.UTC(year,mon-1,day)).toISOString().slice(0,10);
+
+function safeInt(x){ const n=parseInt(x,10); return Number.isFinite(n)?n:NaN; }
+function parseByHeader(lines){
+  const head=lines[0];
+  const delim=(head.match(/\\t/g)||[]).length>(head.match(/;/g)||[]).length?'\\t':(head.match(/;/g)||[]).length?';':',';
+  const H=head.split(delim).map(s=>s.trim());
+  // Versuch A: Tag/Monat/Jahr + ZahlA1..5 + ZahlB1..2
+  let idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
+    A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('ZahlA'+k,'i').test(x))), B:[1,2].map(k=>H.findIndex(x=>new RegExp('ZahlB'+k,'i').test(x)))};
+  // Versuch B: Zahl1..5 + Euro1..2
+  if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){
+    idx={Tag:H.findIndex(x=>/tag/i.test(x)), Monat:H.findIndex(x=>/monat|month/i.test(x)), Jahr:H.findIndex(x=>/jahr|year/i.test(x)),
+      A:[1,2,3,4,5].map(k=>H.findIndex(x=>new RegExp('(^|[^A])Zahl\\s*'+k+'($|[^0-9])','i').test(x))), 
+      B:[1,2].map(k=>H.findIndex(x=>new RegExp('Euro\\s*'+k,'i').test(x)))};
+  }
+  // Versuch C: Datum als eine Spalte (dd.mm.yyyy)
+  let dateIdx=-1; if(idx.Tag<0||idx.Monat<0||idx.Jahr<0){ dateIdx = H.findIndex(x=>/datum|date/i.test(x)); }
+  if(idx.A.some(i=>i<0)||idx.B.some(i=>i<0)){ return null; } // Header-Parsing gescheitert -> fallback
+  const out=[];
+  for(let i=1;i<lines.length;i++){
+    const cells=lines[i].split(delim).map(s=>s.trim()); if(!cells.length) continue;
+    let y,m,d;
+    if(dateIdx>=0){ const m1=cells[dateIdx].match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/); if(m1){ d=safeInt(m1[1]); m=safeInt(m1[2]); y=safeInt(m1[3]); } }
+    else{ d=safeInt(cells[idx.Tag]); m=safeInt(cells[idx.Monat]); y=safeInt(cells[idx.Jahr]); }
+    const A=idx.A.map(ii=>safeInt(cells[ii])).filter(n=>Number.isFinite(n));
+    const B=idx.B.map(ii=>safeInt(cells[ii])).filter(n=>Number.isFinite(n));
+    if(y && m && d && A.length===5 && B.length===2){
+      if(A.every(n=>n>=1&&n<=50) && B.every(n=>n>=1&&n<=12)){
+        const date=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
         out.push({date, main:A.slice().sort((a,b)=>a-b), euro:B.slice().sort((a,b)=>a-b)});
       }
     }
-    if(!out.length) throw new Error('Keine Ziehungen gefunden.');
-    out.sort((a,b)=>a.date.localeCompare(b.date));
-    window.__ej.draws=out; window.__ej.freqA=Array(51).fill(0); window.__ej.freqB=Array(13).fill(0);
+  }
+  return out.length?out:null;
+}
+function parseByAutodetect(lines){
+  const out=[];
+  for(const raw of lines){
+    const line=raw.trim(); if(!line) continue;
+    // 1) Date search
+    let y,m,d;
+    let m1=line.match(/(\\d{4})[.\\/-](\\d{1,2})[.\\/-](\\d{1,2})/);
+    if(m1){ y=safeInt(m1[1]); m=safeInt(m1[2]); d=safeInt(m1[3]); }
+    if(!y){ m1=line.match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/); if(m1){ d=safeInt(m1[1]); m=safeInt(m1[2]); y=safeInt(m1[3]); } }
+    // 2) Numbers
+    const nums=line.match(/\\d+/g)?.map(x=>parseInt(x,10))||[];
+    // Filter plausible numbers
+    const mains=nums.filter(n=>n>=1 && n<=50);
+    const euros=nums.filter(n=>n>=1 && n<=12);
+    // Try to take first 5 unique mains and last 2 euro after that
+    const uniqMain=[]; for(const n of mains){ if(!uniqMain.includes(n)) uniqMain.push(n); if(uniqMain.length===5) break; }
+    const uniqEuro=[]; for(const n of euros){ if(!uniqEuro.includes(n)) uniqEuro.push(n); if(uniqEuro.length===2) break; }
+    if(y&&m&&d && uniqMain.length===5 && uniqEuro.length===2){
+      const date=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
+      out.push({date, main:uniqMain.slice().sort((a,b)=>a-b), euro:uniqEuro.slice().sort((a,b)=>a-b)});
+    }
+  }
+  // Deduplicate by date
+  const map=new Map(); for(const d of out){ map.set(d.date, d); }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
+}
+function parseEuroArchive(txt){
+  try{
+    const t=txt.replace(/\\r\\n?/g,'\\n'); const lines=t.split('\\n').filter(Boolean);
+    let out=parseByHeader(lines);
+    if(!out){ out=parseByAutodetect(lines); }
+    if(!out || !out.length) throw new Error('Kopfzeile/Struktur unbekannt – auch Autodetect fand nichts.');
+    window.__ej.draws=out;
+    window.__ej.freqA=Array(51).fill(0); window.__ej.freqB=Array(13).fill(0);
     out.forEach(d=>{ d.main.forEach(n=>window.__ej.freqA[n]++); d.euro.forEach(n=>window.__ej.freqB[n]++); });
     $('#kpiCount').textContent=out.length; $('#kpiFrom').textContent=out[0].date; $('#kpiTo').textContent=out.at(-1).date;
     $('#statusText').textContent='Archiv geladen ✔';
@@ -197,7 +243,7 @@ $('#fileInput').addEventListener('change', async (ev)=>{
 });
 $('#btnParsePaste').onclick=()=>{ const txt=$('#pasteBox').value; if(txt.trim()){ localStorage.setItem(LS_ARCH,txt); parseEuroArchive(txt); } };
 
-/* ===== Hot/Cold ===== */
+/* ===== HOT/COLD ===== */
 function renderHotCold(){
   const A=window.__ej.freqA, B=window.__ej.freqB;
   function table(el, arr, maxN){
@@ -217,7 +263,7 @@ function renderHotCold(){
   table($('#hotEuro'),B,12);
 }
 
-/* ===== Custom Premium Simulation ===== */
+/* ===== Premium Simulation (wie gehabt) ===== */
 class DrumSim{
   constructor(canvas, count, seed=0){
     this.canvas=canvas; this.ctx=canvas.getContext('2d');
@@ -226,7 +272,7 @@ class DrumSim{
     this.rBall=Math.max(12,this.R*0.08);
     this.intakeAngle=-Math.PI*0.18+Math.PI/2;
     this.intakePos=()=>({x:this.cx+Math.cos(this.intakeAngle)*(this.R-64), y:this.cy+Math.sin(this.intakeAngle)*(this.R-64)});
-    this.rng=(function(seed){ let s=seed|0||Date.now()%2147483647; return ()=> (s=(s*48271)%2147483647)/2147483647; })(seed||Date.now());
+    this.rng=rng(seed||Date.now());
     this.balls=[]; for(let i=1;i<=count;i++){ const th=i/count*Math.PI*2 + this.rng()*0.2; const w=(this.rng()*2-1)*0.6; this.balls.push({n:i, th, w, alive:true}); }
     this.target=null; this.flap=0; this.phase='mix';
     this.arms=[0,Math.PI*2/3,-Math.PI*2/3]; this.armSpeed=1.1;
@@ -314,8 +360,8 @@ document.getElementById('btnStart').onclick=async()=>{
   if(window.__running) return; window.__running=true;
   current.main=[]; current.euro=[]; current.created_at=new Date().toISOString();
   await sleep(600);
-  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(400); }
-  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(400); }
+  for(let i=0;i<5;i++){ await drumA.drawOne(); await sleep(380); }
+  for(let i=0;i<2;i++){ await drumB.drawOne(); await sleep(380); }
   current.main.sort((a,b)=>a-b); current.euro.sort((a,b)=>a-b);
   for(let i=0;i<5;i++) placeStatic('A'+(i+1), current.main[i], false);
   for(let i=0;i<2;i++) placeStatic('B'+(i+1), current.euro[i], true);
