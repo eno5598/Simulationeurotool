@@ -3,49 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Twin‑Cyclone Studio (by ENOWEB)</title>
+<title>EuroJackpot • Sphären-Edition (by ENOWEB)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 :root{
-  --bg:#06060b;
-  --panel:#0b1222f0;
-  --ink:#e9f7ff;
-  --mint:#10e6d7;
-  --teal:#0aa39a;
-  --gold:#f6cc58;
-  --accent1:#00fff0; --accent2:#6cc7ff; --accent3:#ff5be8; --accent4:#ffd36a;
+  --bg:#06070f; --panel:#0a1223f0; --ink:#eaf7ff; --gold:#f6cc58;
+  --cy:#00fff0; --mag:#ff5be8; --sky:#6cc7ff;
 }
-html,body{height:100%}*{box-sizing:border-box}
-body{
-  margin:0;color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
   background:
-    radial-gradient(1100px 800px at -20% -10%, rgba(0,255,240,.08), transparent 60%),
-    radial-gradient(1100px 800px at 120% -10%, rgba(255,0,234,.08), transparent 60%),
-    radial-gradient(100% 100% at 50% 120%, #03040a, #080a14);
+    radial-gradient(1000px 700px at -15% -10%, rgba(0,255,240,.10), transparent 60%),
+    radial-gradient(1000px 700px at 115% -10%, rgba(255,0,234,.10), transparent 60%),
+    #05060b;
 }
 .container{max-width:1180px;margin:18px auto;padding:0 14px}
 h1{margin:0;font-size:clamp(28px,4.5vw,44px);font-weight:900;
-   background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent3),var(--accent4),var(--accent1));
-   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:titleAnim 6s linear infinite}
-@keyframes titleAnim{0%{background-position:0 50%}100%{background-position:100% 50%}}
+   background:linear-gradient(90deg,var(--cy),var(--sky),var(--mag),#ffd36a,var(--cy));
+   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:grad 6s linear infinite}
 .by{font-weight:900;display:inline-block;margin-top:2px;
-   background:linear-gradient(90deg,#00fff0,#6cc7ff,#ff5be8,#ffd36a,#00fff0);
-   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:titleAnim 7s linear infinite}
+   background:linear-gradient(90deg,var(--cy),var(--sky),var(--mag),#ffd36a,var(--cy));
+   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:grad 7s linear infinite}
+@keyframes grad{0%{background-position:0 50%}100%{background-position:100% 50%}}
 .card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;
       box-shadow:0 20px 46px rgba(0,0,0,.6);backdrop-filter:blur(18px)}
-.grid{display:grid;gap:14px}
-@media(min-width:980px){.g2{grid-template-columns:1fr 1fr}}
+.grid{display:grid;gap:14px} @media(min-width:980px){.g2{grid-template-columns:1fr 1fr}}
 .sectionTitle{font-weight:900;font-size:20px;margin:.25rem 0 12px 0}
 .btn{height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:800;color:#fff;background:#15803d;cursor:pointer}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-.btn.ghost{background:#314158}
-.btn.warn{background:#b45309}
+.btn.warn{background:#b45309} .btn.ghost{background:#334155} .btn:disabled{opacity:.6;cursor:not-allowed}
 .sim{position:relative;border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;height:480px;
      background:radial-gradient(120% 120% at 50% 30%, #0a1426, #091326 60%, #071223)}
-.sim .label{position:absolute;left:12px;top:10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.06);
-           border:1px solid rgba(140,170,255,.22);padding:6px 10px;border-radius:999px}
-.sim .slot{position:absolute;right:10px;top:10px;width:106px;height:106px;border-radius:16px;
+.badge{position:absolute;left:12px;top:10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.06);
+       border:1px solid rgba(140,170,255,.22);padding:6px 10px;border-radius:999px}
+.slot{position:absolute;right:10px;top:10px;width:106px;height:106px;border-radius:16px;
   border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));
   display:flex;align-items:center;justify-content:center;font-weight:800;color:#98ffe0}
 canvas{width:100%;height:100%}
@@ -57,30 +48,30 @@ canvas{width:100%;height:100%}
 .chip{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;border-radius:999px;
       background:radial-gradient(120% 120% at 30% 28%, #1ae3d9, #0aa39a 60%);color:#062a29;font-weight:900;
       box-shadow:inset 0 2px 6px rgba(255,255,255,.2), inset 0 -6px 12px rgba(0,0,0,.3)}
-.chip.gold{background:radial-gradient(120% 120% at 30% 28%, #fff1b9, #f6cc58 60%);color:#221a06;
+.chip.gold{background:radial-gradient(120% 120% at 30% 28%, #fff1b9, var(--gold) 60%);color:#221a06;
       box-shadow:0 0 18px rgba(255,220,120,.5), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
 .fly{position:fixed;z-index:90;min-width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-     font-weight:900;pointer-events:none;background:radial-gradient(120% 120% at 30% 28%, #fff1b9, #f6cc58 60%);color:#221a06;
+     font-weight:900;pointer-events:none;background:radial-gradient(120% 120% at 30% 28%, #fff1b9, var(--gold) 60%);color:#221a06;
      box-shadow:0 0 18px rgba(255,220,120,.5), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
 .small{opacity:.85}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>EuroJackpot • Twin‑Cyclone Studio</h1>
+  <h1>EuroJackpot • Sphären‑Edition</h1>
   <div class="by">by ENOWEB</div>
 
   <div class="grid g2" style="margin-top:12px">
     <div class="card">
-      <div class="sectionTitle">🎬 Simulation (Twin‑Cyclone + Rohr‑Zoom)</div>
+      <div class="sectionTitle">🎬 Simulation (Rotierende Glaskugel + Rohr)</div>
       <div class="grid g2">
         <div class="sim">
-          <div class="label">Haupttrommel (1–50)</div>
+          <div class="badge">Hauptkugel (1–50)</div>
           <div class="slot" id="slotA">Auswurf</div>
           <canvas id="cvA" width="680" height="480"></canvas>
         </div>
         <div class="sim">
-          <div class="label">Eurotrommel (1–12)</div>
+          <div class="badge">Eurokugel (1–12)</div>
           <div class="slot" id="slotB">Auswurf</div>
           <canvas id="cvB" width="680" height="480"></canvas>
         </div>
@@ -138,9 +129,9 @@ canvas{width:100%;height:100%}
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-const LS='ej_twincyclone_archiv_v1';
+const LS='ej_sphere_archiv_v1';
 
-// ===== Robustes Archiv =====
+/* ===== Archiv (robust) ===== */
 let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
 async function fetchWithProxies(url){
   const list=[ url, 'https://cors.isomorphic-git.org/'+url, 'https://api.allorigins.win/raw?url='+encodeURIComponent(url), 'https://thingproxy.freeboard.io/fetch/'+url, 'https://corsproxy.io/?'+encodeURIComponent(url) ];
@@ -154,9 +145,7 @@ async function fetchWithProxies(url){
         const entries=Object.values(zip.files);
         const entry=entries.find(f=>/\\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\\.(txt|csv)$/i.test(f.name));
         const txt=await entry.async('string'); return txt;
-      }else{
-        return await res.text();
-      }
+      }else{ return await res.text(); }
     }catch(e){ last=e; }
   }
   throw last||new Error('Download fehlgeschlagen');
@@ -165,11 +154,10 @@ function parseArchiveText(txt){
   try{
     const lines=txt.replace(/\\r\\n?/g,'\\n').split('\\n').map(s=>s.trim()).filter(Boolean);
     const usable=lines.filter(l=>(l.match(/\\d+/g)||[]).length>=7);
-    const dmy=/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{2,4})/; const ymd=/(\\d{4})[.\\/-](\\d{1,2})[.\\/-](\\d{1,2})/;
+    const dmy=/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{2,4})/, ymd=/(\\d{4})[.\\/-](\\d{1,2})[.\\/-](\\d{1,2})/;
     function iso(y,m,d){ const t=new Date(+y,+m-1,+d); return isNaN(t)?null:t.toISOString().slice(0,10); }
     function parseLine(l){
-      const t=l.split(/;|,|\\t|\\s+/).filter(Boolean);
-      let date=null, rest=[];
+      const t=l.split(/;|,|\\t|\\s+/).filter(Boolean); let date=null, rest=[];
       if(t.length&&dmy.test(t[0])){ const m=t[0].match(dmy); date=iso(m[3],m[2],m[1]); rest=t.slice(1); }
       else if(t.length&&ymd.test(t[0])){ const m=t[0].match(ymd); date=iso(m[1],m[2],m[3]); rest=t.slice(1); }
       else rest=t.slice(0);
@@ -225,146 +213,129 @@ function pills(freq, maxN){ const vals=freq.slice(1,maxN+1); const max=Math.max(
   return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
 function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-// ===== Neues Trommel‑System (Twin‑Cyclone) =====
-class Drum{
-  constructor(canvas, count, slotEl, themeHue=175){
-    this.cv=canvas; this.ctx=canvas.getContext('2d'); this.slotEl=slotEl;
+/* ===== Sphären‑Kugel (eine große Glaskugel, die sich selbst dreht) ===== */
+class Sphere{
+  constructor(canvas, count){
+    this.cv=canvas; this.ctx=canvas.getContext('2d');
     this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
-    this.cx=this.W*0.48; this.cy=this.H*0.56; this.R=Math.min(this.W,this.H)*0.38;
-    this.r=Math.max(12,this.R*0.09); // 4.5cm skaliert
-    // Kamera
-    this.cam={s:1,tx:0,ty:0,ts:1,ttx:0,tty:0,t:1};
-    // Speckle‑Texturen je Ball
-    function speckles(n){ const a=[]; for(let i=0;i<8;i++) a.push([(Math.random()*2-1)*0.6,(Math.random()*2-1)*0.6, Math.random()*0.6+0.15]); return a; }
-    // Bälle
-    this.balls=[]; this.left=new Set(Array.from({length:count},(_,i)=>i+1));
+    this.cx=this.W*0.5; this.cy=this.H*0.56; this.R=Math.min(this.W,this.H)*0.38;
+    this.r=Math.max(12,this.R*0.09);
+    this.rot=0; this.rotSpeed=0.5; // Kugel dreht sich
+    this.left=new Set(Array.from({length:count},(_,i)=>i+1));
+    this.balls=[];
     for(const n of this.left){
-      this.balls.push({n, a:Math.random()*Math.PI*2, w:(Math.random()<.5?-1:1)*(1.3+Math.random()*1.4),
-        rm:0.68+Math.random()*0.12, rv:0, spin:Math.random()*Math.PI*2, live:true, flip:300+Math.random()*800,
-        spec:speckles()});
+      this.balls.push({n, a:Math.random()*Math.PI*2, w:(Math.random()<.5?-1:1)*(1.2+Math.random()*1.4),
+        rm:0.7+Math.random()*0.08, rv:0, spin:Math.random()*Math.PI*2, live:true, flip:300+Math.random()*800});
     }
-    // Doppel‑Wirbel: Paddel drehen, Drehrichtung flippt, plus innerer Mini‑Wirbel
-    this.pads=[0,Math.PI*0.66,Math.PI*1.33]; this.padDir=1; this.padSp=1.9; this.padFlip=1800+Math.random()*1600;
-    this.miniPhase=Math.random()*Math.PI*2;
-    // Intake
-    this.intake=-Math.PI*0.12 + Math.PI/2;
-    // Farben
-    this.h=themeHue;
-    this.tPrev=performance.now(); requestAnimationFrame(this.loop.bind(this));
+    this.intake = -Math.PI*0.13 + Math.PI/2;
+    this.prev=performance.now(); requestAnimationFrame(this.loop.bind(this));
   }
-  xy(a,m){ return {x:this.cx+Math.cos(a)*m, y:this.cy+Math.sin(a)*m}; }
+  xy(a,m=this.R*0.72){ return {x:this.cx+Math.cos(a)*m, y:this.cy+Math.sin(a)*m}; }
   async eject(onDrop){
-    const P=this.xy(this.intake,this.R*0.9);
-    let best=null,bd=1e9;
+    // wähle die nächste Kugel in der Nähe des Ansaugpunkts
+    const P=this.xy(this.intake,this.R*0.9); let best=null,bd=1e9;
     for(const b of this.balls){ if(!b.live) continue; const p=this.xy(b.a,this.R*b.rm); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} }
     if(!best) return null;
-    this.cam={...this.cam,ts:1.35,ttx:this.W*0.5-P.x,tty:this.H*0.52-P.y,t:0};
-    for(let i=0;i<16;i++){ best.w*=0.85; best.a+=(this.intake-best.a)*0.18; best.spin+=0.55; await sleep(18); }
-    if(onDrop) onDrop({num:best.n, start:P});
+    // animierte „Saug“-Phase
+    for(let t=0;t<16;t++){ best.w*=0.85; best.a+=(this.intake-best.a)*0.16; best.spin+=0.5; await sleep(18); }
+    if(onDrop){ onDrop({num:best.n, start:this.xy(this.intake,this.R*0.9)}); }
     best.live=false; this.left.delete(best.n);
-    this.cam={...this.cam,ts:1,ttx:0,tty:0,t:0};
     return best.n;
   }
   update(dt){
-    if(this.cam.t<1){ this.cam.t=Math.min(1,this.cam.t+dt*1.2);
-      const e=this.cam.t*this.cam.t*(3-2*this.cam.t);
-      this.cam.s += (this.cam.ts - this.cam.s)*e*dt*4;
-      this.cam.tx+= (this.cam.ttx- this.cam.tx)*e*dt*4;
-      this.cam.ty+= (this.cam.tty- this.cam.ty)*e*dt*4;
-    }
-    this.padFlip-=dt*1000; if(this.padFlip<=0){ this.padDir*=-1; this.padFlip=1800+Math.random()*1600; }
-    this.pads=this.pads.map(a=>a+this.padDir*this.padSp*dt);
-    this.miniPhase+=dt*1.3;
+    // Kugelrotation (rein visuell, beeinflusst das Wirbeln leicht)
+    this.rot = (this.rot + this.rotSpeed*dt)%(Math.PI*2);
     for(const b of this.balls){
       if(!b.live) continue;
       b.flip-=dt*1000; if(b.flip<=0){ b.w*=-1; b.flip=300+Math.random()*800; }
-      // tangential + Mini‑Wirbel
-      b.w += (Math.random()*2-1)*0.06 + Math.sin(this.miniPhase + b.a*3)*0.015;
-      b.w=clamp(b.w,-2.9,2.9);
-      b.a=(b.a + b.w*dt + Math.PI*2)%(Math.PI*2);
-      // radial jitter
+      b.w += (Math.random()*2-1)*0.06 + Math.sin(this.rot*2 + b.a*3)*0.015;
+      b.w = clamp(b.w,-2.9,2.9);
+      b.a = (b.a + b.w*dt + Math.PI*2)%(Math.PI*2);
       b.rv += (Math.random()*2-1)*0.004; b.rv=clamp(b.rv,-0.08,0.08);
-      b.rm = clamp(b.rm + b.rv*dt, 0.62, 0.80);
+      b.rm = clamp(b.rm + b.rv*dt, 0.64, 0.78);
       b.spin += b.w*0.45;
     }
-    // Entschlängeln
-    const alive=this.balls.filter(x=>x.live).sort((a,b)=>a.a-b.a);
-    const gapMin=(Math.PI*2)/Math.max(alive.length,2)*0.22;
-    for(let i=0;i<alive.length;i++){ const A=alive[i], B=alive[(i+1)%alive.length];
-      let g=(B.a-A.a+Math.PI*2)%(Math.PI*2); if(g<gapMin){ const p=(gapMin-g)/2; A.a-=p; B.a+=p; A.w-=p*0.6; B.w+=p*0.6; } }
+    // Mindestabstand, damit kein „Schlange“-Look
+    const alive=this.balls.filter(b=>b.live).sort((a,b)=>a.a-b.a);
+    const minGap=(Math.PI*2)/Math.max(alive.length,2)*0.24;
+    for(let i=0;i<alive.length;i++){
+      const A=alive[i], B=alive[(i+1)%alive.length];
+      let gap=(B.a-A.a+Math.PI*2)%(Math.PI*2);
+      if(gap<minGap){ const push=(minGap-gap)/2; A.a-=push; B.a+=push; A.w-=push*0.6; B.w+=push*0.6; }
+    }
   }
   drawGlass(ctx){
-    // Oktagon + Ring + Streulicht
-    ctx.save(); ctx.translate(this.cx,this.cy); const R=this.R;
+    // 3D-Look durch bewegte Highlights
+    const R=this.R;
+    ctx.save(); ctx.translate(this.cx,this.cy);
+    // Outer glass
     ctx.lineWidth=18;
-    const g=ctx.createLinearGradient(-R,0,R,0); g.addColorStop(0,'rgba(20,240,200,.10)'); g.addColorStop(.5,'rgba(255,255,255,.12)'); g.addColorStop(1,'rgba(20,240,200,.10)');
-    ctx.strokeStyle=g; ctx.beginPath();
-    const sides=8;
-    for(let i=0;i<=sides;i++){ const a=i/sides*Math.PI*2; const x=Math.cos(a)*R, y=Math.sin(a)*R; if(i) ctx.lineTo(x,y); else ctx.moveTo(x,y); }
-    ctx.stroke();
-    // Innen‑Vignette
-    const ig=ctx.createRadialGradient(0,0,R*0.2,0,0,R); ig.addColorStop(0,'rgba(0,0,0,0)'); ig.addColorStop(1,'rgba(0,0,0,.32)');
+    const grad=ctx.createRadialGradient(-R*0.3,-R*0.3,R*0.2, 0,0,R);
+    grad.addColorStop(0,'rgba(255,255,255,.18)');
+    grad.addColorStop(1,'rgba(20,240,210,.08)');
+    ctx.strokeStyle=grad;
+    ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.stroke();
+    // rotating highlight ring
+    ctx.save(); ctx.rotate(this.rot);
+    ctx.globalAlpha=.25;
+    for(let i=0;i<6;i++){
+      ctx.rotate(Math.PI/3);
+      ctx.beginPath(); ctx.arc(0,0,R*0.92, i*0.2, i*0.2+0.9); ctx.strokeStyle='rgba(140,255,230,.12)'; ctx.lineWidth=10; ctx.stroke();
+    }
+    ctx.restore();
+    // intake slot
+    ctx.save(); ctx.rotate(this.intake); ctx.fillStyle='rgba(120,255,230,.18)';
+    roundRect(ctx,-18,-74,36,148,12); ctx.fill();
+    ctx.restore();
+    // inner vignette
+    const ig=ctx.createRadialGradient(0,0,R*0.2, 0,0,R*1.0);
+    ig.addColorStop(0,'rgba(0,0,0,0)'); ig.addColorStop(1,'rgba(0,0,0,.35)');
     ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
-  drawPaddles(ctx){
-    ctx.save(); ctx.translate(this.cx,this.cy);
-    for(let k=0;k<3;k++){
-      ctx.save(); ctx.globalAlpha=0.18*(3-k); ctx.fillStyle='hsl('+this.h+',60%,48%)';
-      for(const a of this.pads){ ctx.save(); ctx.rotate(a - k*0.08); this.roundRect(ctx,-14,-7,this.R*0.84,14,7); ctx.fill(); ctx.restore(); }
-      ctx.restore();
-    }
-    ctx.restore();
-  }
   drawPipe(ctx){
-    const slot=this.slotEl.getBoundingClientRect(), rect=this.cv.getBoundingClientRect();
+    const slot=document.getElementById(this.cv.id==='cvA'?'slotA':'slotB').getBoundingClientRect();
+    const rect=this.cv.getBoundingClientRect();
     const P=this.xy(this.intake,this.R*0.9);
-    const sx=P.x+6, sy=P.y-6; const ex=slot.left-rect.left+slot.width*0.1, ey=slot.top-rect.top+slot.height*0.3;
-    const cx=(sx+ex)/2+60, cy=(sy+ey)/2-80;
+    const sx=P.x+6, sy=P.y-6;
+    const ex=slot.left-rect.left+slot.width*0.1, ey=slot.top-rect.top+slot.height*0.3;
+    const cx=(sx+ex)/2 + 80, cy=(sy+ey)/2 - 60;
     ctx.save();
     ctx.lineWidth=18; ctx.strokeStyle='rgba(140,255,230,.12)'; ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(cx,cy,ex,ey); ctx.stroke();
     ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.stroke();
-    ctx.translate(P.x,P.y); ctx.rotate(this.intake); ctx.fillStyle='rgba(120,255,230,.18)';
-    this.roundRect(ctx,-20,-78,40,156,12); ctx.fill(); ctx.restore();
+    ctx.restore();
   }
   drawBall(ctx,p,rad,b){
-    const g=ctx.createRadialGradient(p.x-rad*.35,p.y-rad*.4,rad*.1,p.x,p.y,rad*1.1);
-    g.addColorStop(0,'#1fe8dc'); g.addColorStop(.6,'#12b6ad'); g.addColorStop(1,'#0a766f');
+    const g=ctx.createRadialGradient(p.x-rad*0.35,p.y-rad*0.4,rad*0.1,p.x,p.y,rad*1.1);
+    g.addColorStop(0,'#1fe8dc'); g.addColorStop(0.6,'#12b6ad'); g.addColorStop(1,'#0a766f');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,rad,0,Math.PI*2); ctx.fill();
-    // Speckles (Styropor‑Look)
-    ctx.save(); ctx.globalAlpha=.22; ctx.fillStyle='#fff';
-    for(const s of b.spec){ ctx.beginPath(); ctx.arc(p.x+s[0]*rad, p.y+s[1]*rad, s[2]*2, 0, Math.PI*2); ctx.fill(); }
-    ctx.restore();
     ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,rad,0,Math.PI*2); ctx.stroke();
-    // Glanzstreifen
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(b.spin); ctx.globalAlpha=.18; ctx.fillStyle='#fff'; ctx.fillRect(-rad*.8,-rad*.12,rad*1.6,rad*.24); ctx.restore();
-    // Nummer
     ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.n).padStart(2,'0'),p.x,p.y);
     ctx.fillStyle='#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y);
   }
   frame(ts){
-    const dt=Math.min(1.6,Math.max(0.6,(ts-this.tPrev)/16))*0.016; this.tPrev=ts;
+    const dt=Math.min(1.6,Math.max(0.6,(ts-this.prev)/16))*0.016; this.prev=ts;
     this.update(dt);
     const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H);
-    ctx.save(); ctx.translate(this.cam.tx,this.cam.ty); ctx.scale(this.cam.s,this.cam.s);
-    this.drawGlass(ctx); this.drawPaddles(ctx); this.drawPipe(ctx);
+    this.drawGlass(ctx); this.drawPipe(ctx);
     for(const b of this.balls){ if(!b.live) continue; const p=this.xy(b.a,this.R*b.rm); this.drawBall(ctx,p,this.r,b); }
-    ctx.restore();
     requestAnimationFrame(this.frame.bind(this));
   }
   loop(ts){ this.frame(ts||performance.now()); }
-  roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
-    ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
-    ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
-  }
+}
+function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
+  ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
+  ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
 }
 
+/* ===== Ergebnis-Flug ===== */
 const rail=document.getElementById('rail');
-function slotPlace(slot,num,gold){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'gold':''}">${String(num).padStart(2,'0')}</span>`; }
+function slotPlace(slot,num,gold=false){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'gold':''}">${String(num).padStart(2,'0')}</span>`; }
 function bez(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x+b*p1.x+c*p2.x, y:a*p0.y+b*p1.y+c*p2.y}; }
-async function flyTo(slot,start,num,gold){
-  const el=rail.querySelector(`[data-slot="${slot}"]`), r=el.getBoundingClientRect();
+async function flyTo(slotElement,start,num,gold){
+  const el=rail.querySelector(`[data-slot="${slotElement}"]`), r=el.getBoundingClientRect();
   const sx=start.x+90, sy=start.y-6, ex=r.left+r.width/2, ey=r.top+r.height/2;
   const ctrl={x:(sx+ex)/2+100, y:(sy+ey)/2-50};
   const chip=document.createElement('div'); chip.className='fly'; chip.textContent=String(num).padStart(2,'0');
@@ -373,20 +344,20 @@ async function flyTo(slot,start,num,gold){
   await new Promise(res=>{ const t0=performance.now(); (function step(t){ const u=Math.min(1,(t-t0)/dur); const p=bez({x:sx,y:sy},ctrl,{x:ex,y:ey},u);
     const rot=Math.atan2(p.y-sy,p.x-sx)+u*6*Math.PI; chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot}rad)`;
     if(u<1) requestAnimationFrame(step); else res(); })(t0); });
-  chip.remove(); slotPlace(slot,num,gold);
+  chip.remove(); slotPlace(slotElement,num,gold);
 }
 
-// App
-const drumA=new Drum(document.getElementById('cvA'),50,document.getElementById('slotA'),175);
-const drumB=new Drum(document.getElementById('cvB'),12,document.getElementById('slotB'),185);
+/* ===== App ===== */
+const drumA=new Sphere(document.getElementById('cvA'),50);
+const drumB=new Sphere(document.getElementById('cvB'),12);
 let result={A:[],B:[],ts:null}, busy=false;
 document.getElementById('btnReset').onclick=()=>location.reload();
-
 async function drawSet(drum,count,prefix,isEuro=false){
   const used=new Set();
   for(let i=0;i<count;i++){
     let n=null;
-    do{ n=await drum.eject(({num,start})=>flyTo(`${prefix}${i+1}`,start,num,isEuro)); } while(n==null || used.has(n));
+    do{ n=await drum.eject(({num,start})=>flyTo(`${prefix}${i+1}`,start,num,isEuro)); }
+    while(n==null || used.has(n));
     used.add(n);
     (isEuro?result.B:result.A).push(n);
     await sleep(120);
@@ -404,7 +375,7 @@ document.getElementById('btnStart').onclick=async(e)=>{
   analyze(); busy=false; e.currentTarget.disabled=false;
 };
 
-// Analyse
+/* ===== Analyse ===== */
 function analyze(){
   if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
   $('#analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
