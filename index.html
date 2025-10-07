@@ -34,16 +34,16 @@
   /* — Trommel (Venus/Pearl) — */
   #drumBox{width:100%;aspect-ratio:4/3;max-height:70vh}
   #drumCanvas{width:100%;height:100%;background:#0b1022;border:1px solid rgba(255,255,255,.1);border-radius:.7rem;display:block}
-  #dbg{position:fixed;left:8px;bottom:8px;font:11px/1.2 ui-monospace,Consolas,monospace;color:#b7c7ff;background:rgba(17,24,39,.7);padding:.25rem .4rem;border:1px solid rgba(255,255,255,.2);border-radius:.4rem}
-
+  #dbg{position:fixed;left:8px;bottom:8px;font:11px/1.2 ui-monospace,Consolas,monospace;color:#b7c7ff;background:rgba(17,24,39,.7);padding:.25rem .4rem;border:1px solid rgba(255,255,255,.2);border-radius:.4rem;z-index:9}
 </style>
 </head>
 <body class="p-5">
   <h1 class="title text-3xl md:text-4xl mb-4">Eurojackpot Tool by EnoWeb</h1>
 
   <div class="flex justify-center flex-wrap gap-3 mb-6">
-    <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"><div>📂</div><span>Archiv</span></button>
+    <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"</button>
     <button type="button" onclick="tab('trommel', this)" class="nav-btn" id="btn-trommel"><div>🎱</div><span>Trommel</span></button>
+    <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>><div>📂</div><span>Archiv</span></button>
     <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
     <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
     <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
@@ -106,7 +106,7 @@
     <div class="badge mt-3">Gezogene Eurozahlen (Pearl)</div>
     <div id="outEuro" class="flex flex-wrap mt-1"></div>
   </div>
-  <div id="dbg" class="hidden md:block">init…</div>
+  <div id="dbg" class="hidden md:block">idle…</div>
 
 
   <!-- MAP -->
@@ -827,247 +827,183 @@ renderFavs();
   setKPIs();
 })();
 
-/* === Trommel (Venus/Pearl) Simulation v14 ================================= */
-(function(){
-  const box=document.getElementById('drumBox');
-  const canvas=document.getElementById('drumCanvas');
-  if(!box||!canvas) return; // in case section not rendered yet
-  const ctx=canvas.getContext('2d',{alpha:false});
+/* === EJ Namespace for shared data ======================================== */
+window.EJ = window.EJ || {
+  history: [], // {type:'draw'|'gen', main:[n...], euro:[n...] , ts:number}
+  tips: [],    // array of {main:[5], euro:[2]}
+  recordGeneratedTip(tip){ try{ if(!tip||!tip.main||!tip.euro) return; EJ.tips.push(tip); EJ._save(); }catch(e){} },
+  recordDraw(main, euro){ try{ EJ.history.push({type:'draw', main:[...main], euro:[...euro], ts:Date.now()}); EJ._save(); }catch(e){} },
+  _save(){ try{ localStorage.setItem('ej_data', JSON.stringify({history:EJ.history, tips:EJ.tips})); }catch(e){} },
+  _load(){ try{ const j=localStorage.getItem('ej_data'); if(j){ const o=JSON.parse(j); EJ.history=o.history||[]; EJ.tips=o.tips||[]; } }catch(e){} }
+}; EJ._load();
 
-  function resize(){
-    const dpr=Math.max(1, Math.floor(window.devicePixelRatio||1));
-    const rect=box.getBoundingClientRect();
-    canvas.width = Math.floor(rect.width*dpr);
-    canvas.height= Math.floor(rect.height*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    setupGeometry();
-    drawFrame();
-  }
+/* === Trommel (v15) – Start-only & gate logic ============================= */
+(function(){
+  const $= (q)=>document.querySelector(q);
+  const box=$('#drumBox'), canvas=$('#drumCanvas'); if(!box||!canvas) return;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  const label=$('#drumLabel'), outMain=$('#outMain'), outEuro=$('#outEuro'), dbg=$('#dbg');
+  const startBtn=$('#startDraw'), resetBtn=$('#resetDraw');
+
+  function resize(){ const dpr=Math.max(1, Math.floor(window.devicePixelRatio||1));
+    const rect=box.getBoundingClientRect(); canvas.width=Math.floor(rect.width*dpr); canvas.height=Math.floor(rect.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0); setupGeom(); drawFrame(); }
   window.addEventListener('resize', resize);
 
-  // Geometry & scaling
-  const BALL_DIAM_CM=4.5, BALL_MASS_G=4.0, DRUM_DIAM_CM=70;
-  let W=0,H=0,CX=0,CY=0,DRUM_R=0,cm2px=0,R=0;
-  let CATCH, JETS, JET_R;
-
-  function setupGeometry(){
-    W=canvas.clientWidth; H=canvas.clientHeight;
-    CX=W*0.5; CY=H*0.52;
-    DRUM_R=Math.min(W,H)*0.44;
-    cm2px=(DRUM_R*2)/DRUM_DIAM_CM;
-    R=Math.max(10,(BALL_DIAM_CM*cm2px)/2);
-    CATCH = { x:CX+DRUM_R*0.47, y:CY-DRUM_R*0.78, r:R+5 };
-    JETS = [
-      {x:CX-DRUM_R*0.28, y:CY+DRUM_R*0.58, phase:0.0},
-      {x:CX,             y:CY+DRUM_R*0.60, phase:1.1},
-      {x:CX+DRUM_R*0.28, y:CY+DRUM_R*0.58, phase:2.2}
-    ];
+  const BALL_DIAM_CM=4.5, DRUM_DIAM_CM=70;
+  let W=0,H=0,CX=0,CY=0,DRUM_R=0,cm2px=0,R=0, CATCH, JETS, JET_R;
+  function setupGeom(){ W=canvas.clientWidth; H=canvas.clientHeight; CX=W*0.5; CY=H*0.52; DRUM_R=Math.min(W,H)*0.44;
+    cm2px=(DRUM_R*2)/DRUM_DIAM_CM; R=Math.max(10,(BALL_DIAM_CM*cm2px)/2);
+    CATCH={x:CX+DRUM_R*0.47,y:CY-DRUM_R*0.78,r:R+5};
+    JETS=[{x:CX-DRUM_R*0.28,y:CY+DRUM_R*0.58,phase:0.0},{x:CX,y:CY+DRUM_R*0.60,phase:1.1},{x:CX+DRUM_R*0.28,y:CY+DRUM_R*0.58,phase:2.2}];
     JET_R=Math.max(90,R*3.6);
   }
 
-  // Physics
   const OMEGA=1.1, GRAV_Y=540, LIN_DRAG=0.32, REST=0.78;
 
-  // UI
-  const outMain=document.getElementById('outMain');
-  const outEuro=document.getElementById('outEuro');
-  const startBtn=document.getElementById('startDraw');
-  const resetBtn=document.getElementById('resetDraw');
-  const label=document.getElementById('drumLabel');
-  const dbg=document.getElementById('dbg');
-
-  // State
   let balls=[], phase='idle', running=false, raf=0, lastT=0;
   let drawnMain=[], drawnEuro=[];
   let gateOpen=true, chuteBall=null, chuteT=0;
+  let capturingEnabled=false;
 
   function rng(a,b){return a+Math.random()*(b-a);}
-  function pill(n){const s=document.createElement('span');s.className='chip';s.textContent=n;return s;}
-  function render(){ outMain.innerHTML=''; drawnMain.forEach(n=>outMain.appendChild(pill(n))); outEuro.innerHTML=''; drawnEuro.forEach(n=>outEuro.appendChild(pill(n))); }
+  function chip(n){const s=document.createElement('span');s.className='chip';s.textContent=n;return s;}
+  function render(){ outMain.innerHTML=''; drawnMain.forEach(n=>outMain.appendChild(chip(n)));
+                     outEuro.innerHTML=''; drawnEuro.forEach(n=>outEuro.appendChild(chip(n))); }
 
   function spawn(count){
     const res=[], minD=R*2.02; let tries=0;
-    while(res.length<count && tries<9000){
-      tries++;
-      const a=Math.random()*Math.PI*2, rr=DRUM_R*rng(0.2,0.9);
-      const x=CX+Math.cos(a)*rr, y=CY+Math.sin(a)*rr;
-      if(Math.hypot(x-CX,y-CY) > (DRUM_R - R*1.6)) continue;
+    while(res.length<count && tries<9000){ tries++; const a=Math.random()*Math.PI*2, rr=DRUM_R*rng(0.2,0.9);
+      const x=CX+Math.cos(a)*rr, y=CY+Math.sin(a)*rr; if(Math.hypot(x-CX,y-CY)>(DRUM_R-R*1.6)) continue;
       let ok=true; for(const o of res){ if(Math.hypot(o.x-x,o.y-y)<minD){ ok=false; break; } }
-      if(ok) res.push({id:res.length+1,x,y,vx:rng(-60,60),vy:rng(-60,60),r:R});
-    }
+      if(ok) res.push({id:res.length+1,x,y,vx:rng(-60,60),vy:rng(-60,60),r:R}); }
     while(res.length<count){ const a=Math.random()*Math.PI*2, rr=DRUM_R*rng(0.2,0.95);
       res.push({id:res.length+1,x:CX+Math.cos(a)*rr,y:CY+Math.sin(a)*rr,vx:rng(-60,60),vy:rng(-60,60),r:R}); }
     return res;
   }
 
-  function init(count,isPearl){
-    balls=spawn(count);
-    label.textContent=isPearl?'Pearl · 12 weiße Styroporkugeln · Ø 4,5 cm · 4 g':'Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g';
-  }
+  function init(count,isPearl){ balls=spawn(count);
+    label.textContent = isPearl ? 'Pearl · 12 weiße Styroporkugeln · Ø 4,5 cm · 4 g' : 'Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g'; }
 
   function drawDrum(isPearl){
-    ctx.clearRect(0,0,W,H);
-    // Kessel
-    ctx.beginPath(); ctx.arc(CX,CY,DRUM_R,0,Math.PI*2);
-    ctx.strokeStyle='rgba(210,230,255,.65)'; ctx.lineWidth=8; ctx.stroke();
-    // Fangöffnung (Gate visual: geschlossen = orange)
-    ctx.beginPath(); ctx.arc(CATCH.x, CATCH.y, CATCH.r, 0, Math.PI*2);
-    ctx.strokeStyle=gateOpen?'rgba(255,255,255,.95)':'#ffb74d'; ctx.lineWidth=3; ctx.stroke();
-
-    // Rutsche
-    const outX = CX + DRUM_R*0.6, outY = CY + DRUM_R*0.35;
-    ctx.beginPath();
-    ctx.moveTo(CATCH.x, CATCH.y+CATCH.r);
-    ctx.quadraticCurveTo(CX+DRUM_R*0.55, CY-DRUM_R*0.2, outX, outY);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.beginPath(); ctx.arc(CX,CY,DRUM_R,0,Math.PI*2); ctx.strokeStyle='rgba(210,230,255,.65)'; ctx.lineWidth=8; ctx.stroke();
+    ctx.beginPath(); ctx.arc(CATCH.x,CATCH.y,CATCH.r,0,Math.PI*2);
+    ctx.strokeStyle = gateOpen ? '#80e27e' : '#ff5252'; ctx.lineWidth=3; ctx.stroke();
+    const outX=CX+DRUM_R*0.6, outY=CY+DRUM_R*0.35;
+    ctx.beginPath(); ctx.moveTo(CATCH.x, CATCH.y+CATCH.r); ctx.quadraticCurveTo(CX+DRUM_R*0.55, CY-DRUM_R*0.2, outX, outY);
     ctx.lineWidth=6; ctx.strokeStyle='rgba(200,220,255,.25)'; ctx.stroke();
-
-    // Jet markers
     for(const j of JETS){ ctx.beginPath(); ctx.arc(j.x,j.y,7,0,Math.PI*2); ctx.fillStyle='rgba(120,170,255,.5)'; ctx.fill(); }
   }
   function drawBall(b,isPearl){
-    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=6;
-    ctx.fillStyle=isPearl?'#FFFFFF':'#FFEB6A'; ctx.fill();
-    ctx.shadowBlur=0; ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
-    ctx.fillStyle='#111'; ctx.font='bold 13px Inter, system-ui';
-    const s=String(b.id), w=ctx.measureText(s).width; ctx.fillText(s,b.x-w/2,b.y+4);
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=6;
+    ctx.fillStyle=isPearl?'#FFFFFF':'#FFEB6A'; ctx.fill(); ctx.shadowBlur=0; ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
+    ctx.fillStyle='#111'; ctx.font='bold 13px Inter, system-ui'; const s=String(b.id), w=ctx.measureText(s).width; ctx.fillText(s,b.x-w/2,b.y+4);
   }
 
-  // Rutsch-Animation
-  function chutePoint(t){
-    const p0={x:CATCH.x, y:CATCH.y+CATCH.r};
-    const p1={x:CX+DRUM_R*0.55, y:CY-DRUM_R*0.2};
-    const p2={x:CX+DRUM_R*0.6,  y:CY+DRUM_R*0.35};
-    const u=1-t;
-    return { x:u*u*p0.x + 2*u*t*p1.x + t*t*p2.x,
-             y:u*u*p0.y + 2*u*t*p1.y + t*t*p2.y };
-  }
+  function chutePoint(t){ const p0={x:CATCH.x,y:CATCH.y+CATCH.r}, p1={x:CX+DRUM_R*0.55,y:CY-DRUM_R*0.2}, p2={x:CX+DRUM_R*0.6,y:CY+DRUM_R*0.35};
+    const u=1-t; return {x:u*u*p0.x+2*u*t*p1.x+t*t*p2.x, y:u*u*p0.y+2*u*t*p1.y+t*t*p2.y}; }
 
   const neigh=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
-  function CELL(){ return Math.max(22, R*2.2); }
+  function CELL(){ return Math.max(22,R*2.2); }
 
-  function physics(dt, now, isPearl){
+  function physics(dt,now,isPearl){
     const grid=new Map(), C=CELL();
     for(const b of balls){ const k=(Math.floor(b.x/C))+','+(Math.floor(b.y/C)); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(b); }
-
     for(const b of balls){
-      let ax=0, ay=0;
-      ay += GRAV_Y;
-      // Jets
-      for(const J of JETS){
-        const dx=b.x-J.x, dy=b.y-J.y, d2=dx*dx+dy*dy, sigma2=JET_R*JET_R;
-        const strength=Math.exp(-d2/(2*sigma2));
-        const pulse=0.65+0.45*Math.sin(now*2.6+J.phase);
-        ay -= 1080*strength*pulse;
-        ax +=  140*strength*pulse*(dx/JET_R);
-      }
-      // Rezirkulation + Wand-Shear
-      const rx=b.x-CX, ry=b.y-CY, rlen=Math.hypot(rx,ry)||1;
-      const tx= ry/rlen, ty=-rx/rlen;
-      const swirl=OMEGA*(0.2+0.8*(rlen/DRUM_R));
-      ax += tx*250*swirl; ay += ty*250*swirl;
-      const nearWall=Math.max(0,(rlen-(DRUM_R-R*1.6))/(R*1.6));
-      ax += tx*320*nearWall; ay += ty*320*nearWall;
-      // Drag
-      ax += -LIN_DRAG*b.vx; ay += -LIN_DRAG*b.vy;
-
-      b.vx += ax*dt; b.vy += ay*dt;
-      b.x  += b.vx*dt; b.y += b.vy*dt;
-
-      // Wand
+      let ax=0, ay=0; ay+=540;
+      for(const J of JETS){ const dx=b.x-J.x, dy=b.y-J.y, d2=dx*dx+dy*dy, sigma2=JET_R*JET_R;
+        const s=Math.exp(-d2/(2*sigma2)); const p=0.65+0.45*Math.sin(now*2.6+J.phase);
+        ay -= 1080*s*p; ax += 140*s*p*(dx/JET_R); }
+      const rx=b.x-CX, ry=b.y-CY, rlen=Math.hypot(rx,ry)||1; const tx=ry/rlen, ty=-rx/rlen;
+      const swirl=1.1*(0.2+0.8*(rlen/DRUM_R)); ax+=tx*250*swirl; ay+=ty*250*swirl;
+      const nearWall=Math.max(0,(rlen-(DRUM_R-R*1.6))/(R*1.6)); ax+=tx*320*nearWall; ay+=ty*320*nearWall;
+      ax+=-0.32*b.vx; ay+=-0.32*b.vy;
+      b.vx+=ax*dt; b.vy+=ay*dt; b.x+=b.vx*dt; b.y+=b.vy*dt;
       const ddx=b.x-CX, ddy=b.y-CY, dist=Math.hypot(ddx,ddy), maxR=DRUM_R-b.r-2;
-      if(dist>maxR){
-        const nx=ddx/dist, ny=ddy/dist;
-        b.x=CX+nx*maxR; b.y=CY+ny*maxR;
-        const vn=b.vx*nx+b.vy*ny, vtx=b.vx-vn*nx, vty=b.vy-vn*ny;
-        b.vx=vtx*1.01-REST*vn*nx; b.vy=vty*1.01-REST*vn*ny;
-      }
+      if(dist>maxR){ const nx=ddx/dist, ny=ddy/dist; b.x=CX+nx*maxR; b.y=CY+ny*maxR;
+        const vn=b.vx*nx+b.vy*ny, vtx=b.vx-vn*nx, vty=b.vy-vn*ny; b.vx=vtx*1.01-0.78*vn*nx; b.vy=vty*1.01-0.78*vn*ny; }
     }
-
-    // Kollisionen
-    for(const b of balls){
-      const C=CELL(), ix=Math.floor(b.x/C), iy=Math.floor(b.y/C);
-      for(const n of neigh){
-        const arr=grid.get((ix+n[0])+','+(iy+n[1])); if(!arr) continue;
-        for(const o of arr){ if(o===b) continue;
-          const dx=o.x-b.x, dy=o.y-b.y, rsum=o.r+b.r, d2=dx*dx+dy*dy;
-          if(d2<rsum*rsum){
-            const d=Math.sqrt(d2)||0.0001, nx=dx/d, ny=dy/d;
-            const overlap=(rsum-d), push=overlap*0.53;
+    for(const b of balls){ const C=CELL(), ix=Math.floor(b.x/C), iy=Math.floor(b.y/C);
+      for(const n of neigh){ const arr=grid.get((ix+n[0])+','+(iy+n[1])); if(!arr) continue;
+        for(const o of arr){ if(o===b) continue; const dx=o.x-b.x, dy=o.y-b.y, rsum=o.r+b.r, d2=dx*dx+dy*dy;
+          if(d2<rsum*rsum){ const d=Math.sqrt(d2)||0.0001, nx=dx/d, ny=dy/d; const overlap=(rsum-d), push=overlap*0.53;
             b.x-=nx*push*0.5; b.y-=ny*push*0.5; o.x+=nx*push*0.5; o.y+=ny*push*0.5;
-            const reln=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny; const J=(-2.0*reln)/2;
-            b.vx+=J*nx; b.vy+=J*ny; o.vx-=J*nx; o.vy-=J*ny;
-          }
-        }
-      }
-    }
-
-    // Fang nur wenn Gate offen und keine Rutsch-Animation läuft
-    if(gateOpen && !chuteBall){
-      for(let i=balls.length-1;i>=0;i--){
-        const b=balls[i]; const d=Math.hypot(b.x-CATCH.x,b.y-CATCH.y);
-        if(d < CATCH.r-1){
-          balls.splice(i,1);
-          gateOpen=false;
-          chuteBall={id:b.id, isPearl:isPearl};
-          chuteT=0;
-          break;
-        }
-      }
+            const reln=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny; const J=(-2.0*reln)/2; b.vx+=J*nx; b.vy+=J*ny; o.vx-=J*nx; o.vy-=J*ny; } } } }
+    if(capturingEnabled && gateOpen && !chuteBall){
+      for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; const d=Math.hypot(b.x-CATCH.x,b.y-CATCH.y);
+        if(d < CATCH.r-1){ balls.splice(i,1); gateOpen=false; chuteBall={id:b.id,isPearl:isPearl}; chuteT=0; break; } }
     }
   }
 
-  function chutePointDraw(dt){
-    if(!chuteBall) return;
-    chuteT=Math.min(1, chuteT + dt*0.8);
-    const p=chutePoint(chuteT);
-    drawBall({x:p.x,y:p.y,r:R,id:chuteBall.id}, chuteBall.isPearl);
-    if(chuteT>=1){
-      const id=chuteBall.id, isPearl=chuteBall.isPearl;
-      chuteBall=null;
-      setTimeout(()=>{
-        if(phase==='main'){ drawnMain.push(id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5){ phase='switch'; } }
-        else if(phase==='euro'){ drawnEuro.push(id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; stop(); } }
-        gateOpen=true;
-      }, 200);
+  function commitNumber(id,isPearl){
+    if(phase==='main'){ drawnMain.push(id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5) phase='switch'; }
+    else if(phase==='euro'){ drawnEuro.push(id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; EJ.recordDraw(drawnMain,drawnEuro); } }
+  }
+
+  function updateChute(dt){
+    if(!chuteBall) return; chuteT=Math.min(1, chuteT + dt*0.8);
+    const p=chutePoint(chuteT); drawBall({x:p.x,y:p.y,r:R,id:chuteBall.id}, chuteBall.isPearl);
+    if(chuteT>=1){ const id=chuteBall.id, isPearl=chuteBall.isPearl; chuteBall=null;
+      setTimeout(()=>{ commitNumber(id,isPearl);
+        if(phase==='switch'){ if(!chuteBall){ phase='euro_init'; setTimeout(()=>{ init(12,true); phase='euro'; }, 500); } }
+        setTimeout(()=>{ gateOpen=true; }, 300);
+      }, 1200);
     }
   }
 
-  function drawFrame(){
-    const isPearl=(phase==='euro'||phase==='done');
-    drawDrum(isPearl);
-    for(const b of balls) drawBall(b,isPearl);
-    chutePointDraw(0);
-  }
-
-  function loop(ts){
-    if(!running) return;
-    const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
+  function drawFrame(){ const isPearl=(phase==='euro'||phase==='done'); drawDrum(isPearl); for(const b of balls) drawBall(b,isPearl); updateChute(0); }
+  function loop(ts){ if(!running) return; const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
     if(phase==='main'||phase==='euro'){ physics(dt,t,(phase!=='main')); }
-    else if(phase==='switch'){ if(!chuteBall){ phase='euro_init'; setTimeout(()=>{ init(12,true); phase='euro'; }, 500); } }
-    drawDrum(phase!=='main');
-    for(const b of balls) drawBall(b,(phase!=='main'));
-    chutePointDraw(dt);
-    if(dbg) dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(gateOpen?' | gate:open':' | gate:closed');
-    raf=requestAnimationFrame(loop);
-  }
-
+    drawDrum(phase!=='main'); for(const b of balls) drawBall(b,(phase!=='main')); updateChute(dt);
+    if(dbg) dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(gateOpen?' | gate:open':' | gate:closed')+(capturingEnabled?' | capturing:on':' | capturing:off');
+    raf=requestAnimationFrame(loop); }
   function start(){ if(running) return; running=true; lastT=0; raf=requestAnimationFrame(loop); }
   function stop(){ running=false; if(raf) cancelAnimationFrame(raf); raf=0; }
-  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; if(outMain) outMain.innerHTML=''; if(outEuro) outEuro.innerHTML=''; balls=[]; phase='idle'; gateOpen=true; chuteBall=null; drawFrame(); if(label) label.textContent='Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g'; }
+  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; if(outMain) outMain.innerHTML=''; if(outEuro) outEuro.innerHTML=''; balls=[]; phase='idle'; gateOpen=true; chuteBall=null; capturingEnabled=false; drawFrame(); label.textContent='Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g'; }
 
-  if(resetBtn) resetBtn.addEventListener('click', reset);
-  if(startBtn) startBtn.addEventListener('click', ()=>{ reset(); init(50,false); phase='main'; start(); });
+  if(resetBtn) resetBtn.addEventListener('click', ()=>{ reset(); init(50,false); phase='main'; start(); });
+  if(startBtn) startBtn.addEventListener('click', ()=>{ if(phase==='idle'){ init(50,false); phase='main'; } start(); gateOpen=true; capturingEnabled=true; });
 
-  // Initialisieren wenn Tab geöffnet wird
-  const observer = new MutationObserver(()=>{
-    const vis = document.getElementById('v-trommel') && !document.getElementById('v-trommel').classList.contains('hidden');
-    if(vis && phase==='idle'){ resize(); reset(); init(50,false); phase='main'; start(); }
+  // Activate when Trommel tab opened, but do not enable capturing until Start is clicked
+  const observer=new MutationObserver(()=>{
+    const panel=document.getElementById('v-trommel'); if(panel && !panel.classList.contains('hidden') && phase==='idle'){ resize(); init(50,false); phase='main'; start(); }
   });
-  observer.observe(document.body,{attributes:true, subtree:true, attributeFilter:['class']});
+  observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
+  setTimeout(resize,0);
+})();
 
-  // Falls direkt geöffnet
-  setTimeout(resize, 0);
+/* === Analyse ============================================================= */
+(function(){
+  const el=(id)=>document.getElementById(id);
+  const freqMain=el('freq-main'), freqEuro=el('freq-euro'), hitStats=el('hit-stats'), history=el('history');
+  const btnRefresh=el('btn-refresh-stats'), btnClear=el('btn-clear-data'); if(!freqMain||!freqEuro) return;
+
+  function renderFreq(){
+    const fm=new Array(50).fill(0), fe=new Array(12).fill(0);
+    for(const h of EJ.history){ for(const n of h.main) fm[n-1]++; for(const e of h.euro) fe[e-1]++; }
+    function pills(container, arr){ container.innerHTML=''; arr.forEach((c,i)=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=(i+1)+' • '+c; s.style.margin='4px'; container.appendChild(s); }); }
+    pills(freqMain,fm); pills(freqEuro,fe);
+  }
+  function renderHits(){
+    const counts={'0/5':0,'1/5':0,'2/5':0,'3/5':0,'4/5':0,'5/5':0};
+    for(const tip of EJ.tips){
+      for(const h of EJ.history){
+        const set=new Set(tip.main); let k=0; h.main.forEach(n=>{ if(set.has(n)) k++; });
+        const key=f"{k}/5"; counts[key]=(counts[key]||0)+1;
+      }
+    }
+    hitStats.innerHTML=Object.keys(counts).map(k=>`<span class="chip" style="margin:4px">${k}: ${counts[k]}</span>`).join('');
+  }
+  function renderHistory(){
+    history.innerHTML = EJ.history.slice(-20).reverse().map(h=>`<div class="glass" style="margin:6px 0;padding:6px"><b>${new Date(h.ts).toLocaleString()}</b><div>Haupt: ${h.main.join(', ')} &nbsp;|&nbsp; Euro: ${h.euro.join(', ')}</div></div>`).join('');
+  }
+  function refresh(){ EJ._load(); renderFreq(); renderHits(); renderHistory(); }
+  if(btnRefresh) btnRefresh.addEventListener('click', refresh);
+  if(btnClear) btnClear.addEventListener('click', ()=>{ EJ.history=[]; EJ.tips=[]; EJ._save(); refresh(); });
+  window.EJRefreshAnalysis = refresh;
+  const observer=new MutationObserver(()=>{ const panel=document.getElementById('v-ana'); if(panel && !panel.classList.contains('hidden')) refresh(); });
+  observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
 })();
 </script>
 </body>
