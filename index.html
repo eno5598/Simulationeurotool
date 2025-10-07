@@ -1039,5 +1039,31 @@ renderFavs();
 })();
 </script>
 
+
+<script>
+(function(){
+  function show(el){
+    var views = document.querySelectorAll('[id^="v-"]');
+    views.forEach(function(v){ v.classList && v.classList.add('hidden'); v.style && (v.style.display='none'); });
+    var d = document.getElementById('v-drum');
+    if(d){ d.classList && d.classList.remove('hidden'); d.style && (d.style.display='block'); }
+    // nav active
+    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList && b.classList.remove('active'); });
+    if(el && el.classList) el.classList.add('active');
+  }
+  // If a tab() function exists, wrap it to handle 'drum' explicitly
+  var oldTab = window.tab;
+  window.tab = function(name, el){
+    if(name === 'drum'){ show(el); return; }
+    if(typeof oldTab === 'function'){ oldTab(name, el); }
+  };
+  // Also bind click handler in case inline onclick isn't present
+  var btn = document.getElementById('btn-drum');
+  if(btn){ btn.addEventListener('click', function(e){ window.tab('drum', btn); }); }
+  // Expose for debugging
+  window.__openDrum = function(){ show(document.getElementById('btn-drum')); };
+})();
+</script>
+
 </body>
 </html>
