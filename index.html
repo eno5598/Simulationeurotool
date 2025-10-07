@@ -5,650 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Eurojackpot Tool by EnoWeb • v6.5.2</title>
 
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
-/* === Trommel-Physik ======================================================== */
-(function(){
-  // Canvas setup
-  const canvas = document.getElementById('drumCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
-  const BALL_DIAM_PX = 20;
-  const RADIUS = BALL_DIAM_PX/2;
-  const MASS = 4; // g (used relatively, all equal mass)
-  const W = canvas.width, H = canvas.height;
-  const CX = W*0.5, CY = H*0.52;
-  const DRUM_R = Math.min(W,H)*0.42;
-
-  // Gate (Fangstutzen) at top-right
-  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
-  const GATE_R = 18;
-
-  // Controls
-  const rpmEl = document.getElementById('rpm');
-  const rpmVal = document.getElementById('rpmVal');
-  const dragEl = document.getElementById('drag');
-  const dragVal = document.getElementById('dragVal');
-  const startBtn = document.getElementById('drumStart');
-  const pauseBtn = document.getElementById('drumPause');
-  const resetBtn = document.getElementById('drumReset');
-  const autoBtn = document.getElementById('autoDraw');
-  const pickBtn = document.getElementById('pickOne');
-  const outMain = document.getElementById('drumOutMain');
-  const outEuro = document.getElementById('drumOutEuro');
-
-  let running=false, rafId=null, mode='main';
-  let balls=[], drawnMain=[], drawnEuro=[];
-  let lastTime=0;
-
-  function setMode(m){
-    mode=m;
-    document.querySelectorAll('input[name=drummode]').forEach(r=>{
-      if(r.value===m) r.checked=true;
-    });
-    initBalls();
-    renderOutputs();
-  }
-  document.querySelectorAll('input[name=drummode]').forEach(r=>{
-    r.addEventListener('change',e=> setMode(e.target.value));
-  });
-
-  function renderOutputs(){
-    function pill(n, euro=false){
-      const span=document.createElement('span');
-      span.className='chip'+(euro?' euro':'');
-      span.textContent=n;
-      return span;
-    }
-    outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
-    outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
-  }
-
-  function rng(a,b){ return a + Math.random()*(b-a); }
-
-  function initBalls(){
-    balls.length=0;
-    const count = (mode==='main')? 50 : 12;
-    const labels = Array.from({length:count},(_,i)=> i+1);
-    // Fill with jittered circle placement
-    for(let i=0;i<count;i++){
-      const angle = Math.random()*Math.PI*2;
-      const r = DRUM_R*0.5*rng(0.6,0.98);
-      const x = CX + r*Math.cos(angle);
-      const y = CY + r*Math.sin(angle);
-      const speed = rng(40, 80); // px/s initial
-      const dir = angle + Math.PI/2;
-      balls.push({
-        id: labels[i],
-        x, y,
-        vx: speed*Math.cos(dir),
-        vy: speed*Math.sin(dir),
-        r: RADIUS,
-        m: MASS,
-      });
-    }
-  }
-  initBalls();
-
-  function drawDrum(){
-    // background
-    ctx.clearRect(0,0,W,H);
-    // drum glass
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
-    ctx.strokeStyle='rgba(180,220,255,0.35)';
-    ctx.lineWidth=8;
-    ctx.stroke();
-    ctx.restore();
-
-    // gate
-    ctx.beginPath();
-    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
-    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth=2;
-    ctx.stroke();
-    ctx.font='12px Inter, sans-serif';
-    ctx.fillStyle='rgba(255,255,255,.5)';
-    ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
-  }
-
-  function drawBall(b){
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
-    ctx.fill();
-    ctx.lineWidth=1.5;
-    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
-    ctx.stroke();
-    ctx.fillStyle='#111';
-    ctx.font='bold 12px Inter, system-ui';
-    const txt = String(b.id);
-    const w = ctx.measureText(txt).width;
-    ctx.fillText(txt, b.x - w/2, b.y + 4);
-    ctx.restore();
-  }
-
-  function step(dt){
-    const rpm = Number(rpmEl.value);
-    rpmVal.textContent = `${rpm} U/min`;
-    const drag = Number(dragEl.value);
-    dragVal.textContent = drag.toFixed(3);
-
-    // Convert rpm to angular speed (rad/s)
-    const omega = rpm * 2*Math.PI / 60;
-
-    // Swirl field to mimic "Waschmaschine"
-    for(const b of balls){
-      // vector from center
-      const dx=b.x-CX, dy=b.y-CY;
-      const dist=Math.hypot(dx,dy) || 0.0001;
-      // tangential acceleration
-      const tx = -dy/dist, ty = dx/dist;
-      const swirl = omega*120; // tune factor to feel lively
-      b.vx += tx*swirl*dt;
-      b.vy += ty*swirl*dt;
-
-      // slight radial push outward (centrifugal effect)
-      const radial = omega*30;
-      b.vx += (dx/dist)*radial*dt;
-      b.vy += (dy/dist)*radial*dt;
-
-      // air drag (depends on "Styropor" – light, so noticeable)
-      b.vx *= (1 - drag);
-      b.vy *= (1 - drag);
-
-      // integrate
-      b.x += b.vx*dt;
-      b.y += b.vy*dt;
-
-      // wall collision (circle)
-      const vx=b.vx, vy=b.vy;
-      const fromC = Math.hypot(b.x-CX,b.y-CY);
-      const maxR = DRUM_R - b.r - 4;
-      if(fromC>maxR){
-        // project back on boundary
-        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
-        b.x = CX + nx*maxR;
-        b.y = CY + ny*maxR;
-        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
-        const vn = vx*nx + vy*ny;
-        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
-        const restitution = 0.85;
-        b.vx = vt_x - restitution*vn*nx;
-        b.vy = vt_y - restitution*vn*ny;
-      }
-    }
-
-    // ball-ball collisions (elastic, equal mass)
-    for(let i=0;i<balls.length;i++){
-      for(let j=i+1;j<balls.length;j++){
-        const a=balls[i], b=balls[j];
-        const dx=b.x-a.x, dy=b.y-a.y;
-        const dist2 = dx*dx+dy*dy;
-        const rsum=a.r+b.r;
-        if(dist2 < rsum*rsum){
-          const dist = Math.sqrt(dist2)||0.0001;
-          const nx=dx/dist, ny=dy/dist;
-          const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
-          if(p>0) continue;
-          const imp = (-2*p)/(1+1); // equal mass
-          a.vx += imp*nx;
-          a.vy += imp*ny;
-          b.vx -= imp*nx;
-          b.vy -= imp*ny;
-          // separate
-          const overlap = (rsum - dist)/2;
-          a.x -= nx*overlap; a.y -= ny*overlap;
-          b.x += nx*overlap; b.y += ny*overlap;
-        }
-      }
-    }
-  }
-
-  function draw(){
-    drawDrum();
-    for(const b of balls) drawBall(b);
-  }
-
-  function loop(ts){
-    if(!running){ return; }
-    const t = ts*0.001;
-    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
-    lastTime = t;
-    step(dt);
-    draw();
-    rafId = requestAnimationFrame(loop);
-  }
-
-  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
-  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
-  function reset(){
-    pause();
-    drawnMain.length=0; drawnEuro.length=0;
-    renderOutputs();
-    initBalls();
-    draw();
-  }
-
-  startBtn.addEventListener('click', start);
-  pauseBtn.addEventListener('click', pause);
-  resetBtn.addEventListener('click', reset);
-
-  function removeBallToOutput(ball){
-    // remove from balls
-    balls = balls.filter(b=> b!==ball);
-    // append to output
-    if(mode==='main'){
-      drawnMain.push(ball.id);
-      drawnMain.sort((a,b)=>a-b);
-    }else{
-      drawnEuro.push(ball.id);
-      drawnEuro.sort((a,b)=>a-b);
-    }
-    renderOutputs();
-  }
-
-  function tryCatchOne(){
-    // If a ball is inside the gate circle and slow enough, catch it
-    let candidate=null, best=1e9;
-    for(const b of balls){
-      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
-      if(d < GATE_R - 2){
-        const sp = Math.hypot(b.vx,b.vy);
-        if(sp < best){ best = sp; candidate=b; }
-      }
-    }
-    if(candidate){
-      removeBallToOutput(candidate);
-      return true;
-    }
-    return false;
-  }
-
-  pickBtn.addEventListener('click', ()=>{
-    // Try immediate catch; fallback: pick random near top
-    if(tryCatchOne()) return;
-    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
-    const pick = (nearTop.length? nearTop : balls);
-    if(pick.length){
-      const b = pick[Math.floor(Math.random()*pick.length)];
-      removeBallToOutput(b);
-    }
-  });
-
-  async function autoDrawSequence(){
-    // Main numbers (5), then switch mode and draw 2 Euros
-    setMode('main');
-    start();
-    await sleep(1200);
-    while(drawnMain.length<5){
-      // let them tumble a bit
-      await sleep(1200);
-      // try to catch one, retry if needed
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){ // hard fallback
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // switch to Euro
-    setMode('euro');
-    start();
-    await sleep(1000);
-    while(drawnEuro.length<2){
-      await sleep(1200);
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // done
-    pause();
-  }
-  autoBtn.addEventListener('click', autoDrawSequence);
-
-  // initial static draw
-  draw();
-
-  // integrate with existing animateSelection to visualize picks on Map, if present
-  window.__drum_get_result = function(){
-    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
-  };
-})();
-
-</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js">
-/* === Trommel-Physik ======================================================== */
-(function(){
-  // Canvas setup
-  const canvas = document.getElementById('drumCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
-  const BALL_DIAM_PX = 20;
-  const RADIUS = BALL_DIAM_PX/2;
-  const MASS = 4; // g (used relatively, all equal mass)
-  const W = canvas.width, H = canvas.height;
-  const CX = W*0.5, CY = H*0.52;
-  const DRUM_R = Math.min(W,H)*0.42;
-
-  // Gate (Fangstutzen) at top-right
-  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
-  const GATE_R = 18;
-
-  // Controls
-  const rpmEl = document.getElementById('rpm');
-  const rpmVal = document.getElementById('rpmVal');
-  const dragEl = document.getElementById('drag');
-  const dragVal = document.getElementById('dragVal');
-  const startBtn = document.getElementById('drumStart');
-  const pauseBtn = document.getElementById('drumPause');
-  const resetBtn = document.getElementById('drumReset');
-  const autoBtn = document.getElementById('autoDraw');
-  const pickBtn = document.getElementById('pickOne');
-  const outMain = document.getElementById('drumOutMain');
-  const outEuro = document.getElementById('drumOutEuro');
-
-  let running=false, rafId=null, mode='main';
-  let balls=[], drawnMain=[], drawnEuro=[];
-  let lastTime=0;
-
-  function setMode(m){
-    mode=m;
-    document.querySelectorAll('input[name=drummode]').forEach(r=>{
-      if(r.value===m) r.checked=true;
-    });
-    initBalls();
-    renderOutputs();
-  }
-  document.querySelectorAll('input[name=drummode]').forEach(r=>{
-    r.addEventListener('change',e=> setMode(e.target.value));
-  });
-
-  function renderOutputs(){
-    function pill(n, euro=false){
-      const span=document.createElement('span');
-      span.className='chip'+(euro?' euro':'');
-      span.textContent=n;
-      return span;
-    }
-    outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
-    outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
-  }
-
-  function rng(a,b){ return a + Math.random()*(b-a); }
-
-  function initBalls(){
-    balls.length=0;
-    const count = (mode==='main')? 50 : 12;
-    const labels = Array.from({length:count},(_,i)=> i+1);
-    // Fill with jittered circle placement
-    for(let i=0;i<count;i++){
-      const angle = Math.random()*Math.PI*2;
-      const r = DRUM_R*0.5*rng(0.6,0.98);
-      const x = CX + r*Math.cos(angle);
-      const y = CY + r*Math.sin(angle);
-      const speed = rng(40, 80); // px/s initial
-      const dir = angle + Math.PI/2;
-      balls.push({
-        id: labels[i],
-        x, y,
-        vx: speed*Math.cos(dir),
-        vy: speed*Math.sin(dir),
-        r: RADIUS,
-        m: MASS,
-      });
-    }
-  }
-  initBalls();
-
-  function drawDrum(){
-    // background
-    ctx.clearRect(0,0,W,H);
-    // drum glass
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
-    ctx.strokeStyle='rgba(180,220,255,0.35)';
-    ctx.lineWidth=8;
-    ctx.stroke();
-    ctx.restore();
-
-    // gate
-    ctx.beginPath();
-    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
-    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth=2;
-    ctx.stroke();
-    ctx.font='12px Inter, sans-serif';
-    ctx.fillStyle='rgba(255,255,255,.5)';
-    ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
-  }
-
-  function drawBall(b){
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
-    ctx.fill();
-    ctx.lineWidth=1.5;
-    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
-    ctx.stroke();
-    ctx.fillStyle='#111';
-    ctx.font='bold 12px Inter, system-ui';
-    const txt = String(b.id);
-    const w = ctx.measureText(txt).width;
-    ctx.fillText(txt, b.x - w/2, b.y + 4);
-    ctx.restore();
-  }
-
-  function step(dt){
-    const rpm = Number(rpmEl.value);
-    rpmVal.textContent = `${rpm} U/min`;
-    const drag = Number(dragEl.value);
-    dragVal.textContent = drag.toFixed(3);
-
-    // Convert rpm to angular speed (rad/s)
-    const omega = rpm * 2*Math.PI / 60;
-
-    // Swirl field to mimic "Waschmaschine"
-    for(const b of balls){
-      // vector from center
-      const dx=b.x-CX, dy=b.y-CY;
-      const dist=Math.hypot(dx,dy) || 0.0001;
-      // tangential acceleration
-      const tx = -dy/dist, ty = dx/dist;
-      const swirl = omega*120; // tune factor to feel lively
-      b.vx += tx*swirl*dt;
-      b.vy += ty*swirl*dt;
-
-      // slight radial push outward (centrifugal effect)
-      const radial = omega*30;
-      b.vx += (dx/dist)*radial*dt;
-      b.vy += (dy/dist)*radial*dt;
-
-      // air drag (depends on "Styropor" – light, so noticeable)
-      b.vx *= (1 - drag);
-      b.vy *= (1 - drag);
-
-      // integrate
-      b.x += b.vx*dt;
-      b.y += b.vy*dt;
-
-      // wall collision (circle)
-      const vx=b.vx, vy=b.vy;
-      const fromC = Math.hypot(b.x-CX,b.y-CY);
-      const maxR = DRUM_R - b.r - 4;
-      if(fromC>maxR){
-        // project back on boundary
-        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
-        b.x = CX + nx*maxR;
-        b.y = CY + ny*maxR;
-        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
-        const vn = vx*nx + vy*ny;
-        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
-        const restitution = 0.85;
-        b.vx = vt_x - restitution*vn*nx;
-        b.vy = vt_y - restitution*vn*ny;
-      }
-    }
-
-    // ball-ball collisions (elastic, equal mass)
-    for(let i=0;i<balls.length;i++){
-      for(let j=i+1;j<balls.length;j++){
-        const a=balls[i], b=balls[j];
-        const dx=b.x-a.x, dy=b.y-a.y;
-        const dist2 = dx*dx+dy*dy;
-        const rsum=a.r+b.r;
-        if(dist2 < rsum*rsum){
-          const dist = Math.sqrt(dist2)||0.0001;
-          const nx=dx/dist, ny=dy/dist;
-          const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
-          if(p>0) continue;
-          const imp = (-2*p)/(1+1); // equal mass
-          a.vx += imp*nx;
-          a.vy += imp*ny;
-          b.vx -= imp*nx;
-          b.vy -= imp*ny;
-          // separate
-          const overlap = (rsum - dist)/2;
-          a.x -= nx*overlap; a.y -= ny*overlap;
-          b.x += nx*overlap; b.y += ny*overlap;
-        }
-      }
-    }
-  }
-
-  function draw(){
-    drawDrum();
-    for(const b of balls) drawBall(b);
-  }
-
-  function loop(ts){
-    if(!running){ return; }
-    const t = ts*0.001;
-    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
-    lastTime = t;
-    step(dt);
-    draw();
-    rafId = requestAnimationFrame(loop);
-  }
-
-  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
-  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
-  function reset(){
-    pause();
-    drawnMain.length=0; drawnEuro.length=0;
-    renderOutputs();
-    initBalls();
-    draw();
-  }
-
-  startBtn.addEventListener('click', start);
-  pauseBtn.addEventListener('click', pause);
-  resetBtn.addEventListener('click', reset);
-
-  function removeBallToOutput(ball){
-    // remove from balls
-    balls = balls.filter(b=> b!==ball);
-    // append to output
-    if(mode==='main'){
-      drawnMain.push(ball.id);
-      drawnMain.sort((a,b)=>a-b);
-    }else{
-      drawnEuro.push(ball.id);
-      drawnEuro.sort((a,b)=>a-b);
-    }
-    renderOutputs();
-  }
-
-  function tryCatchOne(){
-    // If a ball is inside the gate circle and slow enough, catch it
-    let candidate=null, best=1e9;
-    for(const b of balls){
-      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
-      if(d < GATE_R - 2){
-        const sp = Math.hypot(b.vx,b.vy);
-        if(sp < best){ best = sp; candidate=b; }
-      }
-    }
-    if(candidate){
-      removeBallToOutput(candidate);
-      return true;
-    }
-    return false;
-  }
-
-  pickBtn.addEventListener('click', ()=>{
-    // Try immediate catch; fallback: pick random near top
-    if(tryCatchOne()) return;
-    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
-    const pick = (nearTop.length? nearTop : balls);
-    if(pick.length){
-      const b = pick[Math.floor(Math.random()*pick.length)];
-      removeBallToOutput(b);
-    }
-  });
-
-  async function autoDrawSequence(){
-    // Main numbers (5), then switch mode and draw 2 Euros
-    setMode('main');
-    start();
-    await sleep(1200);
-    while(drawnMain.length<5){
-      // let them tumble a bit
-      await sleep(1200);
-      // try to catch one, retry if needed
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){ // hard fallback
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // switch to Euro
-    setMode('euro');
-    start();
-    await sleep(1000);
-    while(drawnEuro.length<2){
-      await sleep(1200);
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // done
-    pause();
-  }
-  autoBtn.addEventListener('click', autoDrawSequence);
-
-  // initial static draw
-  draw();
-
-  // integrate with existing animateSelection to visualize picks on Map, if present
-  window.__drum_get_result = function(){
-    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
-  };
-})();
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
 <style>
@@ -797,7 +155,7 @@
   </div>
 
   
-  <!-- TROMMEL -->
+  <!-- TROMMEL (v2) -->
   <div id="v-drum" class="glass hidden">
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-xl font-bold">🎱 Ziehung – Trommel</h2>
@@ -810,34 +168,11 @@
       </div>
       <div class="space-y-2">
         <div class="glass">
-          <div class="font-semibold mb-1">Modus</div>
-          <div class="flex gap-2 flex-wrap">
-            <label class="inline-flex items-center gap-2"><input type="radio" name="drummode" value="main" checked> <span>Hauptzahlen (1–50)</span></label>
-            <label class="inline-flex items-center gap-2"><input type="radio" name="drummode" value="euro"> <span>Eurozahlen (1–12)</span></label>
-          </div>
-        </div>
-        <div class="glass">
-          <div class="font-semibold mb-1">Steuerung</div>
-          <div class="flex gap-2 flex-wrap">
-            <button type="button" class="btn btn--green" id="drumStart">▶️ Start</button>
-            <button type="button" class="btn btn--gray" id="drumPause">⏸️ Pause</button>
-            <button type="button" class="btn btn--amber" id="drumReset">🔄 Reset</button>
-          </div>
-          <div class="mt-2 text-sm">
-            <label class="block mb-1">Drehzahl <span id="rpmVal" class="badge">40 U/min</span></label>
-            <input id="rpm" type="range" min="10" max="90" step="1" value="40" class="w-full">
-          </div>
-          <div class="mt-2 text-sm">
-            <label class="block mb-1">Luftwiderstand <span id="dragVal" class="badge">0.015</span></label>
-            <input id="drag" type="range" min="0" max="0.06" step="0.005" value="0.015" class="w-full">
-          </div>
-        </div>
-        <div class="glass">
           <div class="font-semibold mb-1">Ziehung</div>
-          <div class="text-sm opacity-80">Es werden automatisch 5 Hauptzahlen gezogen, danach (optional) die 2 Eurozahlen.</div>
+          <div class="text-sm opacity-80">Automatisch: zuerst 5 Hauptzahlen (1–50), danach 2 Eurozahlen (1–12).</div>
           <div class="mt-2 flex gap-2 flex-wrap">
-            <button type="button" class="btn btn--green" id="autoDraw">🎬 Auto‑Ziehung</button>
-            <button type="button" class="btn btn--gray" id="pickOne">🎟️ 1 Kugel fangen</button>
+            <button type="button" class="btn btn--green" id="drumAutoStart">🎬 Start Ziehung</button>
+            <button type="button" class="btn btn--amber" id="drumReset">🔄 Reset</button>
           </div>
           <div class="mt-2">
             <div class="badge">Gezogene Hauptzahlen</div>
@@ -1493,204 +828,203 @@ renderFavs();
   latestRefDate = localStorage.getItem(LATEST_REF_KEY) || latestRefDate;
   setKPIs();
 })();
+</script>
 
-/* === Trommel-Physik ======================================================== */
+<script>
+/* === Trommel-Physik – v2 (robust & einfach) ================================= */
 (function(){
-  // Canvas setup
   const canvas = document.getElementById('drumCanvas');
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
   const BALL_DIAM_PX = 20;
-  const RADIUS = BALL_DIAM_PX/2;
-  const MASS = 4; // g (used relatively, all equal mass)
+  const R = BALL_DIAM_PX/2;
+  const MASS = 4;
   const W = canvas.width, H = canvas.height;
   const CX = W*0.5, CY = H*0.52;
   const DRUM_R = Math.min(W,H)*0.42;
 
-  // Gate (Fangstutzen) at top-right
-  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
+  const GATE_POS = {x: CX + DRUM_R*0.50, y: CY - DRUM_R*0.22};
   const GATE_R = 18;
 
-  // Controls
-  const rpmEl = document.getElementById('rpm');
-  const rpmVal = document.getElementById('rpmVal');
-  const dragEl = document.getElementById('drag');
-  const dragVal = document.getElementById('dragVal');
-  const startBtn = document.getElementById('drumStart');
-  const pauseBtn = document.getElementById('drumPause');
-  const resetBtn = document.getElementById('drumReset');
-  const autoBtn = document.getElementById('autoDraw');
-  const pickBtn = document.getElementById('pickOne');
+  const btnStart = document.getElementById('drumAutoStart');
+  const btnReset = document.getElementById('drumReset');
   const outMain = document.getElementById('drumOutMain');
   const outEuro = document.getElementById('drumOutEuro');
 
-  let running=false, rafId=null, mode='main';
-  let balls=[], drawnMain=[], drawnEuro=[];
-  let lastTime=0;
+  let balls=[], phase='idle', running=false, rafId=null, last=0;
+  let drawnMain=[], drawnEuro=[];
+  let noiseTimer=0, gravityTimer=0, attractTimer=0;
 
-  function setMode(m){
-    mode=m;
-    document.querySelectorAll('input[name=drummode]').forEach(r=>{
-      if(r.value===m) r.checked=true;
-    });
-    initBalls();
-    renderOutputs();
+  function rng(a,b){ return a + Math.random()*(b-a); }
+  function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function pill(n, euro=false){
+    const span=document.createElement('span');
+    span.className='chip'+(euro?' euro':'');
+    span.textContent=n;
+    return span;
   }
-  document.querySelectorAll('input[name=drummode]').forEach(r=>{
-    r.addEventListener('change',e=> setMode(e.target.value));
-  });
-
   function renderOutputs(){
-    function pill(n, euro=false){
-      const span=document.createElement('span');
-      span.className='chip'+(euro?' euro':'');
-      span.textContent=n;
-      return span;
-    }
     outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
     outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
   }
 
-  function rng(a,b){ return a + Math.random()*(b-a); }
-
-  function initBalls(){
+  function initBalls(count){
     balls.length=0;
-    const count = (mode==='main')? 50 : 12;
     const labels = Array.from({length:count},(_,i)=> i+1);
-    // Fill with jittered circle placement
     for(let i=0;i<count;i++){
-      const angle = Math.random()*Math.PI*2;
-      const r = DRUM_R*0.5*rng(0.6,0.98);
-      const x = CX + r*Math.cos(angle);
-      const y = CY + r*Math.sin(angle);
-      const speed = rng(40, 80); // px/s initial
-      const dir = angle + Math.PI/2;
+      const a = Math.random()*Math.PI*2;
+      const r = DRUM_R*0.55*rng(0.4,0.95);
+      const x = CX + r*Math.cos(a);
+      const y = CY + r*Math.sin(a);
       balls.push({
         id: labels[i],
         x, y,
-        vx: speed*Math.cos(dir),
-        vy: speed*Math.sin(dir),
-        r: RADIUS,
-        m: MASS,
+        vx: rng(-80,80),
+        vy: rng(-80,80),
+        r: R,
+        m: MASS
       });
     }
   }
-  initBalls();
 
   function drawDrum(){
-    // background
     ctx.clearRect(0,0,W,H);
-    // drum glass
     ctx.save();
     ctx.beginPath();
-    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
+    ctx.arc(CX,CY,DRUM_R,0,Math.PI*2);
     ctx.strokeStyle='rgba(180,220,255,0.35)';
     ctx.lineWidth=8;
     ctx.stroke();
     ctx.restore();
-
-    // gate
     ctx.beginPath();
-    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
-    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
+    ctx.arc(GATE_POS.x,GATE_POS.y,GATE_R,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,.25)';
     ctx.lineWidth=2;
     ctx.stroke();
     ctx.font='12px Inter, sans-serif';
     ctx.fillStyle='rgba(255,255,255,.5)';
     ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
   }
-
-  function drawBall(b){
+  function drawBall(b, euroPhase){
     ctx.save();
     ctx.beginPath();
     ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
+    ctx.fillStyle = euroPhase ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
     ctx.fill();
     ctx.lineWidth=1.5;
-    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
+    ctx.strokeStyle = euroPhase ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
     ctx.stroke();
     ctx.fillStyle='#111';
     ctx.font='bold 12px Inter, system-ui';
-    const txt = String(b.id);
-    const w = ctx.measureText(txt).width;
-    ctx.fillText(txt, b.x - w/2, b.y + 4);
+    const s=String(b.id); const w=ctx.measureText(s).width;
+    ctx.fillText(s, b.x-w/2, b.y+4);
     ctx.restore();
   }
 
+  let gvec={x:0, y:60};
   function step(dt){
-    const rpm = Number(rpmEl.value);
-    rpmVal.textContent = `${rpm} U/min`;
-    const drag = Number(dragEl.value);
-    dragVal.textContent = drag.toFixed(3);
+    noiseTimer += dt;
+    gravityTimer += dt;
+    attractTimer += dt;
 
-    // Convert rpm to angular speed (rad/s)
-    const omega = rpm * 2*Math.PI / 60;
+    if(gravityTimer > rng(0.9,1.3)){
+      gravityTimer = 0;
+      const ang = rng(-Math.PI, Math.PI);
+      const g = rng(40, 90);
+      gvec = {x: Math.cos(ang)*g, y: Math.sin(ang)*g};
+    }
+    if(noiseTimer > 0.25){
+      noiseTimer = 0;
+      for(const b of balls){
+        b.vx += rng(-35,35);
+        b.vy += rng(-35,35);
+      }
+    }
+    if(attractTimer > 0.6){
+      attractTimer = 0;
+      if(balls.length){
+        const b = choice(balls);
+        const dx = GATE_POS.x - b.x, dy = GATE_POS.y - b.y;
+        const d = Math.hypot(dx,dy)||1;
+        const ax = (dx/d)*60, ay=(dy/d)*60;
+        b.vx += ax*dt*10;
+        b.vy += ay*dt*10;
+      }
+    }
 
-    // Swirl field to mimic "Waschmaschine"
     for(const b of balls){
-      // vector from center
-      const dx=b.x-CX, dy=b.y-CY;
-      const dist=Math.hypot(dx,dy) || 0.0001;
-      // tangential acceleration
-      const tx = -dy/dist, ty = dx/dist;
-      const swirl = omega*120; // tune factor to feel lively
-      b.vx += tx*swirl*dt;
-      b.vy += ty*swirl*dt;
-
-      // slight radial push outward (centrifugal effect)
-      const radial = omega*30;
-      b.vx += (dx/dist)*radial*dt;
-      b.vy += (dy/dist)*radial*dt;
-
-      // air drag (depends on "Styropor" – light, so noticeable)
-      b.vx *= (1 - drag);
-      b.vy *= (1 - drag);
-
-      // integrate
+      b.vx *= 0.985;
+      b.vy *= 0.985;
+      b.vx += gvec.x*dt;
+      b.vy += gvec.y*dt;
       b.x += b.vx*dt;
       b.y += b.vy*dt;
 
-      // wall collision (circle)
-      const vx=b.vx, vy=b.vy;
-      const fromC = Math.hypot(b.x-CX,b.y-CY);
+      const dx = b.x-CX, dy=b.y-CY;
+      const dist = Math.hypot(dx,dy);
       const maxR = DRUM_R - b.r - 4;
-      if(fromC>maxR){
-        // project back on boundary
-        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
+      if(dist>maxR){
+        const nx = dx/dist, ny=dy/dist;
         b.x = CX + nx*maxR;
         b.y = CY + ny*maxR;
-        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
-        const vn = vx*nx + vy*ny;
-        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
-        const restitution = 0.85;
+        const vn = b.vx*nx + b.vy*ny;
+        const vt_x = b.vx - vn*nx, vt_y = b.vy - vn*ny;
+        const restitution = 0.82;
         b.vx = vt_x - restitution*vn*nx;
         b.vy = vt_y - restitution*vn*ny;
       }
     }
 
-    // ball-ball collisions (elastic, equal mass)
     for(let i=0;i<balls.length;i++){
       for(let j=i+1;j<balls.length;j++){
         const a=balls[i], b=balls[j];
         const dx=b.x-a.x, dy=b.y-a.y;
-        const dist2 = dx*dx+dy*dy;
         const rsum=a.r+b.r;
-        if(dist2 < rsum*rsum){
-          const dist = Math.sqrt(dist2)||0.0001;
-          const nx=dx/dist, ny=dy/dist;
+        const d2 = dx*dx+dy*dy;
+        if(d2 < rsum*rsum){
+          const d = Math.sqrt(d2)||0.0001;
+          const nx=dx/d, ny=dy/d;
           const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
           if(p>0) continue;
-          const imp = (-2*p)/(1+1); // equal mass
-          a.vx += imp*nx;
-          a.vy += imp*ny;
-          b.vx -= imp*nx;
-          b.vy -= imp*ny;
-          // separate
-          const overlap = (rsum - dist)/2;
+          const J = (-2*p)/2;
+          a.vx += J*nx; a.vy += J*ny;
+          b.vx -= J*nx; b.vy -= J*ny;
+          const overlap = (rsum - d)/2;
           a.x -= nx*overlap; a.y -= ny*overlap;
           b.x += nx*overlap; b.y += ny*overlap;
+        }
+      }
+    }
+
+    for(let i=balls.length-1;i>=0;i--){
+      const b=balls[i];
+      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
+      if(d < GATE_R-2){
+        balls.splice(i,1);
+        capture(b);
+      }
+    }
+  }
+
+  function capture(ball){
+    if(phase==='main'){
+      if(drawnMain.length<5){
+        drawnMain.push(ball.id);
+        drawnMain.sort((a,b)=>a-b);
+        renderOutputs();
+        if(drawnMain.length===5){
+          phase='switch';
+        }
+      }
+    }else if(phase==='euro'){
+      if(drawnEuro.length<2){
+        drawnEuro.push(ball.id);
+        drawnEuro.sort((a,b)=>a-b);
+        renderOutputs();
+        if(drawnEuro.length===2){
+          phase='done'; stop();
         }
       }
     }
@@ -1698,122 +1032,37 @@ renderFavs();
 
   function draw(){
     drawDrum();
-    for(const b of balls) drawBall(b);
+    const euroPhase = (phase==='euro' || phase==='done');
+    for(const b of balls) drawBall(b, euroPhase);
   }
 
   function loop(ts){
-    if(!running){ return; }
+    if(!running) return;
     const t = ts*0.001;
-    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
-    lastTime = t;
-    step(dt);
+    const dt = Math.min(0.033, last? (t-last): 0.016);
+    last = t;
+
+    if(phase==='main' || phase==='euro'){
+      step(dt);
+    } else if(phase==='switch'){
+      phase='euro_init_wait';
+      setTimeout(()=>{ initBalls(12); phase='euro'; }, 500);
+    }
     draw();
     rafId = requestAnimationFrame(loop);
   }
 
-  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
-  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
-  function reset(){
-    pause();
-    drawnMain.length=0; drawnEuro.length=0;
-    renderOutputs();
-    initBalls();
-    draw();
-  }
+  function start(){ if(running) return; running=true; last=0; rafId=requestAnimationFrame(loop); }
+  function stop(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
+  function reset(){ stop(); drawnMain.length=0; drawnEuro.length=0; renderOutputs(); phase='idle'; balls.length=0; draw(); }
 
-  startBtn.addEventListener('click', start);
-  pauseBtn.addEventListener('click', pause);
-  resetBtn.addEventListener('click', reset);
+  btnReset.addEventListener('click', reset);
+  btnStart.addEventListener('click', ()=>{ reset(); initBalls(50); phase='main'; start(); });
 
-  function removeBallToOutput(ball){
-    // remove from balls
-    balls = balls.filter(b=> b!==ball);
-    // append to output
-    if(mode==='main'){
-      drawnMain.push(ball.id);
-      drawnMain.sort((a,b)=>a-b);
-    }else{
-      drawnEuro.push(ball.id);
-      drawnEuro.sort((a,b)=>a-b);
-    }
-    renderOutputs();
-  }
-
-  function tryCatchOne(){
-    // If a ball is inside the gate circle and slow enough, catch it
-    let candidate=null, best=1e9;
-    for(const b of balls){
-      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
-      if(d < GATE_R - 2){
-        const sp = Math.hypot(b.vx,b.vy);
-        if(sp < best){ best = sp; candidate=b; }
-      }
-    }
-    if(candidate){
-      removeBallToOutput(candidate);
-      return true;
-    }
-    return false;
-  }
-
-  pickBtn.addEventListener('click', ()=>{
-    // Try immediate catch; fallback: pick random near top
-    if(tryCatchOne()) return;
-    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
-    const pick = (nearTop.length? nearTop : balls);
-    if(pick.length){
-      const b = pick[Math.floor(Math.random()*pick.length)];
-      removeBallToOutput(b);
-    }
-  });
-
-  async function autoDrawSequence(){
-    // Main numbers (5), then switch mode and draw 2 Euros
-    setMode('main');
-    start();
-    await sleep(1200);
-    while(drawnMain.length<5){
-      // let them tumble a bit
-      await sleep(1200);
-      // try to catch one, retry if needed
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){ // hard fallback
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // switch to Euro
-    setMode('euro');
-    start();
-    await sleep(1000);
-    while(drawnEuro.length<2){
-      await sleep(1200);
-      let ok=false, tries=0;
-      while(!ok && tries<6){
-        ok = tryCatchOne();
-        if(!ok){ await sleep(600); tries++; }
-      }
-      if(!ok && balls.length){
-        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
-      }
-    }
-    // done
-    pause();
-  }
-  autoBtn.addEventListener('click', autoDrawSequence);
-
-  // initial static draw
   draw();
-
-  // integrate with existing animateSelection to visualize picks on Map, if present
-  window.__drum_get_result = function(){
-    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
-  };
+  window.__drum_get_result = function(){ return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) }; };
 })();
-
 </script>
+
 </body>
 </html>
