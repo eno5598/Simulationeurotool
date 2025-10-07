@@ -1,389 +1,1819 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EuroJackpot • Sphären-Edition (by ENOWEB)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<title>Eurojackpot Tool by EnoWeb • v6.5.2</title>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
+/* === Trommel-Physik ======================================================== */
+(function(){
+  // Canvas setup
+  const canvas = document.getElementById('drumCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
+  const BALL_DIAM_PX = 20;
+  const RADIUS = BALL_DIAM_PX/2;
+  const MASS = 4; // g (used relatively, all equal mass)
+  const W = canvas.width, H = canvas.height;
+  const CX = W*0.5, CY = H*0.52;
+  const DRUM_R = Math.min(W,H)*0.42;
+
+  // Gate (Fangstutzen) at top-right
+  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
+  const GATE_R = 18;
+
+  // Controls
+  const rpmEl = document.getElementById('rpm');
+  const rpmVal = document.getElementById('rpmVal');
+  const dragEl = document.getElementById('drag');
+  const dragVal = document.getElementById('dragVal');
+  const startBtn = document.getElementById('drumStart');
+  const pauseBtn = document.getElementById('drumPause');
+  const resetBtn = document.getElementById('drumReset');
+  const autoBtn = document.getElementById('autoDraw');
+  const pickBtn = document.getElementById('pickOne');
+  const outMain = document.getElementById('drumOutMain');
+  const outEuro = document.getElementById('drumOutEuro');
+
+  let running=false, rafId=null, mode='main';
+  let balls=[], drawnMain=[], drawnEuro=[];
+  let lastTime=0;
+
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('input[name=drummode]').forEach(r=>{
+      if(r.value===m) r.checked=true;
+    });
+    initBalls();
+    renderOutputs();
+  }
+  document.querySelectorAll('input[name=drummode]').forEach(r=>{
+    r.addEventListener('change',e=> setMode(e.target.value));
+  });
+
+  function renderOutputs(){
+    function pill(n, euro=false){
+      const span=document.createElement('span');
+      span.className='chip'+(euro?' euro':'');
+      span.textContent=n;
+      return span;
+    }
+    outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
+    outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
+  }
+
+  function rng(a,b){ return a + Math.random()*(b-a); }
+
+  function initBalls(){
+    balls.length=0;
+    const count = (mode==='main')? 50 : 12;
+    const labels = Array.from({length:count},(_,i)=> i+1);
+    // Fill with jittered circle placement
+    for(let i=0;i<count;i++){
+      const angle = Math.random()*Math.PI*2;
+      const r = DRUM_R*0.5*rng(0.6,0.98);
+      const x = CX + r*Math.cos(angle);
+      const y = CY + r*Math.sin(angle);
+      const speed = rng(40, 80); // px/s initial
+      const dir = angle + Math.PI/2;
+      balls.push({
+        id: labels[i],
+        x, y,
+        vx: speed*Math.cos(dir),
+        vy: speed*Math.sin(dir),
+        r: RADIUS,
+        m: MASS,
+      });
+    }
+  }
+  initBalls();
+
+  function drawDrum(){
+    // background
+    ctx.clearRect(0,0,W,H);
+    // drum glass
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(180,220,255,0.35)';
+    ctx.lineWidth=8;
+    ctx.stroke();
+    ctx.restore();
+
+    // gate
+    ctx.beginPath();
+    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.font='12px Inter, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
+  }
+
+  function drawBall(b){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
+    ctx.fill();
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
+    ctx.stroke();
+    ctx.fillStyle='#111';
+    ctx.font='bold 12px Inter, system-ui';
+    const txt = String(b.id);
+    const w = ctx.measureText(txt).width;
+    ctx.fillText(txt, b.x - w/2, b.y + 4);
+    ctx.restore();
+  }
+
+  function step(dt){
+    const rpm = Number(rpmEl.value);
+    rpmVal.textContent = `${rpm} U/min`;
+    const drag = Number(dragEl.value);
+    dragVal.textContent = drag.toFixed(3);
+
+    // Convert rpm to angular speed (rad/s)
+    const omega = rpm * 2*Math.PI / 60;
+
+    // Swirl field to mimic "Waschmaschine"
+    for(const b of balls){
+      // vector from center
+      const dx=b.x-CX, dy=b.y-CY;
+      const dist=Math.hypot(dx,dy) || 0.0001;
+      // tangential acceleration
+      const tx = -dy/dist, ty = dx/dist;
+      const swirl = omega*120; // tune factor to feel lively
+      b.vx += tx*swirl*dt;
+      b.vy += ty*swirl*dt;
+
+      // slight radial push outward (centrifugal effect)
+      const radial = omega*30;
+      b.vx += (dx/dist)*radial*dt;
+      b.vy += (dy/dist)*radial*dt;
+
+      // air drag (depends on "Styropor" – light, so noticeable)
+      b.vx *= (1 - drag);
+      b.vy *= (1 - drag);
+
+      // integrate
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+
+      // wall collision (circle)
+      const vx=b.vx, vy=b.vy;
+      const fromC = Math.hypot(b.x-CX,b.y-CY);
+      const maxR = DRUM_R - b.r - 4;
+      if(fromC>maxR){
+        // project back on boundary
+        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
+        b.x = CX + nx*maxR;
+        b.y = CY + ny*maxR;
+        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
+        const vn = vx*nx + vy*ny;
+        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
+        const restitution = 0.85;
+        b.vx = vt_x - restitution*vn*nx;
+        b.vy = vt_y - restitution*vn*ny;
+      }
+    }
+
+    // ball-ball collisions (elastic, equal mass)
+    for(let i=0;i<balls.length;i++){
+      for(let j=i+1;j<balls.length;j++){
+        const a=balls[i], b=balls[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist2 = dx*dx+dy*dy;
+        const rsum=a.r+b.r;
+        if(dist2 < rsum*rsum){
+          const dist = Math.sqrt(dist2)||0.0001;
+          const nx=dx/dist, ny=dy/dist;
+          const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
+          if(p>0) continue;
+          const imp = (-2*p)/(1+1); // equal mass
+          a.vx += imp*nx;
+          a.vy += imp*ny;
+          b.vx -= imp*nx;
+          b.vy -= imp*ny;
+          // separate
+          const overlap = (rsum - dist)/2;
+          a.x -= nx*overlap; a.y -= ny*overlap;
+          b.x += nx*overlap; b.y += ny*overlap;
+        }
+      }
+    }
+  }
+
+  function draw(){
+    drawDrum();
+    for(const b of balls) drawBall(b);
+  }
+
+  function loop(ts){
+    if(!running){ return; }
+    const t = ts*0.001;
+    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
+    lastTime = t;
+    step(dt);
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
+  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
+  function reset(){
+    pause();
+    drawnMain.length=0; drawnEuro.length=0;
+    renderOutputs();
+    initBalls();
+    draw();
+  }
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+
+  function removeBallToOutput(ball){
+    // remove from balls
+    balls = balls.filter(b=> b!==ball);
+    // append to output
+    if(mode==='main'){
+      drawnMain.push(ball.id);
+      drawnMain.sort((a,b)=>a-b);
+    }else{
+      drawnEuro.push(ball.id);
+      drawnEuro.sort((a,b)=>a-b);
+    }
+    renderOutputs();
+  }
+
+  function tryCatchOne(){
+    // If a ball is inside the gate circle and slow enough, catch it
+    let candidate=null, best=1e9;
+    for(const b of balls){
+      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
+      if(d < GATE_R - 2){
+        const sp = Math.hypot(b.vx,b.vy);
+        if(sp < best){ best = sp; candidate=b; }
+      }
+    }
+    if(candidate){
+      removeBallToOutput(candidate);
+      return true;
+    }
+    return false;
+  }
+
+  pickBtn.addEventListener('click', ()=>{
+    // Try immediate catch; fallback: pick random near top
+    if(tryCatchOne()) return;
+    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
+    const pick = (nearTop.length? nearTop : balls);
+    if(pick.length){
+      const b = pick[Math.floor(Math.random()*pick.length)];
+      removeBallToOutput(b);
+    }
+  });
+
+  async function autoDrawSequence(){
+    // Main numbers (5), then switch mode and draw 2 Euros
+    setMode('main');
+    start();
+    await sleep(1200);
+    while(drawnMain.length<5){
+      // let them tumble a bit
+      await sleep(1200);
+      // try to catch one, retry if needed
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){ // hard fallback
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // switch to Euro
+    setMode('euro');
+    start();
+    await sleep(1000);
+    while(drawnEuro.length<2){
+      await sleep(1200);
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // done
+    pause();
+  }
+  autoBtn.addEventListener('click', autoDrawSequence);
+
+  // initial static draw
+  draw();
+
+  // integrate with existing animateSelection to visualize picks on Map, if present
+  window.__drum_get_result = function(){
+    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
+  };
+})();
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+/* === Trommel-Physik ======================================================== */
+(function(){
+  // Canvas setup
+  const canvas = document.getElementById('drumCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
+  const BALL_DIAM_PX = 20;
+  const RADIUS = BALL_DIAM_PX/2;
+  const MASS = 4; // g (used relatively, all equal mass)
+  const W = canvas.width, H = canvas.height;
+  const CX = W*0.5, CY = H*0.52;
+  const DRUM_R = Math.min(W,H)*0.42;
+
+  // Gate (Fangstutzen) at top-right
+  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
+  const GATE_R = 18;
+
+  // Controls
+  const rpmEl = document.getElementById('rpm');
+  const rpmVal = document.getElementById('rpmVal');
+  const dragEl = document.getElementById('drag');
+  const dragVal = document.getElementById('dragVal');
+  const startBtn = document.getElementById('drumStart');
+  const pauseBtn = document.getElementById('drumPause');
+  const resetBtn = document.getElementById('drumReset');
+  const autoBtn = document.getElementById('autoDraw');
+  const pickBtn = document.getElementById('pickOne');
+  const outMain = document.getElementById('drumOutMain');
+  const outEuro = document.getElementById('drumOutEuro');
+
+  let running=false, rafId=null, mode='main';
+  let balls=[], drawnMain=[], drawnEuro=[];
+  let lastTime=0;
+
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('input[name=drummode]').forEach(r=>{
+      if(r.value===m) r.checked=true;
+    });
+    initBalls();
+    renderOutputs();
+  }
+  document.querySelectorAll('input[name=drummode]').forEach(r=>{
+    r.addEventListener('change',e=> setMode(e.target.value));
+  });
+
+  function renderOutputs(){
+    function pill(n, euro=false){
+      const span=document.createElement('span');
+      span.className='chip'+(euro?' euro':'');
+      span.textContent=n;
+      return span;
+    }
+    outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
+    outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
+  }
+
+  function rng(a,b){ return a + Math.random()*(b-a); }
+
+  function initBalls(){
+    balls.length=0;
+    const count = (mode==='main')? 50 : 12;
+    const labels = Array.from({length:count},(_,i)=> i+1);
+    // Fill with jittered circle placement
+    for(let i=0;i<count;i++){
+      const angle = Math.random()*Math.PI*2;
+      const r = DRUM_R*0.5*rng(0.6,0.98);
+      const x = CX + r*Math.cos(angle);
+      const y = CY + r*Math.sin(angle);
+      const speed = rng(40, 80); // px/s initial
+      const dir = angle + Math.PI/2;
+      balls.push({
+        id: labels[i],
+        x, y,
+        vx: speed*Math.cos(dir),
+        vy: speed*Math.sin(dir),
+        r: RADIUS,
+        m: MASS,
+      });
+    }
+  }
+  initBalls();
+
+  function drawDrum(){
+    // background
+    ctx.clearRect(0,0,W,H);
+    // drum glass
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(180,220,255,0.35)';
+    ctx.lineWidth=8;
+    ctx.stroke();
+    ctx.restore();
+
+    // gate
+    ctx.beginPath();
+    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.font='12px Inter, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
+  }
+
+  function drawBall(b){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
+    ctx.fill();
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
+    ctx.stroke();
+    ctx.fillStyle='#111';
+    ctx.font='bold 12px Inter, system-ui';
+    const txt = String(b.id);
+    const w = ctx.measureText(txt).width;
+    ctx.fillText(txt, b.x - w/2, b.y + 4);
+    ctx.restore();
+  }
+
+  function step(dt){
+    const rpm = Number(rpmEl.value);
+    rpmVal.textContent = `${rpm} U/min`;
+    const drag = Number(dragEl.value);
+    dragVal.textContent = drag.toFixed(3);
+
+    // Convert rpm to angular speed (rad/s)
+    const omega = rpm * 2*Math.PI / 60;
+
+    // Swirl field to mimic "Waschmaschine"
+    for(const b of balls){
+      // vector from center
+      const dx=b.x-CX, dy=b.y-CY;
+      const dist=Math.hypot(dx,dy) || 0.0001;
+      // tangential acceleration
+      const tx = -dy/dist, ty = dx/dist;
+      const swirl = omega*120; // tune factor to feel lively
+      b.vx += tx*swirl*dt;
+      b.vy += ty*swirl*dt;
+
+      // slight radial push outward (centrifugal effect)
+      const radial = omega*30;
+      b.vx += (dx/dist)*radial*dt;
+      b.vy += (dy/dist)*radial*dt;
+
+      // air drag (depends on "Styropor" – light, so noticeable)
+      b.vx *= (1 - drag);
+      b.vy *= (1 - drag);
+
+      // integrate
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+
+      // wall collision (circle)
+      const vx=b.vx, vy=b.vy;
+      const fromC = Math.hypot(b.x-CX,b.y-CY);
+      const maxR = DRUM_R - b.r - 4;
+      if(fromC>maxR){
+        // project back on boundary
+        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
+        b.x = CX + nx*maxR;
+        b.y = CY + ny*maxR;
+        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
+        const vn = vx*nx + vy*ny;
+        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
+        const restitution = 0.85;
+        b.vx = vt_x - restitution*vn*nx;
+        b.vy = vt_y - restitution*vn*ny;
+      }
+    }
+
+    // ball-ball collisions (elastic, equal mass)
+    for(let i=0;i<balls.length;i++){
+      for(let j=i+1;j<balls.length;j++){
+        const a=balls[i], b=balls[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist2 = dx*dx+dy*dy;
+        const rsum=a.r+b.r;
+        if(dist2 < rsum*rsum){
+          const dist = Math.sqrt(dist2)||0.0001;
+          const nx=dx/dist, ny=dy/dist;
+          const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
+          if(p>0) continue;
+          const imp = (-2*p)/(1+1); // equal mass
+          a.vx += imp*nx;
+          a.vy += imp*ny;
+          b.vx -= imp*nx;
+          b.vy -= imp*ny;
+          // separate
+          const overlap = (rsum - dist)/2;
+          a.x -= nx*overlap; a.y -= ny*overlap;
+          b.x += nx*overlap; b.y += ny*overlap;
+        }
+      }
+    }
+  }
+
+  function draw(){
+    drawDrum();
+    for(const b of balls) drawBall(b);
+  }
+
+  function loop(ts){
+    if(!running){ return; }
+    const t = ts*0.001;
+    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
+    lastTime = t;
+    step(dt);
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
+  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
+  function reset(){
+    pause();
+    drawnMain.length=0; drawnEuro.length=0;
+    renderOutputs();
+    initBalls();
+    draw();
+  }
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+
+  function removeBallToOutput(ball){
+    // remove from balls
+    balls = balls.filter(b=> b!==ball);
+    // append to output
+    if(mode==='main'){
+      drawnMain.push(ball.id);
+      drawnMain.sort((a,b)=>a-b);
+    }else{
+      drawnEuro.push(ball.id);
+      drawnEuro.sort((a,b)=>a-b);
+    }
+    renderOutputs();
+  }
+
+  function tryCatchOne(){
+    // If a ball is inside the gate circle and slow enough, catch it
+    let candidate=null, best=1e9;
+    for(const b of balls){
+      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
+      if(d < GATE_R - 2){
+        const sp = Math.hypot(b.vx,b.vy);
+        if(sp < best){ best = sp; candidate=b; }
+      }
+    }
+    if(candidate){
+      removeBallToOutput(candidate);
+      return true;
+    }
+    return false;
+  }
+
+  pickBtn.addEventListener('click', ()=>{
+    // Try immediate catch; fallback: pick random near top
+    if(tryCatchOne()) return;
+    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
+    const pick = (nearTop.length? nearTop : balls);
+    if(pick.length){
+      const b = pick[Math.floor(Math.random()*pick.length)];
+      removeBallToOutput(b);
+    }
+  });
+
+  async function autoDrawSequence(){
+    // Main numbers (5), then switch mode and draw 2 Euros
+    setMode('main');
+    start();
+    await sleep(1200);
+    while(drawnMain.length<5){
+      // let them tumble a bit
+      await sleep(1200);
+      // try to catch one, retry if needed
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){ // hard fallback
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // switch to Euro
+    setMode('euro');
+    start();
+    await sleep(1000);
+    while(drawnEuro.length<2){
+      await sleep(1200);
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // done
+    pause();
+  }
+  autoBtn.addEventListener('click', autoDrawSequence);
+
+  // initial static draw
+  draw();
+
+  // integrate with existing animateSelection to visualize picks on Map, if present
+  window.__drum_get_result = function(){
+    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
+  };
+})();
+
+</script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
 <style>
-:root{
-  --bg:#06070f; --panel:#0a1223f0; --ink:#eaf7ff; --gold:#f6cc58;
-  --cy:#00fff0; --mag:#ff5be8; --sky:#6cc7ff;
-}
-*{box-sizing:border-box} html,body{height:100%}
-body{margin:0;color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
-  background:
-    radial-gradient(1000px 700px at -15% -10%, rgba(0,255,240,.10), transparent 60%),
-    radial-gradient(1000px 700px at 115% -10%, rgba(255,0,234,.10), transparent 60%),
-    #05060b;
-}
-.container{max-width:1180px;margin:18px auto;padding:0 14px}
-h1{margin:0;font-size:clamp(28px,4.5vw,44px);font-weight:900;
-   background:linear-gradient(90deg,var(--cy),var(--sky),var(--mag),#ffd36a,var(--cy));
-   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:grad 6s linear infinite}
-.by{font-weight:900;display:inline-block;margin-top:2px;
-   background:linear-gradient(90deg,var(--cy),var(--sky),var(--mag),#ffd36a,var(--cy));
-   background-size:400% 100%;-webkit-background-clip:text;color:transparent;animation:grad 7s linear infinite}
-@keyframes grad{0%{background-position:0 50%}100%{background-position:100% 50%}}
-.card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;
-      box-shadow:0 20px 46px rgba(0,0,0,.6);backdrop-filter:blur(18px)}
-.grid{display:grid;gap:14px} @media(min-width:980px){.g2{grid-template-columns:1fr 1fr}}
-.sectionTitle{font-weight:900;font-size:20px;margin:.25rem 0 12px 0}
-.btn{height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:800;color:#fff;background:#15803d;cursor:pointer}
-.btn.warn{background:#b45309} .btn.ghost{background:#334155} .btn:disabled{opacity:.6;cursor:not-allowed}
-.sim{position:relative;border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;height:480px;
-     background:radial-gradient(120% 120% at 50% 30%, #0a1426, #091326 60%, #071223)}
-.badge{position:absolute;left:12px;top:10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.06);
-       border:1px solid rgba(140,170,255,.22);padding:6px 10px;border-radius:999px}
-.slot{position:absolute;right:10px;top:10px;width:106px;height:106px;border-radius:16px;
-  border:1px solid rgba(0,255,200,.28);background:linear-gradient(180deg,rgba(0,255,170,.12),rgba(0,140,120,.10));
-  display:flex;align-items:center;justify-content:center;font-weight:800;color:#98ffe0}
-canvas{width:100%;height:100%}
-.rail{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;padding:10px}
-.slotbox{width:50px;height:50px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);
-         display:flex;align-items:center;justify-content:center;font-weight:900}
-.sep{width:1px;height:28px;background:rgba(255,255,255,.25);border-radius:2px;margin:0 4px}
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;border-radius:999px;
-      background:radial-gradient(120% 120% at 30% 28%, #1ae3d9, #0aa39a 60%);color:#062a29;font-weight:900;
-      box-shadow:inset 0 2px 6px rgba(255,255,255,.2), inset 0 -6px 12px rgba(0,0,0,.3)}
-.chip.gold{background:radial-gradient(120% 120% at 30% 28%, #fff1b9, var(--gold) 60%);color:#221a06;
-      box-shadow:0 0 18px rgba(255,220,120,.5), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
-.fly{position:fixed;z-index:90;min-width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-     font-weight:900;pointer-events:none;background:radial-gradient(120% 120% at 30% 28%, #fff1b9, var(--gold) 60%);color:#221a06;
-     box-shadow:0 0 18px rgba(255,220,120,.5), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25)}
-.small{opacity:.85}
+  :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; }
+  body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
+  .title{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
+  .glass{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow: 0 12px 40px rgba(0,0,0,.45);}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-width:90px;height:78px;padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); border:1px solid rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.4);}
+  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.1);}
+  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:10px;margin:4px;font-weight:800;font-size:.9rem;color:#bdfcff;background:linear-gradient(180deg,#0e1530,#15204a);border:1px solid rgba(0,255,255,.25);}
+  .chip.euro{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
+  .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 16px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45); }
+  .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.15rem .5rem; font-size:.72rem;}
+  .counter{padding:.2rem .55rem;border-radius:999px;font-weight:700}
+  .counter.red{background:#3a1520;border:1px solid var(--bad)}
+  .counter.green{background:#153a29;border:1px solid var(--ok)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
+  .btn--green{background:#15803d;color:#fff;}
+  .btn--amber{background:#b45309;color:#fff;}
+  .btn--gray{background:#374151;color:#fff;}
+  .btn:hover{filter:brightness(1.1)}
+  .file-label{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); display:inline-flex; gap:8px; align-items:center;}
+  .file-input{display:none}
 </style>
 </head>
-<body>
-<div class="container">
-  <h1>EuroJackpot • Sphären‑Edition</h1>
-  <div class="by">by ENOWEB</div>
+<body class="p-5">
+  <h1 class="title text-3xl md:text-4xl mb-4">Eurojackpot Tool by EnoWeb</h1>
 
-  <div class="grid g2" style="margin-top:12px">
-    <div class="card">
-      <div class="sectionTitle">🎬 Simulation (Rotierende Glaskugel + Rohr)</div>
-      <div class="grid g2">
-        <div class="sim">
-          <div class="badge">Hauptkugel (1–50)</div>
-          <div class="slot" id="slotA">Auswurf</div>
-          <canvas id="cvA" width="680" height="480"></canvas>
-        </div>
-        <div class="sim">
-          <div class="badge">Eurokugel (1–12)</div>
-          <div class="slot" id="slotB">Auswurf</div>
-          <canvas id="cvB" width="680" height="480"></canvas>
-        </div>
+  <div class="flex justify-center flex-wrap gap-3 mb-6">
+    <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"><div>📂</div><span>Archiv</span></button>
+    <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
+    <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
+    <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
+    <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
+    <button type="button" onclick="tab('drum', this)" class="nav-btn" id="btn-drum"><div>🎱</div><span>Trommel</span></button>
+  </div>
+
+  <!-- ARCHIV -->
+  <div id="v-archiv" class="glass">
+    <h2 class="text-xl font-bold mb-2">📂 Archiv</h2>
+    <p id="statusText" class="text-sm mb-2">Noch kein Archiv geladen.</p>
+
+    <div class="glass mb-3">
+      <div class="font-semibold mb-2">Automatisches Laden</div>
+      <div class="flex flex-col md:flex-row gap-2">
+        <input id="archiveUrl" class="bg-gray-900 p-2 rounded flex-1" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
+        <button type="button" id="loadLatestBtn" class="btn btn--green">📥 Neueste laden</button>
+        <button type="button" id="forceDlBtn" class="btn btn--amber">⬇️ ZIP speichern</button>
+        <a id="directDl" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
       </div>
-      <div class="rail" id="rail" style="margin-top:10px">
-        <div class="slotbox" data-slot="A1"></div>
-        <div class="slotbox" data-slot="A2"></div>
-        <div class="slotbox" data-slot="A3"></div>
-        <div class="slotbox" data-slot="A4"></div>
-        <div class="slotbox" data-slot="A5"></div>
-        <div class="sep"></div>
-        <div class="slotbox" data-slot="B1"></div>
-        <div class="slotbox" data-slot="B2"></div>
+      <p class="text-xs text-gray-300 mt-2">„ZIP speichern“ lädt über mehrere Proxys und speichert lokal. „Direktlink“ öffnet die Original-URL.</p>
+    </div>
+
+    <div class="glass mb-3">
+      <div class="font-semibold mb-2">Manuell laden</div>
+      <label class="file-label">
+        📄 Datei auswählen
+        <input type="file" id="zipInput" class="file-input" accept=".zip,.txt,.csv">
+      </label>
+      <span id="fileName" class="ml-2 text-sm opacity-80">Keine Datei ausgewählt</span>
+      <div class="badge mt-2">Tipp: ZIP/TXT/CSV per Drag & Drop auf die Seite ziehen.</div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+      <div><div class="text-sm text-gray-300">Ziehungen</div><div id="kpiCount" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Von</div><div id="kpiFrom" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Bis</div><div id="kpiTo" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Aktualität</div><div id="kpiFresh" class="font-bold">–</div></div>
+    </div>
+    <p id="freshHint" class="text-xs opacity-80 mt-2"></p>
+  </div>
+
+  <!-- MAP -->
+  <div id="v-map" class="glass hidden">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-xl font-bold">🗺 Map</h2>
+      <div class="badge">Live‑Animation</div>
+    </div>
+    <div class="mb-1 flex items-center justify-between">
+      <div class="badge">Hauptzahlen 1–50</div><div id="progress" class="badge">Bereit</div>
+    </div>
+    <div id="mapMain" class="flex flex-wrap relative"></div>
+    <div class="mt-3 badge">Eurozahlen 1–12</div>
+    <div id="mapEuro" class="flex flex-wrap relative"></div>
+  </div>
+
+  <!-- GENERIEREN -->
+  <div id="v-gen" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">⚡ Generieren</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="text-sm text-gray-300">Modus</label>
+        <select id="modus" class="bg-gray-900 p-2 rounded w-full">
+          <option value="never">Nie gezogene</option>
+          <option value="last100">Letzte 100 – Frequenzmuster</option>
+          <option value="hot">Hot Paare & Triples</option>
+          <option value="groups">5er-Gruppen + Wünsche</option>
+          <option value="complex">Komplex (Simulated Annealing)</option>
+          <option value="runs">Folgen‑Zahlen</option>
+        </select>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-        <button class="btn" id="btnStart">Ziehung starten (5+2)</button>
-        <button class="btn warn" id="btnReset">Reset</button>
-        <div id="resultText" class="small">Noch kein Ergebnis</div>
+      <div>
+        <label class="text-sm text-gray-300">Anzahl Kombinationen</label>
+        <input type="number" id="kombis" value="5" min="1" max="25" class="bg-gray-900 p-2 rounded w-full">
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" id="generateBtn" class="btn btn--green">⚡ Generieren</button>
+        <button type="button" id="analyseAllBtn" class="btn btn--amber">📊 Alle analysieren</button>
+        <button type="button" id="clearGeneratedBtn" class="btn btn--gray">🗑️ Alle löschen</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="sectionTitle">📂 Archiv (Auto + Upload + Paste)</div>
-      <input id="archiveUrl" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-             background:#0b1422;color:#eaf7ff"
-        value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
-        <button class="btn" id="btnLoad">📥 Laden</button>
-        <button class="btn ghost" id="btnSaveZip">⬇️ ZIP speichern</button>
-        <a class="btn ghost" id="direct" target="_blank" rel="noopener">🔗 Direkt</a>
+    <div id="groupUI" class="mt-4 hidden">
+      <div class="mb-1 text-sm text-gray-300 flex items-center gap-3">
+        <span>Gruppen: exakt 5 erforderlich</span>
+        <span id="mainCounter" class="counter red">0/5</span>
+        <span id="euroCounter" class="counter red hidden">0/2</span>
       </div>
-      <div id="statusText" class="small" style="margin-top:6px">Noch kein Archiv geladen.</div>
-      <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0">
-        <div class="card" style="padding:8px;text-align:center">Ziehungen<br><b id="kpiCount">–</b></div>
-        <div class="card" style="padding:8px;text-align:center">Von<br><b id="kpiFrom">–</b></div>
-        <div class="card" style="padding:8px;text-align:center">Bis<br><b id="kpiTo">–</b></div>
+      <div id="groupControls" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+      <div class="mt-1 flex items-center justify-between">
+        <div class="badge">Eurozahlen (optional, 0 oder 2)</div>
+        <label class="inline-flex items-center gap-2">
+          <input id="useEuro" type="checkbox"><span class="text-sm">Euro berücksichtigen</span>
+        </label>
       </div>
-      <div class="small">Fallbacks:</div>
-      <input id="fileInput" type="file" accept=".zip,.csv,.txt" style="margin-top:8px;width:100%">
-      <textarea id="pasteBox" rows="5" placeholder="CSV/TXT hier einfügen…" style="margin-top:8px;width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#0b1422;color:#eaf7ff;padding:10px"></textarea>
-      <button class="btn ghost" id="btnParsePaste" style="margin-top:8px">CSV/TXT einlesen</button>
+      <div id="euroControls" class="grid grid-cols-2 gap-2 mt-1 hidden"></div>
+      <div id="groupError" class="bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 hidden mt-2"></div>
+    </div>
 
-      <div class="sectionTitle" style="margin-top:14px">📊 Analyse</div>
-      <div id="analysisIntro" class="small">Warte auf Ziehung…</div>
-      <div class="grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-        <div><div style="font-weight:800;margin-bottom:6px">Hot/Cold Haupt</div><div id="hotMain" class="small"></div></div>
-        <div><div style="font-weight:800;margin-bottom:6px">Hot/Cold Euro</div><div id="hotEuro" class="small"></div></div>
-        <div><div style="font-weight:800;margin-bottom:6px">Kombinationstreffer</div><div id="comboStats" class="small">–</div></div>
+    <pre id="liveOutput" class="font-mono bg-black/70 p-3 mt-3 rounded h-44 overflow-auto text-green-300"></pre>
+    <div id="cards" class="mt-3"></div>
+  </div>
+
+  <!-- ANALYSE -->
+  <div id="v-ana" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">📊 Analyse</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+      <div class="glass"><div class="text-xs text-gray-300">Meistgezogen (Top 5)</div><div id="kpiTop" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Selten (Bottom 5)</div><div id="kpiLow" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Hot (letzte 20)</div><div id="kpiHot" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Top‑Paare</div><div id="kpiPairs" class="font-bold"></div></div>
+    </div>
+    <canvas id="chartMain" class="w-full h-60 mb-4"></canvas>
+    <canvas id="chartEuro" class="w-full h-56"></canvas>
+    <div id="analysisBox" class="mt-3 text-sm"></div>
+  </div>
+
+  
+  <!-- TROMMEL -->
+  <div id="v-drum" class="glass hidden">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-bold">🎱 Ziehung – Trommel</h2>
+      <div class="badge">Styropor · Ø 4,5 cm · 4 g</div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="md:col-span-2">
+        <canvas id="drumCanvas" width="680" height="520" class="w-full rounded border border-white/10 bg-black/30"></canvas>
+      </div>
+      <div class="space-y-2">
+        <div class="glass">
+          <div class="font-semibold mb-1">Modus</div>
+          <div class="flex gap-2 flex-wrap">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="drummode" value="main" checked> <span>Hauptzahlen (1–50)</span></label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="drummode" value="euro"> <span>Eurozahlen (1–12)</span></label>
+          </div>
+        </div>
+        <div class="glass">
+          <div class="font-semibold mb-1">Steuerung</div>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" class="btn btn--green" id="drumStart">▶️ Start</button>
+            <button type="button" class="btn btn--gray" id="drumPause">⏸️ Pause</button>
+            <button type="button" class="btn btn--amber" id="drumReset">🔄 Reset</button>
+          </div>
+          <div class="mt-2 text-sm">
+            <label class="block mb-1">Drehzahl <span id="rpmVal" class="badge">40 U/min</span></label>
+            <input id="rpm" type="range" min="10" max="90" step="1" value="40" class="w-full">
+          </div>
+          <div class="mt-2 text-sm">
+            <label class="block mb-1">Luftwiderstand <span id="dragVal" class="badge">0.015</span></label>
+            <input id="drag" type="range" min="0" max="0.06" step="0.005" value="0.015" class="w-full">
+          </div>
+        </div>
+        <div class="glass">
+          <div class="font-semibold mb-1">Ziehung</div>
+          <div class="text-sm opacity-80">Es werden automatisch 5 Hauptzahlen gezogen, danach (optional) die 2 Eurozahlen.</div>
+          <div class="mt-2 flex gap-2 flex-wrap">
+            <button type="button" class="btn btn--green" id="autoDraw">🎬 Auto‑Ziehung</button>
+            <button type="button" class="btn btn--gray" id="pickOne">🎟️ 1 Kugel fangen</button>
+          </div>
+          <div class="mt-2">
+            <div class="badge">Gezogene Hauptzahlen</div>
+            <div id="drumOutMain" class="mt-1 flex flex-wrap"></div>
+            <div class="badge mt-2">Gezogene Eurozahlen</div>
+            <div id="drumOutEuro" class="mt-1 flex flex-wrap"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+
+  <!-- FAVORITEN -->
+  <div id="v-fav" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">⭐ Favoriten</h2>
+    <div class="flex gap-2 flex-wrap mb-3">
+      <input id="favSearch" placeholder="Suche…" class="bg-gray-900 p-2 rounded flex-1 min-w-[180px]">
+      <button type="button" id="favExport" class="btn btn--gray">Export</button>
+      <button type="button" id="favImport" class="btn btn--gray">Import</button>
+      <button type="button" id="favCSV" class="btn btn--gray">CSV</button>
+      <button type="button" id="favClear" class="btn btn--gray">Leeren</button>
+    </div>
+    <div id="favoritesBox" class="space-y-2"></div>
+  </div>
 
 <script>
-const $=s=>document.querySelector(s);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-const LS='ej_sphere_archiv_v1';
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const sum = a => a.reduce((s,v)=>s+v,0);
 
-/* ===== Archiv (robust) ===== */
-let draws=[], freqA=Array(51).fill(0), freqB=Array(13).fill(0);
-async function fetchWithProxies(url){
-  const list=[ url, 'https://cors.isomorphic-git.org/'+url, 'https://api.allorigins.win/raw?url='+encodeURIComponent(url), 'https://thingproxy.freeboard.io/fetch/'+url, 'https://corsproxy.io/?'+encodeURIComponent(url) ];
-  let last=null;
-  for(const u of list){
+/* === "Neueste Referenz" für Aktualität ===================================== */
+const LATEST_REF_KEY = 'ej_latest_ref_date_v1'; // ISO yyyy-mm-dd
+let latestRefDate = localStorage.getItem(LATEST_REF_KEY) || null;
+
+/* === UI Grundfunktionen ==================================================== */
+function tab(name, btn){
+  ['archiv','map','gen','ana','fav','drum'].forEach(n=>$('#v-'+n).classList.add('hidden'));
+  $('#v-'+name).classList.remove('hidden');
+  $$('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(name==='fav') renderFavs();
+}
+
+function renderMap(){
+  const m=$('#mapMain'); m.innerHTML='';
+  for(let i=1;i<=50;i++){ const d=document.createElement('div'); d.className='chip'; d.textContent=i; d.dataset.n=i; m.appendChild(d); }
+  const e=$('#mapEuro'); e.innerHTML='';
+  for(let i=1;i<=12;i++){ const d=document.createElement('div'); d.className='chip euro'; d.textContent=i; d.dataset.n=i; e.appendChild(d); }
+  $('#progress').textContent='Bereit';
+}
+renderMap();
+function clearMap(){ $$('#mapMain .chip, #mapEuro .chip').forEach(c=>c.classList.remove('sel')); }
+async function animateSelection(main,euro){
+  tab('map',$('#btn-map')); clearMap(); $('#progress').textContent='Tippt…';
+  for(const n of main){ const el=$(`#mapMain .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
+  for(const n of euro){ const el=$(`#mapEuro .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
+  $('#progress').textContent='Fertig';
+}
+
+/* === State ================================================================= */
+let draws=[]; let freqMain=Array(51).fill(0), freqEuro=Array(13).fill(0); let lastSeen=Array(51).fill(null), lastSeenE=Array(13).fill(null);
+let generated=[];
+let favorites = JSON.parse(localStorage.getItem("ej_favs_v1")||"[]");
+const ARCH_KEY='ej_archive_v1';
+
+/* === KPIs & Aktualität ===================================================== */
+function computeFreshnessLabel(endIso){
+  // 1) Vergleich zu "latestRefDate", falls vorhanden
+  if(latestRefDate){
+    const end = new Date(endIso); const ref = new Date(latestRefDate);
+    if(end < ref){ // älter als zuletzt bekannte "neueste"
+      const daysBehind = Math.round((ref - end)/86400000);
+      return `veraltet (−${daysBehind} Tage gegenüber neuestem: ${latestRefDate})`;
+    }
+  }
+  // 2) Fallback: Vergleich zu heute
+  const last=new Date(endIso);
+  const days=Math.max(0, Math.round((Date.now()-last.getTime())/86400000));
+  if(days<=14) return 'aktuell';
+  if(days<=60) return `ok (${days} Tage alt)`;
+  return `veraltet (${days} Tage alt)`;
+}
+
+function setKPIs(){
+  if(!draws.length){
+    $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–';
+    $('#freshHint').textContent=''; return;
+  }
+  $('#kpiCount').textContent=draws.length;
+  $('#kpiFrom').textContent=draws[0].date;
+  $('#kpiTo').textContent=draws.at(-1).date;
+  const label = computeFreshnessLabel(draws.at(-1).date);
+  $('#kpiFresh').textContent = label;
+  $('#freshHint').textContent = latestRefDate ? `Neuestes Referenz-Ende: ${latestRefDate}` : '';
+}
+
+/* === Archiv Laden/Parsen =================================================== */
+async function ensureJSZip(){
+  if (window.JSZip) return true;
+  const cdns = [
+    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+    'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  ];
+  for(const src of cdns){
     try{
-      const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
+      await new Promise((resolve, reject)=>{
+        const s=document.createElement('script');
+        s.src=src; s.async=true;
+        s.onload=()=>resolve(); s.onerror=()=>reject();
+        document.head.appendChild(s);
+      });
+      if(window.JSZip) return true;
+    }catch{}
+  }
+  return false;
+}
+
+async function fetchWithProxies(url){
+  const trials=[
+    url,
+    'https://cors.isomorphic-git.org/'+url,
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://thingproxy.freeboard.io/fetch/'+url,
+    'https://corsproxy.io/?'+encodeURIComponent(url)
+  ];
+  let last=null;
+  for(const u of trials){
+    try{
+      const res=await fetch(u);
+      if(!res.ok) throw new Error('HTTP '+res.status);
       const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip')||u.endsWith('.zip')){
-        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob);
-        const entries=Object.values(zip.files);
-        const entry=entries.find(f=>/\\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\\.(txt|csv)$/i.test(f.name));
-        const txt=await entry.async('string'); return txt;
-      }else{ return await res.text(); }
+      if(ct.includes('zip') || u.endsWith('.zip')){
+        const ok = await ensureJSZip();
+        if(!ok) throw new Error('JSZip nicht verfügbar (CDN blockiert).');
+        const blob=await res.blob();
+        const zip=await JSZip.loadAsync(blob); const entries=Object.values(zip.files);
+        let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+        if(!entry) throw new Error('ZIP ohne TXT/CSV.');
+        const text=await entry.async('string'); return text;
+      }else{
+        return await res.text();
+      }
     }catch(e){ last=e; }
   }
   throw last||new Error('Download fehlgeschlagen');
 }
-function parseArchiveText(txt){
+
+function parseArchiveText(txt, source='manual'){
   try{
-    const lines=txt.replace(/\\r\\n?/g,'\\n').split('\\n').map(s=>s.trim()).filter(Boolean);
-    const usable=lines.filter(l=>(l.match(/\\d+/g)||[]).length>=7);
-    const dmy=/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{2,4})/, ymd=/(\\d{4})[.\\/-](\\d{1,2})[.\\/-](\\d{1,2})/;
-    function iso(y,m,d){ const t=new Date(+y,+m-1,+d); return isNaN(t)?null:t.toISOString().slice(0,10); }
-    function parseLine(l){
-      const t=l.split(/;|,|\\t|\\s+/).filter(Boolean); let date=null, rest=[];
-      if(t.length&&dmy.test(t[0])){ const m=t[0].match(dmy); date=iso(m[3],m[2],m[1]); rest=t.slice(1); }
-      else if(t.length&&ymd.test(t[0])){ const m=t[0].match(ymd); date=iso(m[1],m[2],m[3]); rest=t.slice(1); }
-      else rest=t.slice(0);
-      const nums=rest.map(Number).filter(n=>Number.isFinite(n));
-      if(!date){ const only=(l.match(/\\d+/g)||[]).map(Number); if(only.length>=7){ const [a,b,c]=only.slice(0,3); const dd=iso(c,b,a); if(dd) date=dd; } }
+    txt=txt.replace(/^\uFEFF/,'');
+    const lines = txt.replace(/\r\n?/g,'\n').split('\n').map(l=>l.trim()).filter(Boolean);
+    const cleaned = lines.filter(l => (l.match(/\d+/g)||[]).length >= 7);
+    function iso(y,m,d){ const dt=new Date(+y, +m-1, +d); return isNaN(dt)? null : dt.toISOString().slice(0,10); }
+    const regDMY=/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/, regYMD=/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/;
+    function parseLine(line){
+      const t=line.split(/;|,|\t|\s+/).filter(Boolean); let date=null,rest=[];
+      if(t.length&&regDMY.test(t[0])){const m=t[0].match(regDMY); date=iso(m[3],m[2],m[1]); rest=t.slice(1);}
+      else if(t.length&&regYMD.test(t[0])){const m=t[0].match(regYMD); date=iso(m[1],m[2],m[3]); rest=t.slice(1);}
+      else{rest=t.slice(0);}
+      const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
+      if(!date){ const only=(line.match(/\d+/g)||[]).map(Number); if(only.length>=7){ const [a,b,c]=only.slice(0,3); const d=iso(c,b,a); if(d) date=d; } }
       const main=nums.filter(n=>n>=1&&n<=50).slice(0,5).sort((a,b)=>a-b);
       const euro=nums.filter(n=>n>=1&&n<=12).slice(0,2).sort((a,b)=>a-b);
       if(!date||main.length!==5||euro.length!==2) return null;
       return {date,main,euro};
     }
-    draws=[]; freqA.fill(0); freqB.fill(0);
-    usable.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
-    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt');
+    draws=[]; freqMain.fill(0); freqEuro.fill(0); lastSeen.fill(null); lastSeenE.fill(null);
+    cleaned.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
+    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
     draws.sort((a,b)=>a.date.localeCompare(b.date));
-    draws.forEach(d=>{ d.main.forEach(n=>freqA[n]++); d.euro.forEach(n=>freqB[n]++); });
-    localStorage.setItem(LS, txt);
+    draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeen[n]=idx;}); d.euro.forEach(n=>{freqEuro[n]++; lastSeenE[n]=idx;}); });
+    localStorage.setItem(ARCH_KEY, txt);
+    // Wenn Quelle "latest" ist, Referenz-Enddatum speichern
+    if(source==='latest'){
+      latestRefDate = draws.at(-1).date;
+      localStorage.setItem(LATEST_REF_KEY, latestRefDate);
+    }
     $('#statusText').textContent='Archiv geladen ✔';
-    $('#kpiCount').textContent=draws.length; $('#kpiFrom').textContent=draws[0].date; $('#kpiTo').textContent=draws.at(-1).date;
-    renderHotCold();
+    setKPIs(); renderCharts(); renderAnalyseKPIs();
   }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
 }
-$('#btnLoad').onclick=async()=>{
-  $('#statusText').textContent='Lade Archiv…';
-  try{ const t=await fetchWithProxies($('#archiveUrl').value.trim()); parseArchiveText(t); }
-  catch(e){ const saved=localStorage.getItem(LS); if(saved){ parseArchiveText(saved); $('#statusText').textContent='Online blockiert – lokale Kopie geladen.'; } else $('#statusText').textContent='Download blockiert – ZIP/TXT hochladen oder Inhalt einfügen.'; }
-};
-$('#btnSaveZip').onclick=async()=>{
+
+/* === Buttons =============================================================== */
+document.getElementById('loadLatestBtn').addEventListener('click', async ()=>{
   const url=$('#archiveUrl').value.trim();
-  const list=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
-  for(const u of list){ try{ const r=await fetch(u); if(!r.ok) throw 0; const b=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='archiv_eurojackpot.zip'; a.click(); URL.revokeObjectURL(a.href); return; }catch{} }
-  alert('ZIP-Download nicht möglich.');
-};
-$('#direct').href=$('#archiveUrl').value.trim();
-$('#fileInput').addEventListener('change', async (e)=>{
-  const f=e.target.files?.[0]; if(!f) return;
+  $('#statusText').textContent='Lade neuestes Archiv…';
+  try{ const text=await fetchWithProxies(url); parseArchiveText(text, 'latest'); }
+  catch(e){
+    $('#statusText').innerHTML="Download nicht möglich. <a class='underline' target='_blank' href='"+url+"'>Manuell öffnen</a>.";
+  }
+});
+document.getElementById('forceDlBtn').addEventListener('click', async ()=>{
+  const url=$('#archiveUrl').value.trim();
+  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
+  let last=null;
+  for(const u of trials){
+    try{
+      const res=await fetch(u); if(!res.ok) throw new Error('HTTP '+res.status);
+      const blob=await res.blob();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='archiv_eurojackpot.zip'; a.click(); URL.revokeObjectURL(a.href);
+      return;
+    }catch(e){ last=e; }
+  }
+  alert('Direkt-Download nicht möglich: '+(last?.message||'Unbekannt'));
+});
+(function(){ const u=$('#archiveUrl').value.trim(); $('#directDl').href=u; })();
+
+document.getElementById('zipInput').addEventListener('change', async (e)=>{
+  const file=e.target.files?.[0]; if(!file) return; $('#fileName').textContent=file.name;
   try{
-    if(f.name.toLowerCase().endsWith('.zip')){
-      const ab=await f.arrayBuffer(); const zip=await JSZip.loadAsync(ab);
-      const entries=Object.values(zip.files);
-      const entry=entries.find(x=>/\\.(txt|csv)$/i.test(x.name) && /eurojackpot/i.test(x.name)) || entries.find(x=>/\\.(txt|csv)$/i.test(x.name));
+    let text='';
+    if(file.name.toLowerCase().endsWith('.zip')){
+      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
+      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
+      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
       if(!entry) throw new Error('ZIP ohne TXT/CSV.');
-      const txt=await entry.async('string'); parseArchiveText(txt);
-    }else{
-      const txt=await f.text(); parseArchiveText(txt);
-    }
+      text=await entry.async('string');
+    }else{ text=await file.text(); }
+    // Manuelle Datei = Quelle "manual", keine Aktualisierung der "latestRefDate"
+    parseArchiveText(text, 'manual');
   }catch(err){ $('#statusText').textContent='Fehler: '+err.message; }
 });
-$('#btnParsePaste').onclick=()=>{ const v=$('#pasteBox').value; if(v.trim()) parseArchiveText(v); };
-(()=>{ const saved=localStorage.getItem(LS); if(saved){ try{ parseArchiveText(saved); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} } })();
-function pills(freq, maxN){ const vals=freq.slice(1,maxN+1); const max=Math.max(...vals,1), min=Math.min(...vals.filter(v=>v>0),max);
-  return vals.map((v,i)=>{ const n=i+1; const hot=v>=(min+(max-min)*0.66), cold=v<=(min+(max-min)*0.33);
-  const bg=hot?'rgba(30,200,160,.25)':(cold?'rgba(90,120,255,.22)':'rgba(255,255,255,.06)');
-  return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin:3px;border-radius:8px;background:${bg};border:1px solid rgba(255,255,255,.12);font-weight:800">${String(n).padStart(2,'0')}<small style="opacity:.7;margin-left:6px">${v}</small></span>`; }).join(''); }
-function renderHotCold(){ $('#hotMain').innerHTML=pills(freqA,50); $('#hotEuro').innerHTML=pills(freqB,12); }
 
-/* ===== Sphären‑Kugel (eine große Glaskugel, die sich selbst dreht) ===== */
-class Sphere{
-  constructor(canvas, count){
-    this.cv=canvas; this.ctx=canvas.getContext('2d');
-    this.W=canvas.clientWidth; this.H=canvas.clientHeight; canvas.width=this.W; canvas.height=this.H;
-    this.cx=this.W*0.5; this.cy=this.H*0.56; this.R=Math.min(this.W,this.H)*0.38;
-    this.r=Math.max(12,this.R*0.09);
-    this.rot=0; this.rotSpeed=0.5; // Kugel dreht sich
-    this.left=new Set(Array.from({length:count},(_,i)=>i+1));
-    this.balls=[];
-    for(const n of this.left){
-      this.balls.push({n, a:Math.random()*Math.PI*2, w:(Math.random()<.5?-1:1)*(1.2+Math.random()*1.4),
-        rm:0.7+Math.random()*0.08, rv:0, spin:Math.random()*Math.PI*2, live:true, flip:300+Math.random()*800});
-    }
-    this.intake = -Math.PI*0.13 + Math.PI/2;
-    this.prev=performance.now(); requestAnimationFrame(this.loop.bind(this));
+/* Drag & Drop */
+document.body.addEventListener('dragover', e=>{ e.preventDefault(); });
+document.body.addEventListener('drop', async e=>{
+  e.preventDefault();
+  const file=e.dataTransfer?.files?.[0]; if(!file) return;
+  $('#fileName').textContent = file.name;
+  $('#statusText').textContent='Lade Datei…';
+  try{
+    let text='';
+    if(file.name.toLowerCase().endsWith('.zip')){
+      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
+      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
+      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+      if(!entry) throw new Error('ZIP ohne TXT/CSV.');
+      text=await entry.async('string');
+    }else{ text=await file.text(); }
+    parseArchiveText(text, 'manual');
+  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
+});
+
+/* === Analyse (Charts + KPIs) ============================================== */
+let chartMain, chartEuro;
+function renderCharts(){
+  if(!draws.length) return;
+  if(chartMain) chartMain.destroy(); if(chartEuro) chartEuro.destroy();
+  chartMain=new Chart($('#chartMain'),{type:'bar',data:{labels:[...Array(50).keys()].slice(1),datasets:[{data:[...freqMain].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+  chartEuro=new Chart($('#chartEuro'),{type:'bar',data:{labels:[...Array(12).keys()].slice(1),datasets:[{data:[...freqEuro].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+}
+function renderAnalyseKPIs(){
+  if(!draws.length) return;
+  const mf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]);
+  const lf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>a[1]-b[1]);
+  $('#kpiTop').textContent = mf.slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiLow').textContent = lf.slice(0,5).map(x=>x[0]).join(' ');
+  const recent = draws.slice(-20);
+  const counts=Array(51).fill(0); recent.forEach(d=>d.main.forEach(n=>counts[n]++));
+  const hot = counts.map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiHot').textContent = hot;
+  const last=draws.slice(-200);
+  const map=new Map();
+  function inc(k){ map.set(k,(map.get(k)||0)+1); }
+  last.forEach(d=>{ const m=[...d.main].sort((a,b)=>a-b); for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) inc(`${m[i]}-${m[j]}`); });
+  const pairs=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>k).join('  ');
+  $('#kpiPairs').textContent = pairs;
+}
+
+/* === Gruppen & Generator =================================================== */
+const GROUPS=[{label:'1–10',from:1,to:10},{label:'11–20',from:11,to:20},{label:'21–30',from:21,to:30},{label:'31–40',from:31,to:40},{label:'41–50',from:41,to:50}];
+const EGROUPS=[{label:'1–6',from:1,to:6},{label:'7–12',from:7,to:12}];
+function buildGroupUI(){
+  const host=$('#groupControls'); host.innerHTML='';
+  GROUPS.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded" data-idx="${i}">${[0,1,2,3,4,5].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    host.appendChild(row);
+  });
+  $$('#groupControls select').forEach(sel=> sel.addEventListener('change', updateGroupCounters));
+  updateGroupCounters();
+}
+function buildEuroUI(){
+  const host=$('#euroControls'); host.innerHTML='';
+  EGROUPS.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded euro" data-idx="${i}">${[0,1,2].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    host.appendChild(row);
+  });
+  $$('#euroControls select').forEach(sel=> sel.addEventListener('change', updateGroupCounters));
+}
+function setCounter(el, val, total){
+  el.textContent = `${val}/${total}`;
+  el.classList.toggle('green', val===total);
+  el.classList.toggle('red', val!==total);
+}
+function updateGroupCounters(){
+  let sumG=0; $$('#groupControls select').forEach(s=>{ const v=+s.value||0; sumG+=v; s.parentElement.lastChild.textContent=v; });
+  setCounter($('#mainCounter'), sumG, 5);
+  let sumE=0;
+  if($('#useEuro').checked){
+    $$('#euroControls select').forEach(s=>{ const v=+s.value||0; sumE+=v; s.parentElement.lastChild.textContent=v; });
+    $('#euroCounter').classList.remove('hidden');
+    setCounter($('#euroCounter'), sumE, 2);
+  }else{
+    $('#euroCounter').classList.add('hidden');
   }
-  xy(a,m=this.R*0.72){ return {x:this.cx+Math.cos(a)*m, y:this.cy+Math.sin(a)*m}; }
-  async eject(onDrop){
-    // wähle die nächste Kugel in der Nähe des Ansaugpunkts
-    const P=this.xy(this.intake,this.R*0.9); let best=null,bd=1e9;
-    for(const b of this.balls){ if(!b.live) continue; const p=this.xy(b.a,this.R*b.rm); const d=(p.x-P.x)**2+(p.y-P.y)**2; if(d<bd){bd=d; best=b;} }
-    if(!best) return null;
-    // animierte „Saug“-Phase
-    for(let t=0;t<16;t++){ best.w*=0.85; best.a+=(this.intake-best.a)*0.16; best.spin+=0.5; await sleep(18); }
-    if(onDrop){ onDrop({num:best.n, start:this.xy(this.intake,this.R*0.9)}); }
-    best.live=false; this.left.delete(best.n);
-    return best.n;
+  const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+  if(sumG!==5){ err.classList.remove('hidden'); err.textContent='Bitte genau 5 aus den Gruppen wählen.'; }
+  if($('#useEuro').checked && !(sumE===0 || sumE===2)){ err.classList.remove('hidden'); err.textContent='Euro-Summe muss 0 oder 2 sein.'; }
+}
+$('#modus').addEventListener('change', ()=>{
+  const on = $('#modus').value==='groups';
+  $('#groupUI').classList.toggle('hidden', !on);
+  if(on){ buildGroupUI(); }
+});
+$('#useEuro').addEventListener('change', e=>{
+  $('#euroControls').classList.toggle('hidden', !e.target.checked);
+  if(e.target.checked){ buildEuroUI(); setCounter($('#euroCounter'), 0, 2); }
+  updateGroupCounters();
+});
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function pickFromRange(from,to,avoid,count,weightFn){
+  const bag=[]; for(let n=from;n<=to;n++){ if(!avoid.includes(n)){ const w=Math.max(1, weightFn?weightFn(n):1); for(let k=0;k<w;k++) bag.push(n);} }
+  shuffle(bag);
+  const res=[]; for(const v of bag){ if(!res.includes(v)){ res.push(v); if(res.length===count) break; } }
+  return res;
+}
+function euroAuto(){
+  const fe=[...freqEuro]; const maxE=Math.max(...fe.slice(1))||1;
+  const lastIdx=draws.length-1;
+  const w = (e)=>{
+    const f = fe[e]/maxE;
+    const gap = lastSeenE[e]!=null ? (lastIdx-lastSeenE[e]) : lastIdx+1;
+    const gapN = Math.min(1, gap/(lastIdx+1));
+    return 1 + Math.round(3*(0.55*f + 0.45*gapN));
+  };
+  const e = pickFromRange(1,12,[],2,w).sort((a,b)=>a-b);
+  return e;
+}
+
+const normalizeVec = v => { const m=Math.max(...v); return v.map(x=> m? x/m : 0); };
+function buildMatrices(){
+  const C = Array.from({length:51}, ()=>Array(51).fill(0));
+  const recentW = Math.min(150, draws.length);
+  const recentStart = draws.length - recentW;
+  const recentF = Array(51).fill(0);
+  for(let i=0;i<draws.length;i++){
+    const d=draws[i]; const m=d.main;
+    for(let a=0;a<m.length;a++) for(let b=a+1;b<m.length;b++){ C[m[a]][m[b]]++; C[m[b]][m[a]]++; }
+    if(i>=recentStart){ m.forEach(x=>recentF[x]++); }
   }
-  update(dt){
-    // Kugelrotation (rein visuell, beeinflusst das Wirbeln leicht)
-    this.rot = (this.rot + this.rotSpeed*dt)%(Math.PI*2);
-    for(const b of this.balls){
-      if(!b.live) continue;
-      b.flip-=dt*1000; if(b.flip<=0){ b.w*=-1; b.flip=300+Math.random()*800; }
-      b.w += (Math.random()*2-1)*0.06 + Math.sin(this.rot*2 + b.a*3)*0.015;
-      b.w = clamp(b.w,-2.9,2.9);
-      b.a = (b.a + b.w*dt + Math.PI*2)%(Math.PI*2);
-      b.rv += (Math.random()*2-1)*0.004; b.rv=clamp(b.rv,-0.08,0.08);
-      b.rm = clamp(b.rm + b.rv*dt, 0.64, 0.78);
-      b.spin += b.w*0.45;
+  const fNorm = normalizeVec(freqMain);
+  const trendNorm = normalizeVec(recentF);
+  const gaps = lastSeen.map(ix => ix==null ? draws.length : (draws.length-1-ix));
+  const gapNorm = normalizeVec(gaps);
+  const pairScore = (i,j)=>{
+    const fij=C[i][j]; if(fij===0) return 0;
+    const denom = (freqMain[i]||1)*(freqMain[j]||1);
+    return fij/denom;
+  };
+  return {pairScore, fNorm, trendNorm, gapNorm};
+}
+function scoreSet(set, mats){
+  const {pairScore,fNorm,trendNorm,gapNorm} = mats;
+  const wF=0.32, wT=0.30, wR=0.38, wPair=0.75, wBal=0.25;
+  const base = set.reduce((s,n)=> s + (wF*fNorm[n] + wT*trendNorm[n] + wR*gapNorm[n]), 0);
+  let p=0; for(let i=0;i<set.length;i++) for(let j=i+1;j<set.length;j++){ p += pairScore(set[i],set[j]); }
+  const target=[1,1,1,1,1]; const counts=[0,0,0,0,0];
+  set.forEach(n=>{ const g = Math.floor((n-1)/10); counts[g]++; });
+  const balPenalty = counts.reduce((s,c,i)=> s + Math.abs(c-target[i]), 0);
+  const balScore = Math.max(0, 5 - balPenalty)/5;
+  return base + wPair*p + wBal*balScore;
+}
+function complexSimulatedAnnealing(){
+  const mats = buildMatrices();
+  const w = n=> 1 + Math.round(5*(mats.trendNorm[n]*0.6 + mats.gapNorm[n]*0.4));
+  let current = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+  let best = current.slice();
+  let currentScore = scoreSet(current, mats);
+  let bestScore = currentScore;
+  const ITER = 1600 + Math.floor(Math.random()*600);
+  for(let t=0;t<ITER;t++){
+    const T = 1 - t/ITER;
+    const c = current.slice();
+    const k = (Math.random()<T? 2:1);
+    for(let i=0;i<k;i++){
+      const rmIdx = Math.floor(Math.random()*c.length);
+      const avoid = c.slice(); avoid.splice(rmIdx,1);
+      const add = pickFromRange(1,50,avoid,1,w);
+      if(add.length){ c[rmIdx]=add[0]; }
+      c.sort((a,b)=>a-b);
     }
-    // Mindestabstand, damit kein „Schlange“-Look
-    const alive=this.balls.filter(b=>b.live).sort((a,b)=>a.a-b.a);
-    const minGap=(Math.PI*2)/Math.max(alive.length,2)*0.24;
-    for(let i=0;i<alive.length;i++){
-      const A=alive[i], B=alive[(i+1)%alive.length];
-      let gap=(B.a-A.a+Math.PI*2)%(Math.PI*2);
-      if(gap<minGap){ const push=(minGap-gap)/2; A.a-=push; B.a+=push; A.w-=push*0.6; B.w+=push*0.6; }
+    const s = scoreSet(c, mats);
+    const accept = (s>currentScore) || (Math.random()<Math.exp((s-currentScore)/(0.15+0.0001)));
+    if(accept){ current=c; currentScore=s; if(s>bestScore){ best=c; bestScore=s; } }
+  }
+  return {main:best, euro:euroAuto()};
+}
+function runsBest(){
+  const runMap=new Map();
+  function inc(key){ runMap.set(key,(runMap.get(key)||0)+1); }
+  for(const d of draws){
+    const m=[...d.main].sort((a,b)=>a-b);
+    let seq=[m[0]];
+    for(let i=1;i<m.length;i++){
+      if(m[i]===m[i-1]+1){ seq.push(m[i]); }
+      else{
+        if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+        seq=[m[i]];
+      }
+    }
+    if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+  }
+  const lastIdx = draws.length-1;
+  const scoreEntries=[];
+  for(const [k,v] of runMap.entries()){
+    const nums=k.split('-').map(Number);
+    const lastSeenMin = Math.min(...nums.map(n=> lastSeen[n]==null? -1 : lastSeen[n]));
+    const gap = lastSeenMin<0? lastIdx+1 : (lastIdx-lastSeenMin);
+    const fresh = 1 + gap/(lastIdx+1);
+    scoreEntries.push([nums, v*fresh]);
+  }
+  scoreEntries.sort((a,b)=>b[1]-a[1]);
+  const pick = scoreEntries.slice(0,50);
+  const base = pick.length? pick[Math.floor(Math.random()*Math.min(12,pick.length))][0] : [];
+  let main = Array.from(new Set(base));
+  while(main.length<5){
+    const add = pickFromRange(1,50,main,1, n=> (freqMain[n]? freqMain[n]:1) + (lastSeen[n]==null?3:0) );
+    if(add.length) main.push(add[0]); else break;
+  }
+  main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,5);
+  return {main, euro:euroAuto()};
+}
+
+/* Typing Engine */
+async function typeLine(el, text){ for(const ch of text){ el.append(ch); await sleep(10);} }
+async function printTip(outEl, index, tip){
+  await typeLine(outEl, "#"+index+": ");
+  for(const n of tip.main){ await typeLine(outEl, n+" "); }
+  await typeLine(outEl, "| E: ");
+  for(const e of tip.euro){ await typeLine(outEl, e+" "); }
+  outEl.append("\n"); outEl.scrollTop = outEl.scrollHeight;
+}
+
+/* Analyse & Karten */
+function inFav(tip){ return favorites.some(f=> f.main.join('-')===tip.main.join('-') && f.euro.join('-')===tip.euro.join('-')); }
+function exactOccurrences(tip){
+  const idx=[]; for(let i=0;i<draws.length;i++){ const d=draws[i];
+    if(tip.main.length===5 && d.main.length===5 && tip.main.every((n,j)=>n===d.main[j])) idx.push(i);
+  } return idx;
+}
+function analyseVariant(tip){
+  const idx=exactOccurrences(tip);
+  const occurCount=idx.length;
+  const last = occurCount? draws[idx.at(-1)].date : 'nie';
+  const avgGap = occurCount? (function(){
+    let gaps=[]; for(let i=1;i<idx.length;i++) gaps.push(idx[i]-idx[i-1]); const m=gaps.reduce((a,b)=>a+b,0)/(gaps.length||1); return m.toFixed(1);
+  })() : '–';
+  const first = occurCount? draws[idx[0]].date : '–';
+  const dist = Array(8).fill(0);
+  for(const d of draws){ const ov = tip.main.filter(x=>d.main.includes(x)).length + tip.euro.filter(x=>d.euro.includes(x)).length; dist[ov]++; }
+  const ov3p = dist.slice(3).reduce((a,b)=>a+b,0);
+  const freqSum = tip.main.reduce((s,n)=>s+freqMain[n],0);
+  return {occurCount,last,first,avgGap,dist,ov3p,freqSum};
+}
+function tipCard(idx, tip){
+  const a = analyseVariant(tip);
+  const isFav = inFav(tip);
+  const card=document.createElement('div'); card.className='glass mb-3'; card.dataset.key = tip.main.join('-')+'|'+tip.euro.join('-');
+  card.innerHTML = `
+    <div class="flex items-center justify-between">
+      <div>
+        ${tip.main.map(n=>`<span class="chip">${n}</span>`).join('')}
+        <span class="badge">Euro</span>
+        ${tip.euro.map(n=>`<span class="chip euro">${n}</span>`).join('')}
+      </div>
+      <span class="badge">#${idx}</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 text-sm">
+      <div class="badge">Vorkommen exakt: <b>${a.occurCount}</b></div>
+      <div class="badge">Erstes: <b>${a.first}</b></div>
+      <div class="badge">Letztes: <b>${a.last}</b></div>
+      <div class="badge">Ø Abstand: <b>${a.avgGap}</b></div>
+      <div class="badge">Overlap ≥3: <b>${a.ov3p}</b></div>
+      <div class="badge">FreqSum: <b>${a.freqSum}</b></div>
+    </div>
+    <div class="mt-2 flex gap-2 flex-wrap">
+      <button class="btn ${isFav?'btn--green':'btn--amber'} fav-toggle">${isFav?'✅ In Favoriten':'⭐ Favorit'}</button>
+      <button class="btn btn--gray copy-btn">📋 Kopieren</button>
+      <button class="btn btn--gray del-btn">🗑️ Entfernen</button>
+    </div>`;
+  card.querySelector('.copy-btn').onclick = ()=> navigator.clipboard.writeText(`${tip.main.join('-')} | E:${tip.euro.join('-')}`);
+  card.querySelector('.del-btn').onclick = ()=>{ card.remove(); generated = generated.filter(g=> g!==tip); };
+  card.querySelector('.fav-toggle').onclick = (ev)=>{
+    if(inFav(tip)){
+      favorites = favorites.filter(f=> !(f.main.join('-')===tip.main.join('-') && f.euro.join('-')===tip.euro.join('-')));
+    }else{
+      favorites.push(tip);
+    }
+    localStorage.setItem('ej_favs_v1', JSON.stringify(favorites));
+    ev.target.textContent = inFav(tip) ? '✅ In Favoriten' : '⭐ Favorit';
+    ev.target.classList.toggle('btn--green', inFav(tip));
+    ev.target.classList.toggle('btn--amber', !inFav(tip));
+  };
+  return card;
+}
+
+function generateOne(){
+  const mode = $('#modus').value;
+  let main=[];
+  if(!draws.length){
+    main = pickFromRange(1,50,[],5); return {main:main.sort((a,b)=>a-b), euro: pickFromRange(1,12,[],2).sort((a,b)=>a-b)};
+  }
+  if(mode==='groups'){
+    const want = $$('#groupControls select').map(s=>+s.value||0);
+    const sumWant = sum(want);
+    const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+    if(sumWant!==5){ err.classList.remove('hidden'); err.textContent='Bitte genau 5 aus den Gruppen wählen.'; throw new Error('Gruppen nicht vollständig.'); }
+    let weightMain=null;
+    const r=draws.slice(-100); const fm=Array(51).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); weightMain=n=>Math.ceil(3*fm[n]/maxM);
+    GROUPS.forEach((g,i)=>{ const need=want[i]; if(need>0){ main.push(...pickFromRange(g.from,g.to,main,need,weightMain)); } });
+    main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,5);
+    let euro=[];
+    if($('#useEuro').checked){
+      const eWant = $$('#euroControls select').map(s=>+s.value||0);
+      const eSum = sum(eWant);
+      if(!(eSum===0 || eSum===2)){ throw new Error('Euro-Summe muss 0 oder 2 sein.'); }
+      if(eSum===2){ EGROUPS.forEach((g,i)=>{ const need=eWant[i]; if(need>0){ euro.push(...pickFromRange(g.from,g.to,euro,need)); } }); euro.sort((a,b)=>a-b); }
+      if(eSum===0){ euro=euroAuto(); }
+    }else{ euro=euroAuto(); }
+    return {main, euro};
+  }
+  if(mode==='last100'){
+    const r=draws.slice(-100); const fm=Array(51).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(3*fm[n]/maxM);
+    main = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
+  }
+  if(mode==='never'){
+    const fm=freqMain.slice(); const w=n=> fm[n]===0?5:(fm[n]<=5?3:1);
+    main = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
+  }
+  if(mode==='hot'){
+    const recent = draws.slice(-200);
+    const pairMap=new Map(); const tripleMap=new Map();
+    function inc(map,key){ map.set(key,(map.get(key)||0)+1); }
+    for(const d of recent){
+      const m=[...d.main].sort((a,b)=>a-b);
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++){ inc(pairMap, `${m[i]}-${m[j]}`); }
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) for(let k=j+1;k<m.length;k++){ inc(tripleMap, `${m[i]}-${m[j]}-${m[k]}`); }
+    }
+    const topPairs=[...pairMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,30).map(e=>e[0].split('-').map(Number));
+    const topTrip=[...tripleMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0].split('-').map(Number));
+    if(Math.random()<0.5 && topTrip.length){ main = [...topTrip[Math.floor(Math.random()*topTrip.length)]]; }
+    else if(topPairs.length){ main = [...topPairs[Math.floor(Math.random()*topPairs.length)]]; }
+    const r2=draws.slice(-100); const fm=Array(51).fill(1); r2.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(2*fm[n]/maxM);
+    while(main.length<5){ const add = pickFromRange(1,50,main,1,w); if(add.length) main.push(add[0]); else break; }
+    main.sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
+  }
+  if(mode==='complex'){ return complexSimulatedAnnealing(); }
+  if(mode==='runs'){ return runsBest(); }
+  main = pickFromRange(1,50,[],5).sort((a,b)=>a-b); return {main, euro:euroAuto()};
+}
+
+async function printTipAndCard(outEl, index, tip){
+  await printTip(outEl, index, tip);
+  $('#cards').appendChild(tipCard(index, tip));
+}
+
+/* Buttons Generator/Analyse */
+$('#generateBtn').addEventListener('click', async ()=>{
+  if(!draws.length){ alert('Bitte zuerst ein Archiv laden.'); return; }
+  if($('#modus').value==='groups' && $('#groupControls').children.length===0){ buildGroupUI(); }
+  const total = +$('#kombis').value || 1;
+  const out = $('#liveOutput'); out.textContent='';
+  $('#cards').innerHTML='';
+  generated=[];
+  const seen=new Set();
+  for(let i=1;i<=total;i++){
+    try{
+      let tip = generateOne();
+      let key = tip.main.join('-')+'|'+tip.euro.join('-');
+      let guard=0; while(seen.has(key) && guard<10){ tip = generateOne(); key=tip.main.join('-')+'|'+tip.euro.join('-'); guard++; }
+      seen.add(key); generated.push(tip);
+      await animateSelection(tip.main, tip.euro);
+      await printTipAndCard(out, i, tip);
+    }catch(e){
+      const err=$('#groupError'); err.classList.remove('hidden'); err.textContent=e.message; break;
     }
   }
-  drawGlass(ctx){
-    // 3D-Look durch bewegte Highlights
-    const R=this.R;
-    ctx.save(); ctx.translate(this.cx,this.cy);
-    // Outer glass
-    ctx.lineWidth=18;
-    const grad=ctx.createRadialGradient(-R*0.3,-R*0.3,R*0.2, 0,0,R);
-    grad.addColorStop(0,'rgba(255,255,255,.18)');
-    grad.addColorStop(1,'rgba(20,240,210,.08)');
-    ctx.strokeStyle=grad;
-    ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.stroke();
-    // rotating highlight ring
-    ctx.save(); ctx.rotate(this.rot);
-    ctx.globalAlpha=.25;
-    for(let i=0;i<6;i++){
-      ctx.rotate(Math.PI/3);
-      ctx.beginPath(); ctx.arc(0,0,R*0.92, i*0.2, i*0.2+0.9); ctx.strokeStyle='rgba(140,255,230,.12)'; ctx.lineWidth=10; ctx.stroke();
-    }
-    ctx.restore();
-    // intake slot
-    ctx.save(); ctx.rotate(this.intake); ctx.fillStyle='rgba(120,255,230,.18)';
-    roundRect(ctx,-18,-74,36,148,12); ctx.fill();
-    ctx.restore();
-    // inner vignette
-    const ig=ctx.createRadialGradient(0,0,R*0.2, 0,0,R*1.0);
-    ig.addColorStop(0,'rgba(0,0,0,0)'); ig.addColorStop(1,'rgba(0,0,0,.35)');
-    ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
-    ctx.restore();
+});
+$('#clearGeneratedBtn').addEventListener('click', ()=>{ generated=[]; $('#cards').innerHTML=''; $('#liveOutput').textContent=''; });
+$('#analyseAllBtn').addEventListener('click', ()=>{
+  if(!generated.length){ alert('Bitte zuerst Varianten generieren.'); return; }
+  const dist=Array(8).fill(0);
+  generated.forEach(t=>{ for(const d of draws){ const ov = t.main.filter(x=>d.main.includes(x)).length + t.euro.filter(x=>d.euro.includes(x)).length; dist[ov]++; } });
+  const table = dist.map((v,i)=>`<tr><td class="px-2 py-1">${i}</td><td class="px-2 py-1">${v}</td></tr>`).join('');
+  $('#analysisBox').innerHTML = `<div class="glass mt-2"><div class="font-bold mb-2">Overlap‑Verteilung (alle Varianten × Archiv)</div><table class="text-sm"><thead><tr><th class="px-2 py-1">Treffer</th><th class="px-2 py-1">Anzahl</th></tr></thead><tbody>${table}</tbody></table></div>`;
+  $('#v-ana').scrollIntoView({behavior:'smooth'});
+});
+
+/* Favoriten */
+function saveFavs(){ localStorage.setItem('ej_favs_v1', JSON.stringify(favorites)); renderFavs(); }
+function renderFavs(){
+  const q=($('#favSearch')?.value||'').toLowerCase();
+  const box=$('#favoritesBox'); if(!box) return; box.innerHTML='';
+  favorites.filter(f=> (f.main.join(' ')+' '+f.euro.join(' ')).toLowerCase().includes(q)).forEach((f,i)=>{
+    const div=document.createElement('div'); div.className='glass p-3';
+    const grid=document.createElement('div'); grid.className='flex flex-wrap items-center gap-1';
+    f.main.forEach(n=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=n; grid.appendChild(s); });
+    const label=document.createElement('span'); label.className='badge ml-2'; label.textContent='Euro'; grid.appendChild(label);
+    f.euro.forEach(n=>{ const s=document.createElement('span'); s.className='chip euro'; s.textContent=n; grid.appendChild(s); });
+    const actions=document.createElement('div'); actions.className='mt-2 flex gap-2 flex-wrap';
+    actions.innerHTML=`
+      <button class="btn btn--gray" onclick='navigator.clipboard.writeText("${f.main.join('-')} | E:${f.euro.join('-')}")'>Copy</button>
+      <button class="btn btn--gray" onclick='animateSelection(${JSON.stringify(f.main)}, ${JSON.stringify(f.euro)})'>Show</button>
+      <button class="btn btn--gray" onclick="favorites.splice(${i},1); saveFavs();" style="border-color: rgba(255,0,0,.25)">Entfernen</button>`;
+    div.appendChild(grid); div.appendChild(actions); box.appendChild(div);
+  });
+}
+$('#favSearch')?.addEventListener('input', renderFavs);
+$('#favExport')?.addEventListener('click', ()=>{
+  const blob=new Blob([JSON.stringify(favorites,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='favoriten.json'; a.click(); URL.revokeObjectURL(url);
+});
+$('#favCSV')?.addEventListener('click', ()=>{
+  const rows = [["n1","n2","n3","n4","n5","e1","e2"], ...favorites.map(f=>[...f.main, ...f.euro])];
+  const csv = rows.map(r=>r.join(",")).join("\n");
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='favoriten.csv'; a.click(); URL.revokeObjectURL(url);
+});
+$('#favImport')?.addEventListener('click', ()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=async e=>{ const file=e.target.files?.[0]; if(!file) return; const txt=await file.text(); favorites=JSON.parse(txt||'[]'); saveFavs(); };
+  inp.click();
+});
+$('#favClear')?.addEventListener('click', ()=>{ if(confirm('Alle Favoriten löschen?')){ favorites=[]; saveFavs(); } });
+renderFavs();
+
+/* Restore */
+(()=>{
+  const saved=localStorage.getItem(ARCH_KEY);
+  if(saved){ try{ parseArchiveText(saved, 'manual'); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} }
+  latestRefDate = localStorage.getItem(LATEST_REF_KEY) || latestRefDate;
+  setKPIs();
+})();
+
+/* === Trommel-Physik ======================================================== */
+(function(){
+  // Canvas setup
+  const canvas = document.getElementById('drumCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Scale: 1 "Ball" = 45 mm -> map to 20 px diameter for good visuals
+  const BALL_DIAM_PX = 20;
+  const RADIUS = BALL_DIAM_PX/2;
+  const MASS = 4; // g (used relatively, all equal mass)
+  const W = canvas.width, H = canvas.height;
+  const CX = W*0.5, CY = H*0.52;
+  const DRUM_R = Math.min(W,H)*0.42;
+
+  // Gate (Fangstutzen) at top-right
+  const GATE_POS = {x: CX + DRUM_R*0.55, y: CY - DRUM_R*0.20};
+  const GATE_R = 18;
+
+  // Controls
+  const rpmEl = document.getElementById('rpm');
+  const rpmVal = document.getElementById('rpmVal');
+  const dragEl = document.getElementById('drag');
+  const dragVal = document.getElementById('dragVal');
+  const startBtn = document.getElementById('drumStart');
+  const pauseBtn = document.getElementById('drumPause');
+  const resetBtn = document.getElementById('drumReset');
+  const autoBtn = document.getElementById('autoDraw');
+  const pickBtn = document.getElementById('pickOne');
+  const outMain = document.getElementById('drumOutMain');
+  const outEuro = document.getElementById('drumOutEuro');
+
+  let running=false, rafId=null, mode='main';
+  let balls=[], drawnMain=[], drawnEuro=[];
+  let lastTime=0;
+
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('input[name=drummode]').forEach(r=>{
+      if(r.value===m) r.checked=true;
+    });
+    initBalls();
+    renderOutputs();
   }
-  drawPipe(ctx){
-    const slot=document.getElementById(this.cv.id==='cvA'?'slotA':'slotB').getBoundingClientRect();
-    const rect=this.cv.getBoundingClientRect();
-    const P=this.xy(this.intake,this.R*0.9);
-    const sx=P.x+6, sy=P.y-6;
-    const ex=slot.left-rect.left+slot.width*0.1, ey=slot.top-rect.top+slot.height*0.3;
-    const cx=(sx+ex)/2 + 80, cy=(sy+ey)/2 - 60;
+  document.querySelectorAll('input[name=drummode]').forEach(r=>{
+    r.addEventListener('change',e=> setMode(e.target.value));
+  });
+
+  function renderOutputs(){
+    function pill(n, euro=false){
+      const span=document.createElement('span');
+      span.className='chip'+(euro?' euro':'');
+      span.textContent=n;
+      return span;
+    }
+    outMain.innerHTML=''; drawnMain.forEach(n=> outMain.appendChild(pill(n,false)));
+    outEuro.innerHTML=''; drawnEuro.forEach(n=> outEuro.appendChild(pill(n,true)));
+  }
+
+  function rng(a,b){ return a + Math.random()*(b-a); }
+
+  function initBalls(){
+    balls.length=0;
+    const count = (mode==='main')? 50 : 12;
+    const labels = Array.from({length:count},(_,i)=> i+1);
+    // Fill with jittered circle placement
+    for(let i=0;i<count;i++){
+      const angle = Math.random()*Math.PI*2;
+      const r = DRUM_R*0.5*rng(0.6,0.98);
+      const x = CX + r*Math.cos(angle);
+      const y = CY + r*Math.sin(angle);
+      const speed = rng(40, 80); // px/s initial
+      const dir = angle + Math.PI/2;
+      balls.push({
+        id: labels[i],
+        x, y,
+        vx: speed*Math.cos(dir),
+        vy: speed*Math.sin(dir),
+        r: RADIUS,
+        m: MASS,
+      });
+    }
+  }
+  initBalls();
+
+  function drawDrum(){
+    // background
+    ctx.clearRect(0,0,W,H);
+    // drum glass
     ctx.save();
-    ctx.lineWidth=18; ctx.strokeStyle='rgba(140,255,230,.12)'; ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(cx,cy,ex,ey); ctx.stroke();
-    ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(CX, CY, DRUM_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(180,220,255,0.35)';
+    ctx.lineWidth=8;
+    ctx.stroke();
+    ctx.restore();
+
+    // gate
+    ctx.beginPath();
+    ctx.arc(GATE_POS.x, GATE_POS.y, GATE_R, 0, Math.PI*2);
+    ctx.strokeStyle='rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.font='12px Inter, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillText('Fang', GATE_POS.x-12, GATE_POS.y-18);
+  }
+
+  function drawBall(b){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle = (mode==='euro') ? 'rgba(255,230,255,0.95)' : 'rgba(189,252,255,0.95)';
+    ctx.fill();
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle=(mode==='euro') ? 'rgba(255,0,234,0.5)':'rgba(0,255,255,0.45)';
+    ctx.stroke();
+    ctx.fillStyle='#111';
+    ctx.font='bold 12px Inter, system-ui';
+    const txt = String(b.id);
+    const w = ctx.measureText(txt).width;
+    ctx.fillText(txt, b.x - w/2, b.y + 4);
     ctx.restore();
   }
-  drawBall(ctx,p,rad,b){
-    const g=ctx.createRadialGradient(p.x-rad*0.35,p.y-rad*0.4,rad*0.1,p.x,p.y,rad*1.1);
-    g.addColorStop(0,'#1fe8dc'); g.addColorStop(0.6,'#12b6ad'); g.addColorStop(1,'#0a766f');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,rad,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,rad,0,Math.PI*2); ctx.stroke();
-    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(b.spin); ctx.globalAlpha=.18; ctx.fillStyle='#fff'; ctx.fillRect(-rad*.8,-rad*.12,rad*1.6,rad*.24); ctx.restore();
-    ctx.font='800 14px Inter,system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(String(b.n).padStart(2,'0'),p.x,p.y);
-    ctx.fillStyle='#eafffb'; ctx.fillText(String(b.n).padStart(2,'0'),p.x,p.y);
-  }
-  frame(ts){
-    const dt=Math.min(1.6,Math.max(0.6,(ts-this.prev)/16))*0.016; this.prev=ts;
-    this.update(dt);
-    const ctx=this.ctx; ctx.clearRect(0,0,this.W,this.H);
-    this.drawGlass(ctx); this.drawPipe(ctx);
-    for(const b of this.balls){ if(!b.live) continue; const p=this.xy(b.a,this.R*b.rm); this.drawBall(ctx,p,this.r,b); }
-    requestAnimationFrame(this.frame.bind(this));
-  }
-  loop(ts){ this.frame(ts||performance.now()); }
-}
-function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
-  ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
-  ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
-}
 
-/* ===== Ergebnis-Flug ===== */
-const rail=document.getElementById('rail');
-function slotPlace(slot,num,gold=false){ rail.querySelector(`[data-slot="${slot}"]`).innerHTML=`<span class="chip ${gold?'gold':''}">${String(num).padStart(2,'0')}</span>`; }
-function bez(p0,p1,p2,t){ const a=(1-t)*(1-t), b=2*(1-t)*t, c=t*t; return {x:a*p0.x+b*p1.x+c*p2.x, y:a*p0.y+b*p1.y+c*p2.y}; }
-async function flyTo(slotElement,start,num,gold){
-  const el=rail.querySelector(`[data-slot="${slotElement}"]`), r=el.getBoundingClientRect();
-  const sx=start.x+90, sy=start.y-6, ex=r.left+r.width/2, ey=r.top+r.height/2;
-  const ctrl={x:(sx+ex)/2+100, y:(sy+ey)/2-50};
-  const chip=document.createElement('div'); chip.className='fly'; chip.textContent=String(num).padStart(2,'0');
-  chip.style.left=(sx-20)+'px'; chip.style.top=(sy-20)+'px'; document.body.appendChild(chip);
-  const D=Math.hypot(ex-sx,ey-sy), dur=1000+Math.min(600,D);
-  await new Promise(res=>{ const t0=performance.now(); (function step(t){ const u=Math.min(1,(t-t0)/dur); const p=bez({x:sx,y:sy},ctrl,{x:ex,y:ey},u);
-    const rot=Math.atan2(p.y-sy,p.x-sx)+u*6*Math.PI; chip.style.transform=`translate(${p.x-sx}px,${p.y-sy}px) rotate(${rot}rad)`;
-    if(u<1) requestAnimationFrame(step); else res(); })(t0); });
-  chip.remove(); slotPlace(slotElement,num,gold);
-}
+  function step(dt){
+    const rpm = Number(rpmEl.value);
+    rpmVal.textContent = `${rpm} U/min`;
+    const drag = Number(dragEl.value);
+    dragVal.textContent = drag.toFixed(3);
 
-/* ===== App ===== */
-const drumA=new Sphere(document.getElementById('cvA'),50);
-const drumB=new Sphere(document.getElementById('cvB'),12);
-let result={A:[],B:[],ts:null}, busy=false;
-document.getElementById('btnReset').onclick=()=>location.reload();
-async function drawSet(drum,count,prefix,isEuro=false){
-  const used=new Set();
-  for(let i=0;i<count;i++){
-    let n=null;
-    do{ n=await drum.eject(({num,start})=>flyTo(`${prefix}${i+1}`,start,num,isEuro)); }
-    while(n==null || used.has(n));
-    used.add(n);
-    (isEuro?result.B:result.A).push(n);
-    await sleep(120);
+    // Convert rpm to angular speed (rad/s)
+    const omega = rpm * 2*Math.PI / 60;
+
+    // Swirl field to mimic "Waschmaschine"
+    for(const b of balls){
+      // vector from center
+      const dx=b.x-CX, dy=b.y-CY;
+      const dist=Math.hypot(dx,dy) || 0.0001;
+      // tangential acceleration
+      const tx = -dy/dist, ty = dx/dist;
+      const swirl = omega*120; // tune factor to feel lively
+      b.vx += tx*swirl*dt;
+      b.vy += ty*swirl*dt;
+
+      // slight radial push outward (centrifugal effect)
+      const radial = omega*30;
+      b.vx += (dx/dist)*radial*dt;
+      b.vy += (dy/dist)*radial*dt;
+
+      // air drag (depends on "Styropor" – light, so noticeable)
+      b.vx *= (1 - drag);
+      b.vy *= (1 - drag);
+
+      // integrate
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+
+      // wall collision (circle)
+      const vx=b.vx, vy=b.vy;
+      const fromC = Math.hypot(b.x-CX,b.y-CY);
+      const maxR = DRUM_R - b.r - 4;
+      if(fromC>maxR){
+        // project back on boundary
+        const nx = (b.x-CX)/fromC, ny=(b.y-CY)/fromC;
+        b.x = CX + nx*maxR;
+        b.y = CY + ny*maxR;
+        // reflect velocity on normal with little energy loss (Styropor is bouncy but light)
+        const vn = vx*nx + vy*ny;
+        const vt_x = vx - vn*nx, vt_y = vy - vn*ny;
+        const restitution = 0.85;
+        b.vx = vt_x - restitution*vn*nx;
+        b.vy = vt_y - restitution*vn*ny;
+      }
+    }
+
+    // ball-ball collisions (elastic, equal mass)
+    for(let i=0;i<balls.length;i++){
+      for(let j=i+1;j<balls.length;j++){
+        const a=balls[i], b=balls[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist2 = dx*dx+dy*dy;
+        const rsum=a.r+b.r;
+        if(dist2 < rsum*rsum){
+          const dist = Math.sqrt(dist2)||0.0001;
+          const nx=dx/dist, ny=dy/dist;
+          const p = (a.vx - b.vx)*nx + (a.vy - b.vy)*ny;
+          if(p>0) continue;
+          const imp = (-2*p)/(1+1); // equal mass
+          a.vx += imp*nx;
+          a.vy += imp*ny;
+          b.vx -= imp*nx;
+          b.vy -= imp*ny;
+          // separate
+          const overlap = (rsum - dist)/2;
+          a.x -= nx*overlap; a.y -= ny*overlap;
+          b.x += nx*overlap; b.y += ny*overlap;
+        }
+      }
+    }
   }
-}
-document.getElementById('btnStart').onclick=async(e)=>{
-  if(busy) return; busy=true; e.currentTarget.disabled=true;
-  result={A:[],B:[],ts:new Date().toISOString()};
-  await drawSet(drumA,5,'A',false);
-  await drawSet(drumB,2,'B',true);
-  result.A.sort((a,b)=>a-b); result.B.sort((a,b)=>a-b);
-  for(let i=0;i<5;i++) slotPlace('A'+(i+1),result.A[i],false);
-  for(let i=0;i<2;i++) slotPlace('B'+(i+1),result.B[i],true);
-  $('#resultText').innerHTML=`<b>Ergebnis:</b> Haupt: ${result.A.map(n=>String(n).padStart(2,'0')).join(' ')} · Euro: ${result.B.map(n=>String(n).padStart(2,'0')).join(' ')} <div class="small">${result.ts}</div>`;
-  analyze(); busy=false; e.currentTarget.disabled=false;
-};
 
-/* ===== Analyse ===== */
-function analyze(){
-  if(!draws.length){ $('#analysisIntro').textContent='Keine Archivdaten geladen.'; return; }
-  $('#analysisIntro').textContent=`Archiv aktiv: ${draws.length} Ziehungen`;
-  const set=new Set(result.A); let m5=0,m4=0,m3=0,e2=0,e1=0;
-  for(const d of draws){ const mm=d.main.filter(n=>set.has(n)).length; if(mm===5)m5++; else if(mm===4)m4++; else if(mm===3)m3++;
-    const me=d.euro.filter(n=>result.B.includes(n)).length; if(me===2)e2++; else if(me===1)e1++; }
-  $('#comboStats').innerHTML=`🎯 5/5: ${m5}× · 4/5: ${m4}× · 3/5: ${m3}×<br>⭐ Euro 2/2: ${e2}× · 1/2: ${e1}×`;
-}
+  function draw(){
+    drawDrum();
+    for(const b of balls) drawBall(b);
+  }
+
+  function loop(ts){
+    if(!running){ return; }
+    const t = ts*0.001;
+    const dt = Math.min(0.033, lastTime? (t-lastTime): 0.016);
+    lastTime = t;
+    step(dt);
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function start(){ if(!running){ running=true; lastTime=0; rafId=requestAnimationFrame(loop); } }
+  function pause(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
+  function reset(){
+    pause();
+    drawnMain.length=0; drawnEuro.length=0;
+    renderOutputs();
+    initBalls();
+    draw();
+  }
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+
+  function removeBallToOutput(ball){
+    // remove from balls
+    balls = balls.filter(b=> b!==ball);
+    // append to output
+    if(mode==='main'){
+      drawnMain.push(ball.id);
+      drawnMain.sort((a,b)=>a-b);
+    }else{
+      drawnEuro.push(ball.id);
+      drawnEuro.sort((a,b)=>a-b);
+    }
+    renderOutputs();
+  }
+
+  function tryCatchOne(){
+    // If a ball is inside the gate circle and slow enough, catch it
+    let candidate=null, best=1e9;
+    for(const b of balls){
+      const d = Math.hypot(b.x-GATE_POS.x, b.y-GATE_POS.y);
+      if(d < GATE_R - 2){
+        const sp = Math.hypot(b.vx,b.vy);
+        if(sp < best){ best = sp; candidate=b; }
+      }
+    }
+    if(candidate){
+      removeBallToOutput(candidate);
+      return true;
+    }
+    return false;
+  }
+
+  pickBtn.addEventListener('click', ()=>{
+    // Try immediate catch; fallback: pick random near top
+    if(tryCatchOne()) return;
+    const nearTop = balls.filter(b=> b.y < CY - DRUM_R*0.2);
+    const pick = (nearTop.length? nearTop : balls);
+    if(pick.length){
+      const b = pick[Math.floor(Math.random()*pick.length)];
+      removeBallToOutput(b);
+    }
+  });
+
+  async function autoDrawSequence(){
+    // Main numbers (5), then switch mode and draw 2 Euros
+    setMode('main');
+    start();
+    await sleep(1200);
+    while(drawnMain.length<5){
+      // let them tumble a bit
+      await sleep(1200);
+      // try to catch one, retry if needed
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){ // hard fallback
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // switch to Euro
+    setMode('euro');
+    start();
+    await sleep(1000);
+    while(drawnEuro.length<2){
+      await sleep(1200);
+      let ok=false, tries=0;
+      while(!ok && tries<6){
+        ok = tryCatchOne();
+        if(!ok){ await sleep(600); tries++; }
+      }
+      if(!ok && balls.length){
+        removeBallToOutput(balls[Math.floor(Math.random()*balls.length)]);
+      }
+    }
+    // done
+    pause();
+  }
+  autoBtn.addEventListener('click', autoDrawSequence);
+
+  // initial static draw
+  draw();
+
+  // integrate with existing animateSelection to visualize picks on Map, if present
+  window.__drum_get_result = function(){
+    return { main: drawnMain.slice(0,5).sort((a,b)=>a-b), euro: drawnEuro.slice(0,2).sort((a,b)=>a-b) };
+  };
+})();
+
 </script>
 </body>
 </html>
