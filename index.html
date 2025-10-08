@@ -3,17 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lotto Suite (Eurojackpot + 6aus49) • Hybrid v2</title>
+<title>Lotto Suite • Eurojackpot + 6aus49 (Merged)</title>
+
+<!-- deps -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-  :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; --amber:#f59e0b; }
+  :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; }
   body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
   .title{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
   .glass{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow: 0 12px 40px rgba(0,0,0,.45);}
   .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-width:90px;height:78px;padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); border:1px solid rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.4);}
-  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.1);}
+  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.1);}
   .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.15rem .6rem; font-size:.74rem;}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
   .btn--green{background:#15803d;color:#fff;}
@@ -23,19 +26,19 @@
   .file-label{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); display:inline-flex; gap:8px; align-items:center;}
   .file-input{display:none}
   .chip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:10px;margin:4px;font-weight:800;font-size:.9rem;color:#bdfcff;background:linear-gradient(180deg,#0e1530,#15204a);border:1px solid rgba(0,255,255,.25);}
-  .chip.euro{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
+  .chip.extra{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
   .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 16px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45); }
   #drumBox{width:100%; aspect-ratio: 4/3; max-height:70vh;}
   #drumCanvas{width:100%; height:100%; background:#0b1022; border:1px solid rgba(255,255,255,.1); border-radius:.7rem; display:block}
 </style>
 </head>
 <body class="p-5">
-  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+  <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
     <h1 class="title text-3xl md:text-4xl">Lotto Suite</h1>
     <div class="flex items-center gap-2">
-      <span class="badge">Spiel:</span>
+      <span class="badge">Spiel</span>
       <select id="gameSelect" class="bg-gray-900 p-2 rounded">
-        <option value="eurojackpot">Eurojackpot</option>
+        <option value="eurojackpot" selected>Eurojackpot</option>
         <option value="lotto6aus49">6 aus 49 (Bayern)</option>
       </select>
     </div>
@@ -47,6 +50,7 @@
     <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
     <button type="button" onclick="tab('trommel', this)" class="nav-btn" id="btn-trommel"><div>🎱</div><span>Trommel</span></button>
     <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
+    <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
   </div>
 
   <!-- ARCHIV -->
@@ -67,7 +71,7 @@
         <a id="directDl" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
         <button type="button" id="loadSample" class="btn btn--gray">🧪 Beispiel laden</button>
       </div>
-      <p class="text-xs text-gray-300 mt-2">Falls CORS/Proxy blockt: „Beispiel laden“ testet die Parser & Charts lokal.</p>
+      <p class="text-xs text-gray-300 mt-2">Falls CORS/Proxy blockt: „Beispiel laden“ testet Parser & Charts lokal.</p>
     </div>
 
     <div class="glass mb-3">
@@ -91,14 +95,14 @@
   <div id="v-map" class="glass hidden">
     <div class="flex items-center justify-between mb-1">
       <h2 class="text-xl font-bold">🗺 Map</h2>
-      <div class="badge">Live-Auswahl</div>
+      <div class="badge">Live‑Animation</div>
     </div>
     <div class="mb-1 flex items-center justify-between">
       <div class="badge" id="mapBadgeMain">Hauptzahlen</div><div id="progress" class="badge">Bereit</div>
     </div>
-    <div id="mapMain" class="flex flex-wrap"></div>
-    <div class="mt-3 badge" id="mapBadgeExtra">Extra</div>
-    <div id="mapExtra" class="flex flex-wrap"></div>
+    <div id="mapMain" class="flex flex-wrap relative"></div>
+    <div class="mt-3 badge" id="mapBadgeExtra">Eurozahlen</div>
+    <div id="mapExtra" class="flex flex-wrap relative"></div>
   </div>
 
   <!-- GENERIEREN -->
@@ -108,8 +112,12 @@
       <div>
         <label class="text-sm text-gray-300">Modus</label>
         <select id="modus" class="bg-gray-900 p-2 rounded w-full">
-          <option value="simple">Zufall (Archiv-gewichtet)</option>
+          <option value="never">Nie gezogene</option>
+          <option value="last100">Letzte 100 – Frequenzmuster</option>
+          <option value="hot">Hot Paare & Triples</option>
           <option value="groups">Gruppen + Wünsche</option>
+          <option value="complex">Komplex (Simulated Annealing)</option>
+          <option value="runs">Folgen‑Zahlen</option>
         </select>
       </div>
       <div>
@@ -118,10 +126,24 @@
       </div>
       <div class="grid grid-cols-3 gap-2">
         <button type="button" id="generateBtn" class="btn btn--green">⚡ Generieren</button>
+        <button type="button" id="analyseAllBtn" class="btn btn--amber">📊 Alle analysieren</button>
         <button type="button" id="clearGeneratedBtn" class="btn btn--gray">🗑️ Alle löschen</button>
       </div>
     </div>
+
+    <div id="groupUI" class="mt-4 hidden">
+      <div class="mb-1 text-sm text-gray-300 flex items-center gap-3">
+        <span id="groupHint">Gruppen</span>
+        <span id="mainCounter" class="badge">0</span>
+        <span id="extraCounter" class="badge">0</span>
+      </div>
+      <div id="groupControls" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+      <div id="extraControls" class="grid grid-cols-2 gap-2 mt-1 hidden"></div>
+      <div id="groupError" class="bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 hidden mt-2"></div>
+    </div>
+
     <pre id="liveOutput" class="font-mono bg-black/70 p-3 mt-3 rounded h-44 overflow-auto text-green-300"></pre>
+    <div id="cards" class="mt-3"></div>
   </div>
 
   <!-- TROMMEL -->
@@ -144,66 +166,86 @@
   <!-- ANALYSE -->
   <div id="v-ana" class="glass hidden">
     <h2 class="text-xl font-bold mb-2">📊 Analyse</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+      <div class="glass"><div class="text-xs text-gray-300">Meistgezogen (Top 5)</div><div id="kpiTop" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Selten (Bottom 5)</div><div id="kpiLow" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Hot (letzte 20)</div><div id="kpiHot" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Top‑Paare</div><div id="kpiPairs" class="font-bold"></div></div>
+    </div>
     <canvas id="chartMain" class="w-full h-60 mb-4"></canvas>
     <canvas id="chartExtra" class="w-full h-56"></canvas>
+    <div id="analysisBox" class="mt-3 text-sm"></div>
+  </div>
+
+  <!-- FAVORITEN -->
+  <div id="v-fav" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">⭐ Favoriten</h2>
+    <div class="flex gap-2 flex-wrap mb-3">
+      <input id="favSearch" placeholder="Suche…" class="bg-gray-900 p-2 rounded flex-1 min-w-[180px]">
+      <button type="button" id="favExport" class="btn btn--gray">Export</button>
+      <button type="button" id="favImport" class="btn btn--gray">Import</button>
+      <button type="button" id="favCSV" class="btn btn--gray">CSV</button>
+      <button type="button" id="favClear" class="btn btn--gray">Leeren</button>
+    </div>
+    <div id="favoritesBox" class="space-y-2"></div>
   </div>
 
 <script>
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const sum = a => a.reduce((s,v)=>s+v,0);
+
 function tab(name, btn){
-  ['archiv','map','gen','trommel','ana'].forEach(n=>$('#v-'+n).classList.add('hidden'));
+  ['archiv','map','gen','trommel','ana','fav'].forEach(n=>$('#v-'+n).classList.add('hidden'));
   $('#v-'+name).classList.remove('hidden');
   $$('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  if(name==='fav') renderFavs();
 }
 
+/* === Game config ========================================================== */
 let currentGame = 'eurojackpot';
 const urls = {
   eurojackpot: "https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip",
   lotto6aus49: "https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_lotto.zip"
 };
 const gameConfig = {
-  eurojackpot: { mainCount:5, mainMax:50, extraCount:2, extraMax:12, extraName:'Eurozahlen', archKey:'ej_archive_v1' },
-  lotto6aus49: { mainCount:6, mainMax:49, extraCount:1, extraMax:9,  extraName:'Superzahl',  archKey:'lz_archive_v1' }
+  eurojackpot: { mainCount:5, mainMax:50, extraCount:2, extraMin:1, extraMax:12, extraName:'Eurozahlen', archKey:'ej_archive_v1', favKey:'ej_favs_v1' },
+  lotto6aus49: { mainCount:6, mainMax:49, extraCount:1, extraMin:0, extraMax:9,  extraName:'Superzahl',  archKey:'lz_archive_v1', favKey:'lz_favs_v1' }
 };
-
-let draws=[], freqMain=[], freqExtra=[], lastSeenM=[], lastSeenE=[];
+let draws=[]; let freqMain=[], freqExtra=[], lastSeenM=[], lastSeenE=[];
 let chartMain, chartExtra;
-
-function showError(msg){
-  const b=$('#errBox'); b.textContent=msg; b.classList.remove('hidden');
-  console.error(msg);
-}
-function clearError(){ $('#errBox').classList.add('hidden'); }
+let favorites = JSON.parse(localStorage.getItem(gameConfig[currentGame].favKey)||"[]");
 
 function applyGameUI(){
   const cfg = gameConfig[currentGame];
   $('#archiveUrl').value = urls[currentGame];
   $('#directDl').href = urls[currentGame];
   $('#mapBadgeMain').textContent = `Hauptzahlen 1–${cfg.mainMax}`;
-  $('#mapBadgeExtra').textContent = `${cfg.extraName} ${currentGame==='lotto6aus49'?'0–9':'1–'+cfg.extraMax}`;
+  $('#mapBadgeExtra').textContent = `${cfg.extraName} ${cfg.extraMin}–${cfg.extraMax}`;
   $('#drumLabel').textContent = currentGame==='eurojackpot' ? 'Venus (50) + Pearl (12)' : 'Trommel 49 + Super (0–9)';
+  favorites = JSON.parse(localStorage.getItem(cfg.favKey)||"[]");
+  renderFavs();
   renderMap();
-  setKPIs();
+  setKPIs(true);
 }
 applyGameUI();
-
 $('#gameSelect').addEventListener('change', (e)=>{
   currentGame = e.target.value;
-  draws=[]; freqMain=[]; freqExtra=[];
-  clearError();
+  // reset stats
+  draws=[]; freqMain=[]; freqExtra=[]; lastSeenM=[]; lastSeenE=[];
+  if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
   applyGameUI();
 });
 
+/* === Map ================================================================ */
 function renderMap(){
   const cfg = gameConfig[currentGame];
   const m=$('#mapMain'); m.innerHTML='';
   for(let i=1;i<=cfg.mainMax;i++){ const d=document.createElement('div'); d.className='chip'; d.textContent=i; d.dataset.n=i; m.appendChild(d); }
   const e=$('#mapExtra'); e.innerHTML='';
-  const startExtra = currentGame==='lotto6aus49' ? 0 : 1;
-  for(let i=startExtra;i<=cfg.extraMax;i++){ const d=document.createElement('div'); d.className='chip euro'; d.textContent=i; d.dataset.n=i; e.appendChild(d); }
+  for(let i=cfg.extraMin;i<=cfg.extraMax;i++){ const d=document.createElement('div'); d.className='chip extra'; d.textContent=i; d.dataset.n=i; e.appendChild(d); }
   $('#progress').textContent='Bereit';
 }
 function clearMap(){ $$('#mapMain .chip, #mapExtra .chip').forEach(c=>c.classList.remove('sel')); }
@@ -214,9 +256,11 @@ async function animateSelection(main, extra){
   $('#progress').textContent='Fertig';
 }
 
-function setKPIs(){
+/* === KPIs & Freshness ==================================================== */
+function setKPIs(reset=false){
   if(!draws.length){
-    $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–'; $('#freshLabel').textContent='–';
+    $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–';
+    if(reset) $('#freshLabel').textContent = currentGame==='eurojackpot'?'EJ':'6aus49';
     return;
   }
   $('#kpiCount').textContent=draws.length;
@@ -224,13 +268,17 @@ function setKPIs(){
   $('#kpiTo').textContent=draws.at(-1).date;
   const last=new Date(draws.at(-1).date);
   const days=Math.max(0, Math.round((Date.now()-last.getTime())/86400000));
-  $('#kpiFresh').textContent = days<=14? 'aktuell' : (days<=60? `ok (${days} Tage alt)` : `veraltet (${days} Tage)`);
-  $('#freshLabel').textContent = currentGame==='eurojackpot' ? 'EJ' : '6aus49';
+  $('#kpiFresh').textContent = days<=14? 'aktuell' : (days<=60? `ok (${days} Tage alt)` : `veraltet (${days} Tage alt)`);
+  $('#freshLabel').textContent = currentGame==='eurojackpot'?'EJ':'6aus49';
 }
+
+/* === Archiv Laden/Parsen ================================================ */
+function showError(msg){ const b=$('#errBox'); b.textContent=msg; b.classList.remove('hidden'); }
+function clearError(){ $('#errBox').classList.add('hidden'); }
 
 async function ensureJSZip(){ return !!window.JSZip; }
 async function fetchWithProxies(url){
-  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
+  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
   let last=null;
   for(const u of trials){
     try{
@@ -241,7 +289,7 @@ async function fetchWithProxies(url){
         const blob=await res.blob(); const zip=await JSZip.loadAsync(blob); const entries=Object.values(zip.files);
         const wanted = entries.filter(f=>/\.(txt|csv)$/i.test(f.name));
         if(!wanted.length) throw new Error('ZIP ohne TXT/CSV');
-        let combined=''; for(const f of wanted){ combined += '\\n' + await f.async('string'); }
+        let combined=''; for(const f of wanted){ combined += '\n' + await f.async('string'); }
         return combined;
       } else { return await res.text(); }
     }catch(e){ last=e; }
@@ -263,28 +311,27 @@ function parseArchiveText(raw){
       else{rest=t.slice(0);}
       const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
       const main = nums.filter(n=> n>=1 && n<=cfg.mainMax).slice(0,cfg.mainCount).sort((a,b)=>a-b);
-      const extraMin = currentGame==='lotto6aus49' ? 0 : 1;
-      const extra = nums.filter(n=> n>=extraMin && n<=cfg.extraMax).slice(0,cfg.extraCount).sort((a,b)=>a-b);
+      const extra = nums.filter(n=> n>=cfg.extraMin && n<=cfg.extraMax).slice(0,cfg.extraCount).sort((a,b)=>a-b);
       if(!date || main.length!==cfg.mainCount || (cfg.extraCount && extra.length!==cfg.extraCount)) return null;
       return {date,main,extra};
     }
-    draws=[]; freqMain=Array(cfg.mainMax+1).fill(0); freqExtra=Array(cfg.extraMax+1).fill(0);
-    lastSeenM=Array(cfg.mainMax+1).fill(null); lastSeenE=Array(cfg.extraMax+1).fill(null);
+    const mm=cfg.mainMax, ee=cfg.extraMax, emin=cfg.extraMin;
+    draws=[]; freqMain=Array(mm+1).fill(0); freqExtra=Array(ee+1).fill(0);
+    lastSeenM=Array(mm+1).fill(null); lastSeenE=Array(ee+1).fill(null);
     cleaned.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
     if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
     draws.sort((a,b)=>a.date.localeCompare(b.date));
     draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeenM[n]=idx;}); d.extra.forEach(n=>{freqExtra[n]++; lastSeenE[n]=idx;}); });
     localStorage.setItem(gameConfig[currentGame].archKey, raw);
     $('#statusText').textContent='Archiv geladen ✔';
-    setKPIs(); renderCharts();
+    setKPIs(); renderCharts(); renderAnalyseKPIs();
     clearError();
-  }catch(e){ $('#statusText').textContent='Fehler beim Parsen'; showError(e.message); }
+  }catch(e){ $('#statusText').textContent='Fehler beim Parsen'; showError(e.message||String(e)); }
 }
 
 document.getElementById('loadLatestBtn').addEventListener('click', async ()=>{
   const url=$('#archiveUrl').value.trim();
-  $('#statusText').textContent='Lade neuestes Archiv…';
-  clearError();
+  $('#statusText').textContent='Lade neuestes Archiv…'; clearError();
   try{ const text=await fetchWithProxies(url); parseArchiveText(text); }
   catch(e){ $('#statusText').textContent='Download fehlgeschlagen'; showError(e?.message||String(e)); }
 });
@@ -308,118 +355,8 @@ document.getElementById('zipInput').addEventListener('change', async (e)=>{
   }catch(err){ showError(err.message||String(err)); }
 });
 
-function renderCharts(){
-  if(!draws.length) return;
-  if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
-  const cfg = gameConfig[currentGame];
-  const mainLabels = [...Array(cfg.mainMax+1).keys()].slice(1);
-  const extraStart = currentGame==='lotto6aus49'? 0:1;
-  const extraLabels = [...Array(cfg.extraMax+1).keys()].slice(extraStart);
-  chartMain=new Chart($('#chartMain'),{type:'bar',data:{labels:mainLabels,datasets:[{data:[...freqMain].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
-  const dataExtra = extraStart===0 ? [...freqExtra] : [...freqExtra].slice(1);
-  chartExtra=new Chart($('#chartExtra'),{type:'bar',data:{labels:extraLabels,datasets:[{data:dataExtra, borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
-}
-
-// Simple generator (archive-weighted)
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
-function pickFromRange(from,to,avoid,count,weightFn){
-  const bag=[]; for(let n=from;n<=to;n++){ if(!avoid.includes(n)){ const w=Math.max(1, weightFn?weightFn(n):1); for(let k=0;k<w;k++) bag.push(n);} }
-  shuffle(bag);
-  const res=[]; for(const v of bag){ if(!res.includes(v)){ res.push(v); if(res.length===count) break; } }
-  return res;
-}
-function autoExtra(){
-  const cfg = gameConfig[currentGame];
-  const start = currentGame==='lotto6aus49'? 0 : 1;
-  const fe=[...freqExtra]; const maxE=Math.max(...fe.slice(start))||1;
-  const lastIdx=draws.length-1;
-  const w = (e)=>{
-    const f = fe[e]/maxE;
-    const gap = lastSeenE[e]!=null ? (lastIdx-lastSeenE[e]) : lastIdx+1;
-    const gapN = Math.min(1, gap/(lastIdx+1));
-    return 1 + Math.round(3*(0.55*f + 0.45*gapN));
-  };
-  const need = cfg.extraCount;
-  const e = pickFromRange(start,cfg.extraMax,[],need,w).sort((a,b)=>a-b);
-  return e;
-}
-function generateOneSimple(){
-  const cfg = gameConfig[currentGame];
-  const fm=[...freqMain]; const maxM=Math.max(...fm.slice(1))||1;
-  const lastIdx=draws.length-1;
-  const w = (n)=>{
-    const f = fm[n]/maxM;
-    const gap = lastSeenM[n]!=null ? (lastIdx-lastSeenM[n]) : lastIdx+1;
-    const gapN = Math.min(1, gap/(lastIdx+1));
-    return 1 + Math.round(4*(0.5*f + 0.5*gapN));
-  };
-  const main = pickFromRange(1,cfg.mainMax,[],cfg.mainCount,w).sort((a,b)=>a-b);
-  const extra = autoExtra();
-  return {main, extra};
-}
-document.getElementById('generateBtn').addEventListener('click', ()=>{
-  const out=$('#liveOutput'); out.textContent='';
-  const k=Math.max(1, Math.min(25, +$('#kombis').value||5));
-  for(let i=1;i<=k;i++){
-    const tip = generateOneSimple();
-    out.textContent += `#${i}: ${tip.main.join(' ')}  |  [${tip.extra.join(' ')}]\\n`;
-  }
-});
-document.getElementById('clearGeneratedBtn').addEventListener('click', ()=>{ $('#liveOutput').textContent=''; });
-
-// Trommel
-const Trommel=(function(){
-  const canvas = ()=>$('#drumCanvas');
-  let cfg={ mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 };
-  function init(opt){
-    cfg = Object.assign(cfg,opt||{});
-    const c=canvas(); const ctx=c.getContext('2d');
-    c.width=c.clientWidth*2; c.height=c.clientHeight*2; ctx.scale(2,2);
-    ctx.fillStyle='#0b1022'; ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
-    ctx.fillStyle='#9cc3ff'; ctx.font='16px monospace'; ctx.fillText(`Trommel bereit (${cfg.mainBalls} + ${cfg.extraBalls})`, 16, 28);
-  }
-  function randBag(n, start=1){
-    const arr=[]; for(let i=0;i<n;i++) arr.push(i+start);
-    for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
-    return arr;
-  }
-  async function draw(){
-    const c=canvas(); const ctx=c.getContext('2d');
-    const mainBag = randBag(cfg.mainBalls, 1);
-    const extraStart = (currentGame==='lotto6aus49')? 0:1;
-    const extraBag = randBag(cfg.extraBalls, extraStart);
-    const main = mainBag.slice(0,cfg.drawMain).sort((a,b)=>a-b);
-    const extra = extraBag.slice(0,cfg.drawExtra).sort((a,b)=>a-b);
-    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
-    ctx.fillStyle='#0b1022'; ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
-    ctx.fillStyle='#bdfcff'; ctx.font='18px monospace';
-    ctx.fillText('Hauptzahlen: '+main.join(' '), 16, 40);
-    ctx.fillText('Zusatz: '+extra.join(' '), 16, 68);
-    function chip(parent, n, euro=false){
-      const d=document.createElement('div'); d.className='chip'+(euro?' euro':''); d.textContent=n; parent.appendChild(d);
-    }
-    $('#outMain').innerHTML=''; main.forEach(n=>chip($('#outMain'), n, false));
-    $('#outExtra').innerHTML=''; extra.forEach(n=>chip($('#outExtra'), n, true));
-    await animateSelection(main, extra);
-  }
-  return { init, draw };
-})();
-$('#startDraw').addEventListener('click', ()=>{
-  const gc = currentGame==='eurojackpot' ? { mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 }
-                                         : { mainBalls:49, extraBalls:10, drawMain:6, drawExtra:1 };
-  Trommel.init(gc); Trommel.draw();
-});
-$('#resetDraw').addEventListener('click', ()=>{
-  const gc = currentGame==='eurojackpot' ? { mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 }
-                                         : { mainBalls:49, extraBalls:10, drawMain:6, drawExtra:1 };
-  Trommel.init(gc);
-});
-Trommel.init({ mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 });
-
-// Sample loader
 document.getElementById('loadSample').addEventListener('click', ()=>{
-  // Minimal synthetische Beispiele (10 Zeilen) für beide Spiele
-  const sampleEJ = `
+  const ej = `
   2024-09-06; 4; 11; 24; 35; 48; 3; 7
   2024-09-13; 8; 16; 17; 36; 49; 4; 9
   2024-09-20; 2; 10; 19; 22; 28; 1; 6
@@ -431,7 +368,7 @@ document.getElementById('loadSample').addEventListener('click', ()=>{
   2024-11-01; 16; 21; 30; 38; 45; 1; 5
   2024-11-08; 11; 19; 22; 28; 50; 4; 6
   `;
-  const sampleLZ = `
+  const lz = `
   06.09.2024; 4; 11; 24; 35; 48; 49; 7
   13.09.2024; 8; 16; 17; 36; 42; 44; 0
   20.09.2024; 2; 10; 19; 22; 28; 33; 3
@@ -443,12 +380,447 @@ document.getElementById('loadSample').addEventListener('click', ()=>{
   01.11.2024; 16; 21; 30; 38; 45; 49; 6
   08.11.2024; 11; 19; 22; 28; 35; 44; 8
   `;
-  const txt = currentGame==='eurojackpot' ? sampleEJ : sampleLZ;
-  parseArchiveText(txt);
+  parseArchiveText(currentGame==='eurojackpot'?ej:lz);
   $('#statusText').textContent='Beispieldaten geladen ✔';
 });
-// set default URL on load
-window.addEventListener('load', applyGameUI);
+
+/* === Analyse (Charts + KPIs) ============================================ */
+function renderCharts(){
+  if(!draws.length) return;
+  if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
+  const cfg = gameConfig[currentGame];
+  const mainLabels = [...Array(cfg.mainMax).keys()].map(i=>i+1);
+  const extraLabels = [...Array(cfg.extraMax-cfg.extraMin+1).keys()].map(i=>i+cfg.extraMin);
+  chartMain=new Chart($('#chartMain'),{type:'bar',data:{labels:mainLabels,datasets:[{data:[...freqMain].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+  const exData = cfg.extraMin===0 ? [...freqExtra] : [...freqExtra].slice(cfg.extraMin);
+  chartExtra=new Chart($('#chartExtra'),{type:'bar',data:{labels:extraLabels,datasets:[{data:exData, borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+}
+function renderAnalyseKPIs(){
+  if(!draws.length) return;
+  const cfg = gameConfig[currentGame];
+  const mf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]);
+  const lf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>a[1]-b[1]);
+  $('#kpiTop').textContent = mf.slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiLow').textContent = lf.slice(0,5).map(x=>x[0]).join(' ');
+  const recent = draws.slice(-20);
+  const counts=Array(cfg.mainMax+1).fill(0); recent.forEach(d=>d.main.forEach(n=>counts[n]++));
+  const hot = counts.map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiHot').textContent = hot;
+  const last=draws.slice(-200);
+  const map=new Map(); function inc(k){ map.set(k,(map.get(k)||0)+1); }
+  last.forEach(d=>{ const m=[...d.main].sort((a,b)=>a-b); for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) inc(`${m[i]}-${m[j]}`); });
+  const pairs=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>k).join('  ');
+  $('#kpiPairs').textContent = pairs;
+}
+
+/* === Generator =========================================================== */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function pickFromRange(from,to,avoid,count,weightFn){
+  const bag=[]; for(let n=from;n<=to;n++){ if(!avoid.includes(n)){ const w=Math.max(1, weightFn?weightFn(n):1); for(let k=0;k<w;k++) bag.push(n);} }
+  shuffle(bag);
+  const res=[]; for(const v of bag){ if(!res.includes(v)){ res.push(v); if(res.length===count) break; } }
+  return res;
+}
+function autoExtra(){
+  const cfg = gameConfig[currentGame];
+  const fe=[...freqExtra]; const maxE=Math.max(...fe.slice(cfg.extraMin))||1;
+  const lastIdx=draws.length-1;
+  const w = (e)=>{
+    const f = fe[e]/maxE;
+    const gap = lastSeenE[e]!=null ? (lastIdx-lastSeenE[e]) : lastIdx+1;
+    const gapN = Math.min(1, gap/(lastIdx+1));
+    return 1 + Math.round(3*(0.55*f + 0.45*gapN));
+  };
+  const e = pickFromRange(cfg.extraMin,cfg.extraMax,[],cfg.extraCount,w).sort((a,b)=>a-b);
+  return e;
+}
+const normalizeVec = v => { const m=Math.max(...v); return v.map(x=> m? x/m : 0); };
+function buildMatrices(){
+  const cfg = gameConfig[currentGame];
+  const C = Array.from({length:cfg.mainMax+1}, ()=>Array(cfg.mainMax+1).fill(0));
+  const recentW = Math.min(150, draws.length);
+  const recentStart = draws.length - recentW;
+  const recentF = Array(cfg.mainMax+1).fill(0);
+  for(let i=0;i<draws.length;i++){
+    const d=draws[i]; const m=d.main;
+    for(let a=0;a<m.length;a++) for(let b=a+1;b<m.length;b++){ C[m[a]][m[b]]++; C[m[b]][m[a]]++; }
+    if(i>=recentStart){ m.forEach(x=>recentF[x]++); }
+  }
+  const fNorm = normalizeVec(freqMain);
+  const trendNorm = normalizeVec(recentF);
+  const gaps = lastSeenM.map(ix => ix==null ? draws.length : (draws.length-1-ix));
+  const gapNorm = normalizeVec(gaps);
+  const pairScore = (i,j)=>{
+    const fij=C[i][j]; if(fij===0) return 0;
+    const denom = (freqMain[i]||1)*(freqMain[j]||1);
+    return fij/denom;
+  };
+  return {pairScore, fNorm, trendNorm, gapNorm};
+}
+function scoreSet(set, mats){
+  const {pairScore,fNorm,trendNorm,gapNorm} = mats;
+  const wF=0.32, wT=0.30, wR=0.38, wPair=0.75, wBal=0.25;
+  const base = set.reduce((s,n)=> s + (wF*fNorm[n] + wT*trendNorm[n] + wR*gapNorm[n]), 0);
+  let p=0; for(let i=0;i<set.length;i++) for(let j=i+1;j<set.length;j++){ p += pairScore(set[i],set[j]); }
+  const cfg = gameConfig[currentGame];
+  const groups = []; const step = Math.ceil(cfg.mainMax/5);
+  for(let i=0;i<5;i++){ groups.push([i*step+1, Math.min(cfg.mainMax,(i+1)*step)]); }
+  const target=[1,1,1,1,1]; const counts=[0,0,0,0,0];
+  set.forEach(n=>{ const g = Math.min(4, Math.floor((n-1)/step)); counts[g]++; });
+  const balPenalty = counts.reduce((s,c,i)=> s + Math.abs(c-target[i]), 0);
+  const balScore = Math.max(0, 5 - balPenalty)/5;
+  return base + wPair*p + wBal*balScore;
+}
+function complexSimulatedAnnealing(){
+  const cfg = gameConfig[currentGame];
+  const mats = buildMatrices();
+  const w = n=> 1 + Math.round(5*(mats.trendNorm[n]*0.6 + mats.gapNorm[n]*0.4));
+  let current = pickFromRange(1,cfg.mainMax,[],cfg.mainCount,w).sort((a,b)=>a-b);
+  let best = current.slice();
+  let currentScore = scoreSet(current, mats);
+  let bestScore = currentScore;
+  const ITER = 1600 + Math.floor(Math.random()*600);
+  for(let t=0;t<ITER;t++){
+    const T = 1 - t/ITER;
+    const c = current.slice();
+    const k = (Math.random()<T? 2:1);
+    for(let i=0;i<k;i++){
+      const rmIdx = Math.floor(Math.random()*c.length);
+      const avoid = c.slice(); avoid.splice(rmIdx,1);
+      const add = pickFromRange(1,cfg.mainMax,avoid,1,w);
+      if(add.length){ c[rmIdx]=add[0]; }
+      c.sort((a,b)=>a-b);
+    }
+    const s = scoreSet(c, mats);
+    const accept = (s>currentScore) || (Math.random()<Math.exp((s-currentScore)/(0.15+0.0001)));
+    if(accept){ current=c; currentScore=s; if(s>bestScore){ best=c; bestScore=s; } }
+  }
+  return {main:best, extra:autoExtra()};
+}
+function runsBest(){
+  const cfg = gameConfig[currentGame];
+  const runMap=new Map();
+  function inc(key){ runMap.set(key,(runMap.get(key)||0)+1); }
+  for(const d of draws){
+    const m=[...d.main].sort((a,b)=>a-b);
+    let seq=[m[0]];
+    for(let i=1;i<m.length;i++){
+      if(m[i]===m[i-1]+1){ seq.push(m[i]); }
+      else{
+        if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+        seq=[m[i]];
+      }
+    }
+    if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+  }
+  const lastIdx = draws.length-1;
+  const scoreEntries=[];
+  for(const [k,v] of runMap.entries()){
+    const nums=k.split('-').map(Number);
+    const lastSeenMin = Math.min(...nums.map(n=> lastSeenM[n]==null? -1 : lastSeenM[n]));
+    const gap = lastSeenMin<0? lastIdx+1 : (lastIdx-lastSeenMin);
+    const fresh = 1 + gap/(lastIdx+1);
+    scoreEntries.push([nums, v*fresh]);
+  }
+  scoreEntries.sort((a,b)=>b[1]-a[1]);
+  const pick = scoreEntries.slice(0,50);
+  const base = pick.length? pick[Math.floor(Math.random()*Math.min(12,pick.length))][0] : [];
+  let main = Array.from(new Set(base));
+  while(main.length<gameConfig[currentGame].mainCount){
+    const add = pickFromRange(1,gameConfig[currentGame].mainMax,main,1, n=> (freqMain[n]? freqMain[n]:1) + (lastSeenM[n]==null?3:0) );
+    if(add.length) main.push(add[0]); else break;
+  }
+  main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,gameConfig[currentGame].mainCount);
+  return {main, extra:autoExtra()};
+}
+function buildGroupUI(){
+  const cfg = gameConfig[currentGame];
+  const step = Math.ceil(cfg.mainMax/5);
+  const groups = [];
+  for(let i=0;i<5;i++){ groups.push({label:`${i*step+1}–${Math.min(cfg.mainMax,(i+1)*step)}`,from:i*step+1,to:Math.min(cfg.mainMax,(i+1)*step)}); }
+  const host=$('#groupControls'); host.innerHTML='';
+  groups.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded" data-idx="${i}">${[0,1,2,3,4,5,6].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    host.appendChild(row);
+  });
+  const ehost=$('#extraControls'); ehost.innerHTML='';
+  const eGroups = (currentGame==='eurojackpot') ? [{label:'1–6',from:1,to:6},{label:'7–12',from:7,to:12}] : [{label:'0–4',from:0,to:4},{label:'5–9',from:5,to:9}];
+  eGroups.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded euro" data-idx="${i}">${[0,1,2].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    ehost.appendChild(row);
+  });
+  $$('#groupControls select, #extraControls select').forEach(sel=> sel.addEventListener('change', updateGroupCounters));
+  updateGroupCounters();
+}
+function updateGroupCounters(){
+  const cfg=gameConfig[currentGame];
+  let sumG=0; $$('#groupControls select').forEach(s=>{ const v=+s.value||0; sumG+=v; s.parentElement.lastChild.textContent=v; });
+  $('#mainCounter').textContent = `${sumG}/${cfg.mainCount}`;
+  let sumE=0; $$('#extraControls select').forEach(s=>{ const v=+s.value||0; sumE+=v; s.parentElement.lastChild.textContent=v; });
+  $('#extraCounter').textContent = `${sumE}/${cfg.extraCount}`;
+  const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+  if(sumG!==cfg.mainCount){ err.classList.remove('hidden'); err.textContent='Bitte genau die benötigte Anzahl aus den Gruppen wählen.'; }
+  if(!(sumE===0 || sumE===cfg.extraCount)){ err.classList.remove('hidden'); err.textContent='Extra-Summe muss 0 oder exakt benötigt sein.'; }
+}
+$('#modus').addEventListener('change', ()=>{
+  const on = $('#modus').value==='groups';
+  $('#groupUI').classList.toggle('hidden', !on);
+  if(on){ buildGroupUI(); }
+});
+
+function generateOne(){
+  const cfg = gameConfig[currentGame];
+  const mode = $('#modus').value;
+  if(!draws.length){
+    return {main: pickFromRange(1,cfg.mainMax,[],cfg.mainCount).sort((a,b)=>a-b), extra: pickFromRange(cfg.extraMin,cfg.extraMax,[],cfg.extraCount).sort((a,b)=>a-b)};
+  }
+  if(mode==='groups'){
+    const want = $$('#groupControls select').map(s=>+s.value||0);
+    const sumWant = sum(want);
+    const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+    if(sumWant!==cfg.mainCount){ err.classList.remove('hidden'); err.textContent='Bitte genau die benötigte Anzahl aus den Gruppen wählen.'; throw new Error('Gruppen unvollständig.'); }
+    let fm=Array(cfg.mainMax+1).fill(1); draws.slice(-100).forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(3*fm[n]/maxM);
+    const step = Math.ceil(cfg.mainMax/5), groups=[]; for(let i=0;i<5;i++){ groups.push([i*step+1, Math.min(cfg.mainMax,(i+1)*step)]); }
+    let main=[]; groups.forEach((g,i)=>{ const need=want[i]||0; if(need>0){ main.push(...pickFromRange(g[0],g[1],main,need,w)); } });
+    main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,cfg.mainCount);
+    let extra=[];
+    const eWant = $$('#extraControls select').map(s=>+s.value||0); const eSum = sum(eWant);
+    if(eSum===0){ extra = autoExtra(); }
+    else{
+      const eGroups = (currentGame==='eurojackpot') ? [[1,6],[7,12]] : [[0,4],[5,9]];
+      eGroups.forEach((g,i)=>{ const need=eWant[i]||0; if(need>0){ extra.push(...pickFromRange(g[0],g[1],extra,need)); } });
+      extra = extra.sort((a,b)=>a-b).slice(0, cfg.extraCount);
+    }
+    return {main, extra};
+  }
+  if(mode==='last100'){
+    const r=draws.slice(-100); const fm=Array(gameConfig[currentGame].mainMax+1).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(3*fm[n]/maxM);
+    const main = pickFromRange(1,cfg.mainMax,[],cfg.mainCount,w).sort((a,b)=>a-b);
+    return {main, extra:autoExtra()};
+  }
+  if(mode==='never'){
+    const fm=[...freqMain]; const w=n=> fm[n]===0?5:(fm[n]<=5?3:1);
+    const main = pickFromRange(1,cfg.mainMax,[],cfg.mainCount,w).sort((a,b)=>a-b);
+    return {main, extra:autoExtra()};
+  }
+  if(mode==='hot'){
+    const recent = draws.slice(-200);
+    const pairMap=new Map(), tripleMap=new Map();
+    function inc(map,key){ map.set(key,(map.get(key)||0)+1); }
+    for(const d of recent){
+      const m=[...d.main].sort((a,b)=>a-b);
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++){ inc(pairMap, `${m[i]}-${m[j]}`); }
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) for(let k=j+1;k<m.length;k++){ inc(tripleMap, `${m[i]}-${m[j]}-${m[k]}`); }
+    }
+    const topPairs=[...pairMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,30).map(e=>e[0].split('-').map(Number));
+    const topTrip=[...tripleMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0].split('-').map(Number));
+    let main=[];
+    if(Math.random()<0.5 && topTrip.length){ main = [...topTrip[Math.floor(Math.random()*topTrip.length)]]; }
+    else if(topPairs.length){ main = [...topPairs[Math.floor(Math.random()*topPairs.length)]]; }
+    const r2=draws.slice(-100); const fm=Array(cfg.mainMax+1).fill(1); r2.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(2*fm[n]/maxM);
+    while(main.length<cfg.mainCount){ const add = pickFromRange(1,cfg.mainMax,main,1,w); if(add.length) main.push(add[0]); else break; }
+    main.sort((a,b)=>a-b);
+    return {main, extra:autoExtra()};
+  }
+  if(mode==='complex'){ return complexSimulatedAnnealing(); }
+  if(mode==='runs'){ return runsBest(); }
+  const main = pickFromRange(1,cfg.mainMax,[],cfg.mainCount).sort((a,b)=>a-b);
+  return {main, extra:autoExtra()};
+}
+
+async function typeLine(el, text){ for(const ch of text){ el.append(ch); await sleep(10);} }
+async function printTip(outEl, index, tip){
+  await typeLine(outEl, "#"+index+": ");
+  for(const n of tip.main){ await typeLine(outEl, n+" "); }
+  await typeLine(outEl, "| X: ");
+  for(const e of tip.extra){ await typeLine(outEl, e+" "); }
+  outEl.append("\\n"); outEl.scrollTop = outEl.scrollHeight;
+}
+function analyseVariant(tip){
+  const idx=[]; for(let i=0;i<draws.length;i++){ const d=draws[i];
+    if(tip.main.length===gameConfig[currentGame].mainCount && d.main.length===gameConfig[currentGame].mainCount && tip.main.every((n,j)=>n===d.main[j])) idx.push(i);
+  }
+  const occurCount=idx.length;
+  const last = occurCount? draws[idx.at(-1)].date : 'nie';
+  const avgGap = occurCount? (function(){ let gaps=[]; for(let i=1;i<idx.length;i++) gaps.push(idx[i]-idx[i-1]); const m=gaps.reduce((a,b)=>a+b,0)/(gaps.length||1); return m.toFixed(1); })() : '–';
+  const first = occurCount? draws[idx[0]].date : '–';
+  const dist = Array(gameConfig[currentGame].mainCount + gameConfig[currentGame].extraCount + 1).fill(0);
+  for(const d of draws){ const ov = tip.main.filter(x=>d.main.includes(x)).length + tip.extra.filter(x=>d.extra.includes(x)).length; dist[ov]++; }
+  const ov3p = dist.slice(3).reduce((a,b)=>a+b,0);
+  const freqSum = tip.main.reduce((s,n)=>s+freqMain[n],0);
+  return {occurCount,last,first,avgGap,dist,ov3p,freqSum};
+}
+function inFav(tip){ return favorites.some(f=> f.main.join('-')===tip.main.join('-') && f.extra.join('-')===tip.extra.join('-') && f.game===currentGame); }
+function tipCard(idx, tip){
+  const a = analyseVariant(tip);
+  const isFav = inFav(tip);
+  const card=document.createElement('div'); card.className='glass mb-3'; card.dataset.key = tip.main.join('-')+'|'+tip.extra.join('-');
+  card.innerHTML = `
+    <div class="flex items-center justify-between">
+      <div>
+        ${tip.main.map(n=>`<span class="chip">${n}</span>`).join('')}
+        <span class="badge">${gameConfig[currentGame].extraName}</span>
+        ${tip.extra.map(n=>`<span class="chip extra">${n}</span>`).join('')}
+      </div>
+      <span class="badge">#${idx}</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 text-sm">
+      <div class="badge">Vorkommen exakt: <b>${a.occurCount}</b></div>
+      <div class="badge">Erstes: <b>${a.first}</b></div>
+      <div class="badge">Letztes: <b>${a.last}</b></div>
+      <div class="badge">Ø Abstand: <b>${a.avgGap}</b></div>
+      <div class="badge">Overlap ≥3: <b>${a.ov3p}</b></div>
+      <div class="badge">FreqSum: <b>${a.freqSum}</b></div>
+    </div>
+    <div class="mt-2 flex gap-2 flex-wrap">
+      <button class="btn ${isFav?'btn--green':'btn--amber'} fav-toggle">${isFav?'✅ In Favoriten':'⭐ Favorit'}</button>
+      <button class="btn btn--gray copy-btn">📋 Kopieren</button>
+      <button class="btn btn--gray del-btn">🗑️ Entfernen</button>
+    </div>`;
+  card.querySelector('.copy-btn').onclick = ()=> navigator.clipboard.writeText(`${tip.main.join('-')} | X:${tip.extra.join('-')}`);
+  card.querySelector('.del-btn').onclick = ()=>{ card.remove(); };
+  card.querySelector('.fav-toggle').onclick = (ev)=>{
+    if(inFav(tip)){
+      favorites = favorites.filter(f=> !(f.main.join('-')===tip.main.join('-') && f.extra.join('-')===tip.extra.join('-') && f.game===currentGame));
+    }else{
+      favorites.push({...tip, game: currentGame});
+    }
+    localStorage.setItem(gameConfig[currentGame].favKey, JSON.stringify(favorites));
+    ev.target.textContent = inFav(tip) ? '✅ In Favoriten' : '⭐ Favorit';
+    ev.target.classList.toggle('btn--green', inFav(tip));
+    ev.target.classList.toggle('btn--amber', !inFav(tip));
+    renderFavs();
+  };
+  return card;
+}
+
+document.getElementById('generateBtn').addEventListener('click', async ()=>{
+  if(!draws.length){ alert('Bitte zuerst ein Archiv laden.'); return; }
+  if($('#modus').value==='groups' && $('#groupControls').children.length===0){ buildGroupUI(); }
+  const total = +$('#kombis').value || 1;
+  const out = $('#liveOutput'); out.textContent='';
+  $('#cards').innerHTML='';
+  const seen=new Set();
+  for(let i=1;i<=total;i++){
+    try{
+      let tip = generateOne();
+      let key = tip.main.join('-')+'|'+tip.extra.join('-');
+      let guard=0; while(seen.has(key) && guard<10){ tip = generateOne(); key=tip.main.join('-')+'|'+tip.extra.join('-'); guard++; }
+      seen.add(key);
+      await animateSelection(tip.main, tip.extra);
+      await printTip(out, i, tip);
+      $('#cards').appendChild(tipCard(i, tip));
+    }catch(e){
+      const err=$('#groupError'); err.classList.remove('hidden'); err.textContent=e.message; break;
+    }
+  }
+});
+document.getElementById('clearGeneratedBtn').addEventListener('click', ()=>{ $('#cards').innerHTML=''; $('#liveOutput').textContent=''; });
+document.getElementById('analyseAllBtn').addEventListener('click', ()=>{
+  const cards = $$('#cards .glass'); if(!cards.length){ alert('Bitte zuerst Varianten generieren.'); return; }
+  // Recompute distribution
+  const dist=Array(gameConfig[currentGame].mainCount + gameConfig[currentGame].extraCount + 1).fill(0);
+  cards.forEach(c=>{
+    const key=c.dataset.key; const [m,e]=key.split('|');
+    const main=m.split('-').map(Number); const extra=e.split('-').map(Number);
+    for(const d of draws){ const ov = main.filter(x=>d.main.includes(x)).length + extra.filter(x=>d.extra.includes(x)).length; dist[ov]++; }
+  });
+  const table = dist.map((v,i)=>`<tr><td class="px-2 py-1">${i}</td><td class="px-2 py-1">${v}</td></tr>`).join('');
+  $('#analysisBox').innerHTML = `<div class="glass mt-2"><div class="font-bold mb-2">Overlap‑Verteilung (alle Varianten × Archiv)</div><table class="text-sm"><thead><tr><th class="px-2 py-1">Treffer</th><th class="px-2 py-1">Anzahl</th></tr></thead><tbody>${table}</tbody></table></div>`;
+  $('#v-ana').scrollIntoView({behavior:'smooth'});
+});
+
+/* === Favoriten =========================================================== */
+function renderFavs(){
+  const box=$('#favoritesBox'); if(!box) return; box.innerHTML='';
+  const q=($('#favSearch')?.value||'').toLowerCase();
+  const filtered = favorites.filter(f=> (f.main.join(' ')+' '+f.extra.join(' ')).toLowerCase().includes(q) && f.game===currentGame);
+  filtered.forEach((f,i)=>{
+    const div=document.createElement('div'); div.className='glass p-3';
+    const grid=document.createElement('div'); grid.className='flex flex-wrap items-center gap-1';
+    f.main.forEach(n=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=n; grid.appendChild(s); });
+    const label=document.createElement('span'); label.className='badge ml-2'; label.textContent=gameConfig[currentGame].extraName; grid.appendChild(label);
+    f.extra.forEach(n=>{ const s=document.createElement('span'); s.className='chip extra'; s.textContent=n; grid.appendChild(s); });
+    const actions=document.createElement('div'); actions.className='mt-2 flex gap-2 flex-wrap';
+    actions.innerHTML=`
+      <button class="btn btn--gray" onclick='navigator.clipboard.writeText("${f.main.join('-')} | X:${f.extra.join('-')}")'>Copy</button>
+      <button class="btn btn--gray" onclick='animateSelection(${JSON.stringify(f.main)}, ${JSON.stringify(f.extra)})'>Show</button>
+      <button class="btn btn--gray" onclick="removeFav(${i})" style="border-color: rgba(255,0,0,.25)">Entfernen</button>`;
+    div.appendChild(grid); div.appendChild(actions); box.appendChild(div);
+  });
+}
+function removeFav(idx){
+  favorites.splice(idx,1);
+  localStorage.setItem(gameConfig[currentGame].favKey, JSON.stringify(favorites));
+  renderFavs();
+}
+$('#favSearch')?.addEventListener('input', renderFavs);
+$('#favExport')?.addEventListener('click', ()=>{
+  const blob=new Blob([JSON.stringify(favorites,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`favoriten_${currentGame}.json`; a.click(); URL.revokeObjectURL(url);
+});
+$('#favCSV')?.addEventListener('click', ()=>{
+  const rows = [["n1","n2","n3","n4","n5or6","n6or_","x1","x2?"], ...favorites.filter(f=>f.game===currentGame).map(f=>[...f.main, ...f.extra])];
+  const csv = rows.map(r=>r.join(",")).join("\n");
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`favoriten_${currentGame}.csv`; a.click(); URL.revokeObjectURL(url);
+});
+$('#favImport')?.addEventListener('click', ()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=async e=>{ const file=e.target.files?.[0]; if(!file) return; const txt=await file.text(); try{ const arr=JSON.parse(txt||'[]'); favorites=[...favorites, ...arr.filter(x=>x && x.main && x.extra).map(x=>({...x, game: currentGame}))]; localStorage.setItem(gameConfig[currentGame].favKey, JSON.stringify(favorites)); renderFavs(); }catch(e){ alert('Import fehlerhaft.'); } };
+  inp.click();
+});
+$('#favClear')?.addEventListener('click', ()=>{ if(confirm('Alle Favoriten löschen?')){ favorites=favorites.filter(f=>f.game!==currentGame); localStorage.setItem(gameConfig[currentGame].favKey, JSON.stringify(favorites)); renderFavs(); } });
+
+/* === Trommel (simple) ==================================================== */
+const Trommel=(function(){
+  const c = document.getElementById('drumCanvas');
+  const ctx = c.getContext('2d');
+  function resize(){
+    const dpr=Math.max(1, Math.floor(window.devicePixelRatio||1));
+    c.width=c.clientWidth*dpr; c.height=c.clientHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.fillStyle='#0b1022'; ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
+    ctx.fillStyle='#9cc3ff'; ctx.font='16px monospace'; ctx.fillText('Trommel bereit', 16, 28);
+  }
+  window.addEventListener('resize', resize); resize();
+  function drawOnce(){
+    const cfg=gameConfig[currentGame];
+    const main = pickFromRange(1,cfg.mainMax,[],cfg.mainCount).sort((a,b)=>a-b);
+    const extra = pickFromRange(cfg.extraMin,cfg.extraMax,[],cfg.extraCount).sort((a,b)=>a-b);
+    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    ctx.fillStyle='#0b1022'; ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
+    ctx.fillStyle='#bdfcff'; ctx.font='18px monospace';
+    ctx.fillText('Hauptzahlen: '+main.join(' '), 16, 40);
+    ctx.fillText((gameConfig[currentGame].extraName)+': '+extra.join(' '), 16, 68);
+    function chip(parent, n, extraMode=false){ const d=document.createElement('span'); d.className='chip'+(extraMode?' extra':''); d.textContent=n; parent.appendChild(d); }
+    $('#outMain').innerHTML=''; main.forEach(n=>chip($('#outMain'), n, false));
+    $('#outExtra').innerHTML=''; extra.forEach(n=>chip($('#outExtra'), n, true));
+    animateSelection(main, extra);
+  }
+  return { drawOnce };
+})();
+document.getElementById('startDraw').addEventListener('click', ()=>Trommel.drawOnce());
+document.getElementById('resetDraw').addEventListener('click', ()=>{
+  const ctx=document.getElementById('drumCanvas').getContext('2d');
+  const c=document.getElementById('drumCanvas');
+  ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+});
+
+/* Restore saved archive per game */
+(()=>{
+  Object.keys(gameConfig).forEach(game=>{
+    const saved = localStorage.getItem(gameConfig[game].archKey);
+    if(saved && game===currentGame){ try{ parseArchiveText(saved); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} }
+  });
+  setKPIs(true);
+  // default URL
+  $('#archiveUrl').value = urls[currentGame];
+  $('#directDl').href = urls[currentGame];
+})();
 </script>
 </body>
 </html>
