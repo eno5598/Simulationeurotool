@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Eurojackpot – v15 (Trommel + Analyse)</title>
+<title>Eurojackpot – v16 (exakte Klappe + Analyse)</title>
 <style>
   :root{--bg:#0b1220;--fg:#e8eef9;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12)}
   *{box-sizing:border-box}
@@ -14,7 +14,7 @@
   .nav .active{outline:2px solid rgba(99,102,241,.45)}
   .panel{margin-top:12px;background:var(--glass);border:1px solid var(--border);border-radius:1rem;padding:1rem}
   .badge{display:inline-block;padding:.2rem .6rem;border-radius:.5rem;border:1px solid var(--border);font-size:.85rem;opacity:.95}
-  .btn{padding:.55rem .9rem;border-radius:.6rem;border:1px solid var(--border);background:rgba(16,185,129,.18);color:var(--fg);cursor:pointer}
+  .btn{padding:.55rem .9rem;border-radius:.6rem;border:1px solid var(--border);background:rgba(16,185,129,.18);color:#e8eef9;cursor:pointer}
   .btn-amber{background:rgba(245,158,11,.2)}
   .chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:999px;padding:0 .5rem;border:1px solid rgba(255,255,255,.2);margin:.15rem;background:#fff;color:#111;font-weight:700}
   .hidden{display:none}
@@ -102,7 +102,7 @@ window.EJ = window.EJ || {
   _load(){ try{ const j=localStorage.getItem('ej_data'); if(j){ const o=JSON.parse(j); EJ.history=o.history||[]; EJ.tips=o.tips||[]; } }catch(e){} }
 }; EJ._load();
 
-/* === Trommel (v15) – Start-only, gate colors, chute ===================== */
+/* === Trommel (v16) – exakte 2s Gate-Dwell ================================ */
 (function(){
   const box=document.getElementById('drumBox'), canvas=document.getElementById('drumCanvas');
   const ctx=canvas.getContext('2d',{alpha:false});
@@ -119,6 +119,7 @@ window.EJ = window.EJ || {
   }
   window.addEventListener('resize', resize);
 
+  // Geometry
   const BALL_DIAM_CM=4.5, DRUM_DIAM_CM=70;
   let W=0,H=0,CX=0,CY=0,DRUM_R=0,cm2px=0,R=0, CATCH, JETS, JET_R;
   function setupGeom(){
@@ -129,12 +130,16 @@ window.EJ = window.EJ || {
     JET_R=Math.max(90,R*3.6);
   }
 
+  // Physics
   const OMEGA=1.1, GRAV_Y=540, LIN_DRAG=0.32, REST=0.78;
+  const CHUTE_SPEED=0.85;            // roll speed along chute
+  const GATE_DWELL_MS=2000;          // exact 2 seconds closed after arrival
 
+  // State
   let balls=[], phase='idle', running=false, raf=0, lastT=0;
   let drawnMain=[], drawnEuro=[];
-  let gateOpen=false, chuteBall=null, chuteT=0;     // gate closed by default
-  let capturingEnabled=false;                       // only after Start
+  let gateOpen=false, chuteBall=null, chuteT=0;
+  let capturingEnabled=false;
 
   function rng(a,b){return a+Math.random()*(b-a);}
   function chip(n){const s=document.createElement('span');s.className='chip';s.textContent=n;return s;}
@@ -157,12 +162,16 @@ window.EJ = window.EJ || {
 
   function drawDrum(isPearl){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Vessel
     ctx.beginPath(); ctx.arc(CX,CY,DRUM_R,0,Math.PI*2); ctx.strokeStyle='rgba(210,230,255,.65)'; ctx.lineWidth=8; ctx.stroke();
+    // Gate ring color
     ctx.beginPath(); ctx.arc(CATCH.x,CATCH.y,CATCH.r,0,Math.PI*2);
     ctx.strokeStyle = gateOpen ? '#80e27e' : '#ff5252'; ctx.lineWidth=3; ctx.stroke();
+    // Chute
     const outX=CX+DRUM_R*0.6, outY=CY+DRUM_R*0.35;
     ctx.beginPath(); ctx.moveTo(CATCH.x, CATCH.y+CATCH.r); ctx.quadraticCurveTo(CX+DRUM_R*0.55, CY-DRUM_R*0.2, outX, outY);
     ctx.lineWidth=6; ctx.strokeStyle='rgba(200,220,255,.25)'; ctx.stroke();
+    // Jets
     for(const j of JETS){ ctx.beginPath(); ctx.arc(j.x,j.y,7,0,Math.PI*2); ctx.fillStyle='rgba(120,170,255,.5)'; ctx.fill(); }
   }
   function drawBall(b,isPearl){
@@ -212,13 +221,17 @@ window.EJ = window.EJ || {
   }
 
   function updateChute(dt){
-    if(!chuteBall) return; chuteT=Math.min(1, chuteT + dt*0.8);
+    if(!chuteBall) return; chuteT=Math.min(1, chuteT + dt*CHUTE_SPEED);
     const p=chutePoint(chuteT); drawBall({x:p.x,y:p.y,r:R,id:chuteBall.id}, chuteBall.isPearl);
-    if(chuteT>=1){ const id=chuteBall.id, isPearl=chuteBall.isPearl; chuteBall=null;
-      setTimeout(()=>{ commitNumber(id,isPearl);
-        if(phase==='switch'){ if(!chuteBall){ phase='euro_init'; setTimeout(()=>{ init(12,true); phase='euro'; }, 500); } }
-        setTimeout(()=>{ gateOpen=true; }, 300);
-      }, 1200);
+    if(chuteT>=1){
+      const id=chuteBall.id, isPearl=chuteBall.isPearl;
+      chuteBall=null;
+      // Commit sofort beim Ankommen, Gate bleibt EXAKT 2s geschlossen
+      commitNumber(id,isPearl);
+      if(phase==='switch'){ // umstellen auf Pearl während Gate zu ist
+        setTimeout(()=>{ init(12,true); phase='euro'; }, 200); // kleiner Umschaltpuffer
+      }
+      setTimeout(()=>{ gateOpen=true; }, GATE_DWELL_MS); // exakte 2s
     }
   }
 
@@ -226,7 +239,7 @@ window.EJ = window.EJ || {
   function loop(ts){ if(!running) return; const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
     if(phase==='main'||phase==='euro'){ physics(dt,t,(phase!=='main')); }
     drawDrum(phase!=='main'); for(const b of balls) drawBall(b,(phase!=='main')); updateChute(dt);
-    if(dbg) dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(gateOpen?' | gate:open':' | gate:closed')+(capturingEnabled?' | capturing:on':' | capturing:off');
+    dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(gateOpen?' | gate:open':' | gate:closed')+(capturingEnabled?' | capturing:on':' | capturing:off');
     raf=requestAnimationFrame(loop); }
   function start(){ if(running) return; running=true; lastT=0; raf=requestAnimationFrame(loop); }
   function stop(){ running=false; if(raf) cancelAnimationFrame(raf); raf=0; }
@@ -235,11 +248,11 @@ window.EJ = window.EJ || {
   resetBtn.addEventListener('click', ()=>{ reset(); init(50,false); phase='main'; start(); });
   startBtn.addEventListener('click', ()=>{ if(phase==='idle'){ init(50,false); phase='main'; } start(); gateOpen=true; capturingEnabled=true; });
 
-  // Boot
+  // Boot: Kugeln wirbeln sofort (Gate zu), fangen erst nach Start
   resize(); reset(); init(50,false); phase='main'; start();
 })(); 
 
-/* === Analyse: Frequenz, Treffer, Verlauf ================================ */
+/* === Analyse ============================================================= */
 (function(){
   const freqMain=document.getElementById('freq-main'), freqEuro=document.getElementById('freq-euro'), hitStats=document.getElementById('hit-stats'), history=document.getElementById('history');
   const btnRefresh=document.getElementById('btn-refresh-stats'), btnClear=document.getElementById('btn-clear-data');
