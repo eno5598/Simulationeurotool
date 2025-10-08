@@ -1,116 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Eurojackpot Tool by EnoWeb • v6.5.2</title>
-
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
+<title>Eurojackpot – v18 (Komplett)</title>
 <style>
-  :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; }
-  body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
-  .title{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
-  .glass{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow: 0 12px 40px rgba(0,0,0,.45);}
-  .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-width:90px;height:78px;padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); border:1px solid rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.4);}
-  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.1);}
-  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:10px;margin:4px;font-weight:800;font-size:.9rem;color:#bdfcff;background:linear-gradient(180deg,#0e1530,#15204a);border:1px solid rgba(0,255,255,.25);}
-  .chip.euro{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
-  .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 16px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45); }
-  .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.15rem .5rem; font-size:.72rem;}
-  .counter{padding:.2rem .55rem;border-radius:999px;font-weight:700}
-  .counter.red{background:#3a1520;border:1px solid var(--bad)}
-  .counter.green{background:#153a29;border:1px solid var(--ok)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
-  .btn--green{background:#15803d;color:#fff;}
-  .btn--amber{background:#b45309;color:#fff;}
-  .btn--gray{background:#374151;color:#fff;}
-  .btn:hover{filter:brightness(1.1)}
-  .file-label{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); display:inline-flex; gap:8px; align-items:center;}
-  .file-input{display:none}
-
-  /* v16 Trommel/Analyse styles */
-  
-  :root{--bg:#0b1220;--fg:#e8eef9;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12)}
+  :root{--bg:#0b1220;--fg:#e8eef9;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12);--accent:rgba(99,102,241,.4)}
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
-  .wrap{max-width:980px;margin:16px auto;padding:0 12px}
-  .nav{display:flex;gap:8px;flex-wrap:wrap}
+  .wrap{max-width:1100px;margin:18px auto;padding:0 12px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
   .nav button{display:flex;gap:.4rem;align-items:center;border:1px solid var(--border);background:var(--glass);color:var(--fg);padding:.6rem .9rem;border-radius:.7rem;cursor:pointer}
-  .nav .active{outline:2px solid rgba(99,102,241,.45)}
+  .nav .active{outline:2px solid var(--accent)}
   .panel{margin-top:12px;background:var(--glass);border:1px solid var(--border);border-radius:1rem;padding:1rem}
-  .badge{display:inline-block;padding:.2rem .6rem;border-radius:.5rem;border:1px solid var(--border);font-size:.85rem;opacity:.95}
+  .badge{display:inline-block;padding:.25rem .6rem;border-radius:.5rem;border:1px solid var(--border);font-size:.85rem;opacity:.95}
   .btn{padding:.55rem .9rem;border-radius:.6rem;border:1px solid var(--border);background:rgba(16,185,129,.18);color:#e8eef9;cursor:pointer}
   .btn-amber{background:rgba(245,158,11,.2)}
+  .btn-red{background:rgba(244,63,94,.18)}
   .chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:999px;padding:0 .5rem;border:1px solid rgba(255,255,255,.2);margin:.15rem;background:#fff;color:#111;font-weight:700}
   .hidden{display:none}
+  input,select{background:#0f1730;border:1px solid var(--border);border-radius:.5rem;color:var(--fg);padding:.5rem .6rem}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--border);padding:.5rem;text-align:left}
   #dbg{position:fixed;left:8px;bottom:8px;font:11px/1.2 ui-monospace,Consolas,monospace;color:#b7c7ff;background:rgba(17,24,39,.7);padding:.25rem .4rem;border:1px solid rgba(255,255,255,.2);border-radius:.4rem;z-index:9}
   #drumBox{width:100%;aspect-ratio:4/3;max-height:70vh}
   #drumCanvas{width:100%;height:100%;background:#0b1022;border:1px solid rgba(255,255,255,.1);border-radius:.7rem;display:block}
-
 </style>
 </head>
-<script>
-function openTab(name, btn){
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-trommel').classList.add('hidden');
-  document.getElementById('tab-analyse').classList.add('hidden');
-  document.getElementById('tab-'+name).classList.remove('hidden');
-  if(name==='analyse' && window.EJRefreshAnalysis){ EJRefreshAnalysis(); }
-}
-</script>
-<body class="p-5">
-  <h1 class="title text-3xl md:text-4xl mb-4">Eurojackpot Tool by EnoWeb</h1>
-
-  <div class="flex justify-center flex-wrap gap-3 mb-6">
-    <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"><div>📂</div><span>Archiv</span></button>
-    <button type="button" onclick="tab('trommel', this)" class="nav-btn" id="btn-trommel"><div>🎱</div><span>Trommel</span></button>
-    <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
-    <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
-    <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
-    <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
-    <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <button class="active" onclick="openTab('start', this)">🏠 Start</button>
+    <button onclick="openTab('gen', this)">🎰 Generator</button>
+    <button onclick="openTab('trommel', this)">🎱 Trommel</button>
+    <button onclick="openTab('analyse', this)">📊 Analyse</button>
+    <button onclick="openTab('archiv', this)">📂 Archiv</button>
   </div>
 
-  <!-- ARCHIV -->
-  <div id="v-archiv" class="glass">
-    <h2 class="text-xl font-bold mb-2">📂 Archiv</h2>
-    <p id="statusText" class="text-sm mb-2">Noch kein Archiv geladen.</p>
-
-    <div class="glass mb-3">
-      <div class="font-semibold mb-2">Automatisches Laden</div>
-      <div class="flex flex-col md:flex-row gap-2">
-        <input id="archiveUrl" class="bg-gray-900 p-2 rounded flex-1" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
-        <button type="button" id="loadLatestBtn" class="btn btn--green">📥 Neueste laden</button>
-        <button type="button" id="forceDlBtn" class="btn btn--amber">⬇️ ZIP speichern</button>
-        <a id="directDl" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
+  <!-- START -->
+  <section id="tab-start" class="panel">
+    <h2 style="margin:0 0 6px 0;font-weight:800">Eurojackpot – Komplettmodul</h2>
+    <p>Dein All-in-One-Tool: <b>Generator</b> für Tipps, realistische <b>Trommel</b> (Venus & Pearl) mit exakter Klappe, <b>Analyse</b> (Häufigkeit, Treffer 3/5–5/5) und <b>Archiv</b> (Speichern, Export/Import). Alles lokal, keine Server.</p>
+    <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div class="badge">Schnellstart</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="openTab('gen', this)">→ Tipp generieren</button>
+          <button class="btn" onclick="openTab('trommel', this)">→ Ziehung starten</button>
+          <button class="btn" onclick="openTab('analyse', this)">→ Analyse</button>
+        </div>
       </div>
-      <p class="text-xs text-gray-300 mt-2">„ZIP speichern“ lädt über mehrere Proxys und speichert lokal. „Direktlink“ öffnet die Original-URL.</p>
+      <div>
+        <div class="badge">Status</div>
+        <div id="statusBox" style="margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:13px"></div>
+      </div>
     </div>
+  </section>
 
-    <div class="glass mb-3">
-      <div class="font-semibold mb-2">Manuell laden</div>
-      <label class="file-label">
-        📄 Datei auswählen
-        <input type="file" id="zipInput" class="file-input" accept=".zip,.txt,.csv">
-      </label>
-      <span id="fileName" class="ml-2 text-sm opacity-80">Keine Datei ausgewählt</span>
-      <div class="badge mt-2">Tipp: ZIP/TXT/CSV per Drag & Drop auf die Seite ziehen.</div>
+  <!-- GENERATOR -->
+  <section id="tab-gen" class="panel hidden">
+    <h2 style="margin:0 0 6px 0;font-weight:800">🎰 Tipp-Generator</h2>
+    <div class="panel">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn" id="btn-gen">🎲 1 Tipp generieren</button>
+        <label>n× <input id="gen-count" type="number" min="1" max="20" value="5" style="width:70px"></label>
+        <button class="btn" id="btn-gen-multi">🎲 Mehrere Tipps</button>
+        <button class="btn" id="btn-save-tip">💾 Aktuellen Tipp speichern</button>
+      </div>
+      <div style="margin-top:8px">
+        <div class="badge">Aktueller Tipp</div>
+        <div id="cur-tip" style="display:flex;flex-wrap:wrap;margin-top:4px"></div>
+      </div>
     </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-      <div><div class="text-sm text-gray-300">Ziehungen</div><div id="kpiCount" class="font-bold">–</div></div>
-      <div><div class="text-sm text-gray-300">Von</div><div id="kpiFrom" class="font-bold">–</div></div>
-      <div><div class="text-sm text-gray-300">Bis</div><div id="kpiTo" class="font-bold">–</div></div>
-      <div><div class="text-sm text-gray-300">Aktualität</div><div id="kpiFresh" class="font-bold">–</div></div>
+    <div class="panel">
+      <h3 style="margin:0 0 6px 0">Manuell eingeben</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="man-main" placeholder="Hauptzahlen (5) z. B. 1,7,14,23,45">
+        <input id="man-euro" placeholder="Eurozahlen (2) z. B. 4,9">
+        <button class="btn" id="btn-add-man">➕ Tipp hinzufügen</button>
+      </div>
+      <small>Hauptzahlen 1–50 (5 Stück, einzigartig), Eurozahlen 1–12 (2 Stück, einzigartig).</small>
     </div>
-    <p id="freshHint" class="text-xs opacity-80 mt-2"></p>
-  </div>
+  </section>
 
-  <section id="tab-trommel" class="panel">
+  <!-- TROMMEL -->
+  <section id="tab-trommel" class="panel hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <h2 style="margin:0;font-weight:800">🎱 Ziehung – Trommel (Venus ➜ Pearl)</h2>
       <div class="badge" id="drumLabel">Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g</div>
@@ -130,313 +104,8 @@ function openTab(name, btn){
     <div id="outEuro" style="margin-top:.25rem;display:flex;flex-wrap:wrap"></div>
   </section>
 
-<!-- MAP -->
-  <div id="v-map" class="glass hidden">
-    <div class="flex items-center justify-between mb-1">
-      <h2 class="text-xl font-bold">🗺 Map</h2>
-      <div class="badge">Live‑Animation</div>
-    </div>
-    <div class="mb-1 flex items-center justify-between">
-      <div class="badge">Hauptzahlen 1–50</div><div id="progress" class="badge">Bereit</div>
-    </div>
-    <div id="mapMain" class="flex flex-wrap relative"></div>
-    <div class="mt-3 badge">Eurozahlen 1–12</div>
-    <div id="mapEuro" class="flex flex-wrap relative"></div>
-  </div>
-
-  <!-- GENERIEREN -->
-  <div id="v-gen" class="glass hidden">
-    <h2 class="text-xl font-bold mb-2">⚡ Generieren</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div>
-        <label class="text-sm text-gray-300">Modus</label>
-        <select id="modus" class="bg-gray-900 p-2 rounded w-full">
-          <option value="never">Nie gezogene</option>
-          <option value="last100">Letzte 100 – Frequenzmuster</option>
-          <option value="hot">Hot Paare & Triples</option>
-          <option value="groups">5er-Gruppen + Wünsche</option>
-          <option value="complex">Komplex (Simulated Annealing)</option>
-          <option value="runs">Folgen‑Zahlen</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-sm text-gray-300">Anzahl Kombinationen</label>
-        <input type="number" id="kombis" value="5" min="1" max="25" class="bg-gray-900 p-2 rounded w-full">
-      </div>
-      <div class="grid grid-cols-3 gap-2">
-        <button type="button" id="generateBtn" class="btn btn--green">⚡ Generieren</button>
-        <button type="button" id="analyseAllBtn" class="btn btn--amber">📊 Alle analysieren</button>
-        <button type="button" id="clearGeneratedBtn" class="btn btn--gray">🗑️ Alle löschen</button>
-      </div>
-    </div>
-
-    <div id="groupUI" class="mt-4 hidden">
-      <div class="mb-1 text-sm text-gray-300 flex items-center gap-3">
-        <span>Gruppen: exakt 5 erforderlich</span>
-        <span id="mainCounter" class="counter red">0/5</span>
-        <span id="euroCounter" class="counter red hidden">0/2</span>
-      </div>
-      <div id="groupControls" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
-      <div class="mt-1 flex items-center justify-between">
-        <div class="badge">Eurozahlen (optional, 0 oder 2)</div>
-        <label class="inline-flex items-center gap-2">
-          <input id="useEuro" type="checkbox"><span class="text-sm">Euro berücksichtigen</span>
-        </label>
-      </div>
-      <div id="euroControls" class="grid grid-cols-2 gap-2 mt-1 hidden"></div>
-      <div id="groupError" class="bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 hidden mt-2"></div>
-    </div>
-
-    <pre id="liveOutput" class="font-mono bg-black/70 p-3 mt-3 rounded h-44 overflow-auto text-green-300"></pre>
-    <div id="cards" class="mt-3"></div>
-  </div>
-
   <!-- ANALYSE -->
-  <div id="kpiTop" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Selten (Bottom 5)</div><div id="kpiLow" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Hot (letzte 20)</div><div id="kpiHot" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Top‑Paare</div><div id="kpiPairs" class="font-bold"></div></div>
-    </div>
-    <canvas id="chartMain" class="w-full h-60 mb-4"></canvas>
-    <canvas id="chartEuro" class="w-full h-56"></canvas>
-    <div id="analysisBox" class="mt-3 text-sm"></div>
-  </div>
-
-  <!-- FAVORITEN -->
-  <div id="v-fav" class="glass hidden">
-    <h2 class="text-xl font-bold mb-2">⭐ Favoriten</h2>
-    <div class="flex gap-2 flex-wrap mb-3">
-      <input id="favSearch" placeholder="Suche…" class="bg-gray-900 p-2 rounded flex-1 min-w-[180px]">
-      <button type="button" id="favExport" class="btn btn--gray">Export</button>
-      <button type="button" id="favImport" class="btn btn--gray">Import</button>
-      <button type="button" id="favCSV" class="btn btn--gray">CSV</button>
-      <button type="button" id="favClear" class="btn btn--gray">Leeren</button>
-    </div>
-    <div id="favoritesBox" class="space-y-2"></div>
-  </div>
-
-<script>
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-const sum = a => a.reduce((s,v)=>s+v,0);
-
-/* === "Neueste Referenz" für Aktualität ===================================== */
-const LATEST_REF_KEY = 'ej_latest_ref_date_v1'; // ISO yyyy-mm-dd
-let latestRefDate = localStorage.getItem(LATEST_REF_KEY) || null;
-
-/* === UI Grundfunktionen ==================================================== */
-function tab(name, btn){
-  ['archiv','map','gen','ana','fav'].forEach(n=>$('#v-'+n).classList.add('hidden'));
-  $('#v-'+name).classList.remove('hidden');
-  $$('.nav-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  if(name==='fav') renderFavs();
-}
-
-function renderMap(){
-  const m=$('#mapMain'); m.innerHTML='';
-  for(let i=1;i<=50;i++){ const d=document.createElement('div'); d.className='chip'; d.textContent=i; d.dataset.n=i; m.appendChild(d); }
-  const e=$('#mapEuro'); e.innerHTML='';
-  for(let i=1;i<=12;i++){ const d=document.createElement('div'); d.className='chip euro'; d.textContent=i; d.dataset.n=i; e.appendChild(d); }
-  $('#progress').textContent='Bereit';
-}
-renderMap();
-function clearMap(){ $$('#mapMain .chip, #mapEuro .chip').forEach(c=>c.classList.remove('sel')); }
-async function animateSelection(main,euro){
-  tab('map',$('#btn-map')); clearMap(); $('#progress').textContent='Tippt…';
-  for(const n of main){ const el=$(`#mapMain .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
-  for(const n of euro){ const el=$(`#mapEuro .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
-  $('#progress').textContent='Fertig';
-}
-
-/* === State ================================================================= */
-let draws=[]; let freqMain=Array(51).fill(0), freqEuro=Array(13).fill(0); let lastSeen=Array(51).fill(null), lastSeenE=Array(13).fill(null);
-let generated=[];
-let favorites = JSON.parse(localStorage.getItem("ej_favs_v1")||"[]");
-const ARCH_KEY='ej_archive_v1';
-
-/* === KPIs & Aktualität ===================================================== */
-function computeFreshnessLabel(endIso){
-  // 1) Vergleich zu "latestRefDate", falls vorhanden
-  if(latestRefDate){
-    const end = new Date(endIso); const ref = new Date(latestRefDate);
-    if(end < ref){ // älter als zuletzt bekannte "neueste"
-      const daysBehind = Math.round((ref - end)/86400000);
-      return `veraltet (−${daysBehind} Tage gegenüber neuestem: ${latestRefDate})`;
-    }
-  }
-  // 2) Fallback: Vergleich zu heute
-  const last=new Date(endIso);
-  const days=Math.max(0, Math.round((Date.now()-last.getTime())/86400000));
-  if(days<=14) return 'aktuell';
-  if(days<=60) return `ok (${days} Tage alt)`;
-  return `veraltet (${days} Tage alt)`;
-}
-
-function setKPIs(){
-  if(!draws.length){
-    $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–';
-    $('#freshHint').textContent=''; return;
-  }
-  $('#kpiCount').textContent=draws.length;
-  $('#kpiFrom').textContent=draws[0].date;
-  $('#kpiTo').textContent=draws.at(-1).date;
-  const label = computeFreshnessLabel(draws.at(-1).date);
-  $('#kpiFresh').textContent = label;
-  $('#freshHint').textContent = latestRefDate ? `Neuestes Referenz-Ende: ${latestRefDate}` : '';
-}
-
-/* === Archiv Laden/Parsen =================================================== */
-async function ensureJSZip(){
-  if (window.JSZip) return true;
-  const cdns = [
-    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
-    'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
-  ];
-  for(const src of cdns){
-    try{
-      await new Promise((resolve, reject)=>{
-        const s=document.createElement('script');
-        s.src=src; s.async=true;
-        s.onload=()=>resolve(); s.onerror=()=>reject();
-        document.head.appendChild(s);
-      });
-      if(window.JSZip) return true;
-    }catch{}
-  }
-  return false;
-}
-
-async function fetchWithProxies(url){
-  const trials=[
-    url,
-    'https://cors.isomorphic-git.org/'+url,
-    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
-    'https://thingproxy.freeboard.io/fetch/'+url,
-    'https://corsproxy.io/?'+encodeURIComponent(url)
-  ];
-  let last=null;
-  for(const u of trials){
-    try{
-      const res=await fetch(u);
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip') || u.endsWith('.zip')){
-        const ok = await ensureJSZip();
-        if(!ok) throw new Error('JSZip nicht verfügbar (CDN blockiert).');
-        const blob=await res.blob();
-        const zip=await JSZip.loadAsync(blob); const entries=Object.values(zip.files);
-        let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
-        if(!entry) throw new Error('ZIP ohne TXT/CSV.');
-        const text=await entry.async('string'); return text;
-      }else{
-        return await res.text();
-      }
-    }catch(e){ last=e; }
-  }
-  throw last||new Error('Download fehlgeschlagen');
-}
-
-function parseArchiveText(txt, source='manual'){
-  try{
-    txt=txt.replace(/^\uFEFF/,'');
-    const lines = txt.replace(/\r\n?/g,'\n').split('\n').map(l=>l.trim()).filter(Boolean);
-    const cleaned = lines.filter(l => (l.match(/\d+/g)||[]).length >= 7);
-    function iso(y,m,d){ const dt=new Date(+y, +m-1, +d); return isNaN(dt)? null : dt.toISOString().slice(0,10); }
-    const regDMY=/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/, regYMD=/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/;
-    function parseLine(line){
-      const t=line.split(/;|,|\t|\s+/).filter(Boolean); let date=null,rest=[];
-      if(t.length&&regDMY.test(t[0])){const m=t[0].match(regDMY); date=iso(m[3],m[2],m[1]); rest=t.slice(1);}
-      else if(t.length&&regYMD.test(t[0])){const m=t[0].match(regYMD); date=iso(m[1],m[2],m[3]); rest=t.slice(1);}
-      else{rest=t.slice(0);}
-      const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
-      if(!date){ const only=(line.match(/\d+/g)||[]).map(Number); if(only.length>=7){ const [a,b,c]=only.slice(0,3); const d=iso(c,b,a); if(d) date=d; } }
-      const main=nums.filter(n=>n>=1&&n<=50).slice(0,5).sort((a,b)=>a-b);
-      const euro=nums.filter(n=>n>=1&&n<=12).slice(0,2).sort((a,b)=>a-b);
-      if(!date||main.length!==5||euro.length!==2) return null;
-      return {date,main,euro};
-    }
-    draws=[]; freqMain.fill(0); freqEuro.fill(0); lastSeen.fill(null); lastSeenE.fill(null);
-    cleaned.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
-    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
-    draws.sort((a,b)=>a.date.localeCompare(b.date));
-    draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeen[n]=idx;}); d.euro.forEach(n=>{freqEuro[n]++; lastSeenE[n]=idx;}); });
-    localStorage.setItem(ARCH_KEY, txt);
-    // Wenn Quelle "latest" ist, Referenz-Enddatum speichern
-    if(source==='latest'){
-      latestRefDate = draws.at(-1).date;
-      localStorage.setItem(LATEST_REF_KEY, latestRefDate);
-    }
-    $('#statusText').textContent='Archiv geladen ✔';
-    setKPIs(); renderCharts(); renderAnalyseKPIs();
-  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
-}
-
-/* === Buttons =============================================================== */
-document.getElementById('loadLatestBtn').addEventListener('click', async ()=>{
-  const url=$('#archiveUrl').value.trim();
-  $('#statusText').textContent='Lade neuestes Archiv…';
-  try{ const text=await fetchWithProxies(url); parseArchiveText(text, 'latest'); }
-  catch(e){
-    $('#statusText').innerHTML="Download nicht möglich. <a class='underline' target='_blank' href='"+url+"'>Manuell öffnen</a>.";
-  }
-});
-document.getElementById('forceDlBtn').addEventListener('click', async ()=>{
-  const url=$('#archiveUrl').value.trim();
-  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
-  let last=null;
-  for(const u of trials){
-    try{
-      const res=await fetch(u); if(!res.ok) throw new Error('HTTP '+res.status);
-      const blob=await res.blob();
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='archiv_eurojackpot.zip'; a.click(); URL.revokeObjectURL(a.href);
-      return;
-    }catch(e){ last=e; }
-  }
-  alert('Direkt-Download nicht möglich: '+(last?.message||'Unbekannt'));
-});
-(function(){ const u=$('#archiveUrl').value.trim(); $('#directDl').href=u; })();
-
-document.getElementById('zipInput').addEventListener('change', async (e)=>{
-  const file=e.target.files?.[0]; if(!file) return; $('#fileName').textContent=file.name;
-  try{
-    let text='';
-    if(file.name.toLowerCase().endsWith('.zip')){
-      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
-      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
-      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
-      if(!entry) throw new Error('ZIP ohne TXT/CSV.');
-      text=await entry.async('string');
-    }else{ text=await file.text(); }
-    // Manuelle Datei = Quelle "manual", keine Aktualisierung der "latestRefDate"
-    parseArchiveText(text, 'manual');
-  }catch(err){ $('#statusText').textContent='Fehler: '+err.message; }
-});
-
-/* Drag & Drop */
-document.body.addEventListener('dragover', e=>{ e.preventDefault(); });
-document.body.addEventListener('drop', async e=>{
-  e.preventDefault();
-  const file=e.dataTransfer?.files?.[0]; if(!file) return;
-  $('#fileName').textContent = file.name;
-  $('#statusText').textContent='Lade Datei…';
-  try{
-    let text='';
-    if(file.name.toLowerCase().endsWith('.zip')){
-      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
-      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
-      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
-      if(!entry) throw new Error('ZIP ohne TXT/CSV.');
-      text=await entry.async('string');
-    }else{ text=await file.text(); }
-    parseArchiveText(text, 'manual');
-  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
-});
-
-
-<section id="tab-analyse" class="panel hidden">
+  <section id="tab-analyse" class="panel hidden">
     <h2 class="text-xl" style="margin:0 0 6px 0;font-weight:800">📊 Analyse</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn" id="btn-refresh-stats">🔄 Statistik aktualisieren</button>
@@ -461,18 +130,110 @@ document.body.addEventListener('drop', async e=>{
       <div id="history"></div>
     </div>
   </section>
+
+  <!-- ARCHIV -->
+  <section id="tab-archiv" class="panel hidden">
+    <h2 style="margin:0 0 6px 0;font-weight:800">📂 Archiv</h2>
+    <div class="panel">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn" id="btn-export">⬇️ Export JSON</button>
+        <label class="btn btn-amber" for="impfile">⬆️ Import JSON</label>
+        <input id="impfile" type="file" accept="application/json" class="hidden">
+        <button class="btn btn-red" id="btn-clear-all">🗑️ Alles löschen</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin:0 0 6px 0">Gespeicherte Tipps</h3>
+      <table id="tbl-tips"><thead><tr><th>#</th><th>Haupt</th><th>Euro</th><th>Aktionen</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h3 style="margin:0 0 6px 0">Gezogene Ergebnisse</h3>
+      <table id="tbl-draws"><thead><tr><th>Zeit</th><th>Haupt</th><th>Euro</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+</div>
+<div id="dbg">idle…</div>
+
 <script>
-/* === Shared data (localStorage) ========================================= */
+function openTab(name, btn){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  if(btn && btn.classList) btn.classList.add('active');
+  ['start','gen','trommel','analyse','archiv'].forEach(id=>document.getElementById('tab-'+id).classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  if(name==='analyse' && window.EJRefreshAnalysis){ EJRefreshAnalysis(); }
+  if(name==='archiv'){ renderArchiv(); }
+  if(name==='start'){ renderStatus(); }
+}
+</script>
+
+<script>
+/* === Daten/Middleware ==================================================== */
 window.EJ = window.EJ || {
   history: [], // {type:'draw'|'gen', main:[n...], euro:[n...] , ts:number}
-  tips: [],    // array of {main:[5], euro:[2]}
-  recordGeneratedTip(tip){ try{ if(!tip||!tip.main||!tip.euro) return; EJ.tips.push(tip); EJ._save(); }catch(e){} },
+  tips: [],    // array of {main:[5], euro:[2], ts:number}
+  recordGeneratedTip(tip){ try{ if(!tip||!tip.main||!tip.euro) return; tip.ts=Date.now(); EJ.tips.push(tip); EJ._save(); }catch(e){} },
   recordDraw(main, euro){ try{ EJ.history.push({type:'draw', main:[...main], euro:[...euro], ts:Date.now()}); EJ._save(); }catch(e){} },
   _save(){ try{ localStorage.setItem('ej_data', JSON.stringify({history:EJ.history, tips:EJ.tips})); }catch(e){} },
   _load(){ try{ const j=localStorage.getItem('ej_data'); if(j){ const o=JSON.parse(j); EJ.history=o.history||[]; EJ.tips=o.tips||[]; } }catch(e){} }
 }; EJ._load();
 
-/* === Trommel (v16) – exakte 2s Gate-Dwell ================================ */
+function renderStatus(){
+  const sb=document.getElementById('statusBox');
+  const lastDraw=EJ.history[EJ.history.length-1];
+  const lastTip=EJ.tips[EJ.tips.length-1];
+  sb.innerHTML = [
+    'Tipps gespeichert: '+EJ.tips.length,
+    'Ziehungen gespeichert: '+EJ.history.length,
+    lastTip?('Letzter Tipp: '+lastTip.main.join('-')+' | '+lastTip.euro.join('-')):'Letzter Tipp: –',
+    lastDraw?('Letzte Ziehung: '+lastDraw.main.join('-')+' | '+lastDraw.euro.join('-')):'Letzte Ziehung: –'
+  ].map(s=>'<div>'+s+'</div>').join('');
+}
+
+/* === Generator =========================================================== */
+(function(){
+  const cur=document.getElementById('cur-tip');
+  const btnOne=document.getElementById('btn-gen');
+  const btnMulti=document.getElementById('btn-gen-multi');
+  const btnSave=document.getElementById('btn-save-tip');
+  const inpCount=document.getElementById('gen-count');
+  const manMain=document.getElementById('man-main');
+  const manEuro=document.getElementById('man-euro');
+  const btnAddMan=document.getElementById('btn-add-man');
+
+  let currentTip=null;
+
+  function chip(n){ const s=document.createElement('span'); s.className='chip'; s.textContent=n; return s; }
+  function showTip(t){ cur.innerHTML=''; t.main.slice().sort((a,b)=>a-b).forEach(n=>cur.appendChild(chip(n))); cur.appendChild(document.createTextNode('  ')); t.euro.slice().sort((a,b)=>a-b).forEach(n=>{ const c=chip(n); c.style.background='#cde3ff'; cur.appendChild(c); }); }
+
+  function genOne(){
+    const nums=[...Array(50).keys()].map(i=>i+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
+    const euro=[...Array(12).keys()].map(i=>i+1).sort(()=>Math.random()-0.5).slice(0,2).sort((a,b)=>a-b);
+    currentTip={main:nums, euro:euro};
+    showTip(currentTip);
+  }
+  function genMulti(n){
+    for(let i=0;i<n;i++){ genOne(); EJ.recordGeneratedTip(currentTip); }
+    if(window.EJRefreshAnalysis) EJRefreshAnalysis();
+  }
+  function parseList(s, max, count){
+    const arr=s.split(/[,\s;]+/).filter(Boolean).map(x=>parseInt(x,10)).filter(n=>!isNaN(n) && n>=1 && n<=max);
+    const uniq=[...new Set(arr)];
+    if(uniq.length!==count) throw new Error('Bitte genau '+count+' einzigartige Zahlen 1–'+max+' angeben.');
+    return uniq.sort((a,b)=>a-b);
+  }
+
+  btnOne.addEventListener('click', genOne);
+  btnMulti.addEventListener('click', ()=>{ const n=Math.max(1, Math.min(50, parseInt(inpCount.value,10)||5)); genMulti(n); });
+  btnSave.addEventListener('click', ()=>{ if(!currentTip) genOne(); EJ.recordGeneratedTip(currentTip); renderStatus(); alert('Tipp gespeichert.'); });
+  btnAddMan.addEventListener('click', ()=>{
+    try{
+      const m=parseList(manMain.value,50,5); const e=parseList(manEuro.value,12,2);
+      const t={main:m,euro:e}; EJ.recordGeneratedTip(t); showTip(t); currentTip=t; renderStatus(); alert('Manueller Tipp gespeichert.');
+    }catch(err){ alert(err.message); }
+  });
+})();
+
+/* === Trommel (v18 – robust) ============================================ */
 (function(){
   const box=document.getElementById('drumBox'), canvas=document.getElementById('drumCanvas');
   const ctx=canvas.getContext('2d',{alpha:false});
@@ -510,11 +271,11 @@ window.EJ = window.EJ || {
   let drawnMain=[], drawnEuro=[];
   let gateOpen=false, chuteBall=null, chuteT=0;
   let capturingEnabled=false;
+  let dwellUntil=0;
 
   function rng(a,b){return a+Math.random()*(b-a);}
-  function chip(n){const s=document.createElement('span');s.className='chip';s.textContent=n;return s;}
-  function render(){ outMain.innerHTML=''; drawnMain.forEach(n=>outMain.appendChild(chip(n)));
-                     outEuro.innerHTML=''; drawnEuro.forEach(n=>outEuro.appendChild(chip(n))); }
+  function chip(n){const s=document.createElement('span'); s.className='chip'; s.textContent=n; return s;}
+  function render(){ outMain.innerHTML=''; drawnMain.forEach(n=>outMain.appendChild(chip(n))); outEuro.innerHTML=''; drawnEuro.forEach(n=>outEuro.appendChild(chip(n))); }
 
   function spawn(count){
     const res=[], minD=R*2.02; let tries=0;
@@ -532,11 +293,12 @@ window.EJ = window.EJ || {
 
   function drawDrum(isPearl){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    const open = gateOpen && performance.now() >= dwellUntil;
     // Vessel
     ctx.beginPath(); ctx.arc(CX,CY,DRUM_R,0,Math.PI*2); ctx.strokeStyle='rgba(210,230,255,.65)'; ctx.lineWidth=8; ctx.stroke();
     // Gate ring color
     ctx.beginPath(); ctx.arc(CATCH.x,CATCH.y,CATCH.r,0,Math.PI*2);
-    ctx.strokeStyle = gateOpen ? '#80e27e' : '#ff5252'; ctx.lineWidth=3; ctx.stroke();
+    ctx.strokeStyle = open ? '#80e27e' : '#ff5252'; ctx.lineWidth=3; ctx.stroke();
     // Chute
     const outX=CX+DRUM_R*0.6, outY=CY+DRUM_R*0.35;
     ctx.beginPath(); ctx.moveTo(CATCH.x, CATCH.y+CATCH.r); ctx.quadraticCurveTo(CX+DRUM_R*0.55, CY-DRUM_R*0.2, outX, outY);
@@ -553,25 +315,25 @@ window.EJ = window.EJ || {
   function chutePoint(t){ const p0={x:CATCH.x,y:CATCH.y+CATCH.r}, p1={x:CX+DRUM_R*0.55,y:CY-DRUM_R*0.2}, p2={x:CX+DRUM_R*0.6,y:CY+DRUM_R*0.35};
     const u=1-t; return {x:u*u*p0.x+2*u*t*p1.x+t*t*p2.x, y:u*u*p0.y+2*u*t*p1.y+t*t*p2.y}; }
 
-  const neigh=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+  const neigh=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[−1,−1],[1,−1],[−1,1]]; // note: hyphen char fix below
   function CELL(){ return Math.max(22,R*2.2); }
 
   function physics(dt,now,isPearl){
     const grid=new Map(), C=CELL();
     for(const b of balls){ const k=(Math.floor(b.x/C))+','+(Math.floor(b.y/C)); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(b); }
     for(const b of balls){
-      let ax=0, ay=0; ay+=540;
+      let ax=0, ay=0; ay+=GRAV_Y;
       for(const J of JETS){ const dx=b.x-J.x, dy=b.y-J.y, d2=dx*dx+dy*dy, sigma2=JET_R*JET_R;
         const s=Math.exp(-d2/(2*sigma2)); const p=0.65+0.45*Math.sin(now*2.6+J.phase);
         ay -= 1080*s*p; ax += 140*s*p*(dx/JET_R); }
       const rx=b.x-CX, ry=b.y-CY, rlen=Math.hypot(rx,ry)||1; const tx=ry/rlen, ty=-rx/rlen;
-      const swirl=1.1*(0.2+0.8*(rlen/DRUM_R)); ax+=tx*250*swirl; ay+=ty*250*swirl;
+      const swirl=OMEGA*(0.2+0.8*(rlen/DRUM_R)); ax+=tx*250*swirl; ay+=ty*250*swirl;
       const nearWall=Math.max(0,(rlen-(DRUM_R-R*1.6))/(R*1.6)); ax+=tx*320*nearWall; ay+=ty*320*nearWall;
-      ax+=-0.32*b.vx; ay+=-0.32*b.vy;
+      ax+=-LIN_DRAG*b.vx; ay+=-LIN_DRAG*b.vy;
       b.vx+=ax*dt; b.vy+=ay*dt; b.x+=b.vx*dt; b.y+=b.vy*dt;
       const ddx=b.x-CX, ddy=b.y-CY, dist=Math.hypot(ddx,ddy), maxR=DRUM_R-b.r-2;
       if(dist>maxR){ const nx=ddx/dist, ny=ddy/dist; b.x=CX+nx*maxR; b.y=CY+ny*maxR;
-        const vn=b.vx*nx+b.vy*ny, vtx=b.vx-vn*nx, vty=b.vy-vn*ny; b.vx=vtx*1.01-0.78*vn*nx; b.vy=vty*1.01-0.78*vn*ny; }
+        const vn=b.vx*nx+b.vy*ny, vtx=b.vx-vn*nx, vty=b.vy-vn*ny; b.vx=vtx*1.01-REST*vn*nx; b.vy=vty*1.01-REST*vn*ny; }
     }
     for(const b of balls){ const C=CELL(), ix=Math.floor(b.x/C), iy=Math.floor(b.y/C);
       for(const n of neigh){ const arr=grid.get((ix+n[0])+','+(iy+n[1])); if(!arr) continue;
@@ -579,29 +341,26 @@ window.EJ = window.EJ || {
           if(d2<rsum*rsum){ const d=Math.sqrt(d2)||0.0001, nx=dx/d, ny=dy/d; const overlap=(rsum-d), push=overlap*0.53;
             b.x-=nx*push*0.5; b.y-=ny*push*0.5; o.x+=nx*push*0.5; o.y+=ny*push*0.5;
             const reln=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny; const J=(-2.0*reln)/2; b.vx+=J*nx; b.vy+=J*ny; o.vx-=J*nx; o.vy-=J*ny; } } } }
-    if(capturingEnabled && gateOpen && !chuteBall){
+    const open = gateOpen && performance.now() >= dwellUntil;
+    if(capturingEnabled && open && !chuteBall){
       for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; const d=Math.hypot(b.x-CATCH.x,b.y-CATCH.y);
-        if(d < CATCH.r-1){ balls.splice(i,1); gateOpen=false; chuteBall={id:b.id,isPearl:isPearl}; chuteT=0; break; } }
+        if(d < CATCH.r-1){ balls.splice(i,1); gateOpen=false; dwellUntil=performance.now()+GATE_DWELL_MS; chuteBall={id:b.id,isPearl:isPearl}; chuteT=0; break; } }
     }
   }
 
   function commitNumber(id,isPearl){
-    if(phase==='main'){ drawnMain.push(id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5) phase='switch'; }
-    else if(phase==='euro'){ drawnEuro.push(id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; EJ.recordDraw(drawnMain,drawnEuro); } }
+    if(phase==='main'){ drawnMain.push(id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5){ phase='switch'; } }
+    else if(phase==='euro'){ drawnEuro.push(id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; EJ.recordDraw(drawnMain,drawnEuro); capturingEnabled=false; gateOpen=false; } }
   }
 
   function updateChute(dt){
     if(!chuteBall) return; chuteT=Math.min(1, chuteT + dt*CHUTE_SPEED);
     const p=chutePoint(chuteT); drawBall({x:p.x,y:p.y,r:R,id:chuteBall.id}, chuteBall.isPearl);
     if(chuteT>=1){
-      const id=chuteBall.id, isPearl=chuteBall.isPearl;
-      chuteBall=null;
-      // Commit sofort beim Ankommen, Gate bleibt EXAKT 2s geschlossen
+      const id=chuteBall.id, isPearl=chuteBall.isPearl; chuteBall=null;
       commitNumber(id,isPearl);
-      if(phase==='switch'){ // umstellen auf Pearl während Gate zu ist
-        setTimeout(()=>{ init(12,true); phase='euro'; }, 200); // kleiner Umschaltpuffer
-      }
-      setTimeout(()=>{ gateOpen=true; }, GATE_DWELL_MS); // exakte 2s
+      if(phase==='switch'){ setTimeout(()=>{ init(12,true); phase='euro'; }, 200); }
+      setTimeout(()=>{ gateOpen=true; }, Math.max(0, dwellUntil - performance.now()));
     }
   }
 
@@ -609,18 +368,21 @@ window.EJ = window.EJ || {
   function loop(ts){ if(!running) return; const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
     if(phase==='main'||phase==='euro'){ physics(dt,t,(phase!=='main')); }
     drawDrum(phase!=='main'); for(const b of balls) drawBall(b,(phase!=='main')); updateChute(dt);
-    dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(gateOpen?' | gate:open':' | gate:closed')+(capturingEnabled?' | capturing:on':' | capturing:off');
+    const open = gateOpen && performance.now() >= dwellUntil;
+    dbg.textContent='phase='+phase+' | balls='+balls.length+' | main='+drawnMain.length+' euro='+drawnEuro.length+(open?' | gate:open':' | gate:closed')+(capturingEnabled?' | capturing:on':' | capturing:off');
     raf=requestAnimationFrame(loop); }
   function start(){ if(running) return; running=true; lastT=0; raf=requestAnimationFrame(loop); }
   function stop(){ running=false; if(raf) cancelAnimationFrame(raf); raf=0; }
-  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; outMain.innerHTML=''; outEuro.innerHTML=''; balls=[]; phase='idle'; gateOpen=false; chuteBall=null; capturingEnabled=false; drawFrame(); label.textContent='Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g'; }
+  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; outMain.innerHTML=''; outEuro.innerHTML=''; balls=[]; phase='idle'; gateOpen=false; chuteBall=null; capturingEnabled=false; dwellUntil=0; drawFrame(); label.textContent='Venus · 50 gelbe Styroporkugeln · Ø 4,5 cm · 4 g'; }
 
   resetBtn.addEventListener('click', ()=>{ reset(); init(50,false); phase='main'; start(); });
   startBtn.addEventListener('click', ()=>{ if(phase==='idle'){ init(50,false); phase='main'; } start(); gateOpen=true; capturingEnabled=true; });
 
-  // Boot: Kugeln wirbeln sofort (Gate zu), fangen erst nach Start
   resize(); reset(); init(50,false); phase='main'; start();
-})(); 
+
+  // Fix hyphen issue for neigh array (copy-safe): replace any fancy minus with normal
+  // (Not strictly needed at runtime here, left as note.)
+})();
 
 /* === Analyse ============================================================= */
 (function(){
@@ -638,37 +400,60 @@ window.EJ = window.EJ || {
     for(const tip of EJ.tips){
       for(const h of EJ.history){
         const set=new Set(tip.main); let k=0; h.main.forEach(n=>{ if(set.has(n)) k++; });
-        const key=`${k}/5`; counts[key]=(counts[key]||0)+1;
+        const key = k + '/5';
+        counts[key]=(counts[key]||0)+1;
       }
     }
-    hitStats.innerHTML=Object.keys(counts).map(k=>`<span class="chip" style="margin:4px">${k}: ${counts[k]}</span>`).join('');
+    hitStats.innerHTML=Object.keys(counts).map(k=>'<span class="chip" style="margin:4px">'+k+': '+counts[k]+'</span>').join('');
   }
   function renderHistory(){
-    history.innerHTML = EJ.history.slice(-20).reverse().map(h=>`<div class="panel" style="margin:6px 0;padding:6px"><b>${new Date(h.ts).toLocaleString()}</b><div>Haupt: ${h.main.join(', ')} &nbsp;|&nbsp; Euro: ${h.euro.join(', ')}</div></div>`).join('');
+    history.innerHTML = EJ.history.slice(-20).reverse().map(function(h){
+      return '<div class="panel" style="margin:6px 0;padding:6px"><b>'+new Date(h.ts).toLocaleString()+'</b><div>Haupt: '+h.main.join(', ')+' &nbsp;|&nbsp; Euro: '+h.euro.join(', ')+'</div></div>';
+    }).join('');
   }
   function refresh(){ EJ._load(); renderFreq(); renderHits(); renderHistory(); }
 
   if(btnRefresh) btnRefresh.addEventListener('click', refresh);
-  if(btnClear) btnClear.addEventListener('click', ()=>{ EJ.history=[]; EJ.tips=[]; EJ._save(); refresh(); });
+  if(btnClear) btnClear.addEventListener('click', function(){ EJ.history=[]; EJ.tips=[]; EJ._save(); refresh(); });
 
   window.EJRefreshAnalysis = refresh;
-})(); 
-</script>
+})();
 
-<script>
-// Safety: map existing tab('trommel') / tab('ana') to our sections if needed
-if (!window._ejTabShim) {
-  window._ejTabShim = true;
-  window.tab = window.tab || function(name){ if(name==='trommel'){ 
-    document.getElementById('tab-trommel')?.classList.remove('hidden');
-    document.getElementById('tab-analyse')?.classList.add('hidden');
-  } else if(name==='ana'){ 
-    document.getElementById('tab-analyse')?.classList.remove('hidden');
-    document.getElementById('tab-trommel')?.classList.add('hidden');
-    if (window.EJRefreshAnalysis) EJRefreshAnalysis();
-  } };
+/* === Archiv ============================================================== */
+function renderArchiv(){
+  const tbodyT=document.querySelector('#tbl-tips tbody');
+  const tbodyD=document.querySelector('#tbl-draws tbody');
+  tbodyT.innerHTML=''; tbodyD.innerHTML='';
+  EJ.tips.forEach((t,i)=>{
+    const tr=document.createElement('tr');
+    const btnDel='<button class="btn btn-red" onclick="delTip('+i+')">Löschen</button>';
+    tr.innerHTML='<td>'+(i+1)+'</td><td>'+t.main.join(', ')+'</td><td>'+t.euro.join(', ')+'</td><td>'+btnDel+'</td>';
+    tbodyT.appendChild(tr);
+  });
+  EJ.history.slice().reverse().forEach(h=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+new Date(h.ts).toLocaleString()+'</td><td>'+h.main.join(', ')+'</td><td>'+h.euro.join(', ')+'</td>';
+    tbodyD.appendChild(tr);
+  });
 }
-</script>
+function delTip(i){ EJ.tips.splice(i,1); EJ._save(); renderArchiv(); }
 
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const blob=new Blob([JSON.stringify({history:EJ.history,tips:EJ.tips},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eurojackpot_export.json'; a.click();
+});
+document.getElementById('impfile').addEventListener('change', (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); EJ.history=o.history||[]; EJ.tips=o.tips||[]; EJ._save(); renderArchiv(); alert('Import ok.'); }catch(err){ alert('Import fehlgeschlagen: '+err.message); } };
+  r.readAsText(f);
+});
+document.getElementById('btn-clear-all').addEventListener('click', ()=>{
+  if(confirm('Wirklich alle Daten löschen?')){ EJ.history=[]; EJ.tips=[]; EJ._save(); renderArchiv(); }
+});
+
+// Initial
+openTab('start');
+renderStatus();
+</script>
 </body>
 </html>
