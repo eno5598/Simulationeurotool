@@ -3,20 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lotto Suite (Eurojackpot + 6aus49) • Hybrid</title>
-
-<!-- deps -->
+<title>Lotto Suite (Eurojackpot + 6aus49) • Hybrid v2</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
   :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; --amber:#f59e0b; }
   body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
   .title{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
   .glass{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow: 0 12px 40px rgba(0,0,0,.45);}
   .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-width:90px;height:78px;padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); border:1px solid rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.4);}
-  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.1);}
+  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.1);}
   .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.15rem .6rem; font-size:.74rem;}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
   .btn--green{background:#15803d;color:#fff;}
@@ -30,11 +27,6 @@
   .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 16px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45); }
   #drumBox{width:100%; aspect-ratio: 4/3; max-height:70vh;}
   #drumCanvas{width:100%; height:100%; background:#0b1022; border:1px solid rgba(255,255,255,.1); border-radius:.7rem; display:block}
-  .map{display:grid; grid-template-columns: repeat(10, minmax(0,1fr)); gap:6px;}
-  .cell{position:relative; text-align:center; border-radius:10px; padding:8px 0; font-weight:800; border:1px solid rgba(0,255,255,.15);
-        background:linear-gradient(180deg,#0e1530,#15204a); color:#bdfcff;}
-  .cell .cnt{position:absolute; right:6px; bottom:4px; font-size:.65rem; opacity:.8}
-  .cell.sel{box-shadow:0 0 16px rgba(0,255,240,.5), inset 0 0 0 1px rgba(0,255,255,.6);}
 </style>
 </head>
 <body class="p-5">
@@ -63,6 +55,7 @@
       <h2 class="text-xl font-bold mb-2">📂 Archiv</h2>
       <div class="badge" id="freshLabel">–</div>
     </div>
+    <div id="errBox" class="hidden bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 mb-2 text-sm"></div>
     <p id="statusText" class="text-sm mb-2">Noch kein Archiv geladen.</p>
 
     <div class="glass mb-3">
@@ -72,8 +65,9 @@
         <button type="button" id="loadLatestBtn" class="btn btn--green">📥 Neueste laden</button>
         <button type="button" id="forceDlBtn" class="btn btn--amber">⬇️ ZIP speichern</button>
         <a id="directDl" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
+        <button type="button" id="loadSample" class="btn btn--gray">🧪 Beispiel laden</button>
       </div>
-      <p class="text-xs text-gray-300 mt-2">ZIP/TXT/CSV werden über mehrere CORS‑Proxys versucht, ansonsten Link öffnen.</p>
+      <p class="text-xs text-gray-300 mt-2">Falls CORS/Proxy blockt: „Beispiel laden“ testet die Parser & Charts lokal.</p>
     </div>
 
     <div class="glass mb-3">
@@ -97,7 +91,7 @@
   <div id="v-map" class="glass hidden">
     <div class="flex items-center justify-between mb-1">
       <h2 class="text-xl font-bold">🗺 Map</h2>
-      <div class="badge">Live‑Auswahl</div>
+      <div class="badge">Live-Auswahl</div>
     </div>
     <div class="mb-1 flex items-center justify-between">
       <div class="badge" id="mapBadgeMain">Hauptzahlen</div><div id="progress" class="badge">Bereit</div>
@@ -124,24 +118,10 @@
       </div>
       <div class="grid grid-cols-3 gap-2">
         <button type="button" id="generateBtn" class="btn btn--green">⚡ Generieren</button>
-        <button type="button" id="analyseAllBtn" class="btn btn--amber">📊 Alle analysieren</button>
         <button type="button" id="clearGeneratedBtn" class="btn btn--gray">🗑️ Alle löschen</button>
       </div>
     </div>
-
-    <div id="groupUI" class="mt-4 hidden">
-      <div class="mb-1 text-sm text-gray-300 flex items-center gap-3">
-        <span id="groupHint">Gruppen</span>
-        <span id="mainCounter" class="badge">0</span>
-        <span id="extraCounter" class="badge">0</span>
-      </div>
-      <div id="groupControls" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
-      <div id="extraControls" class="grid grid-cols-2 gap-2 mt-2 hidden"></div>
-      <div id="groupError" class="bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 hidden mt-2"></div>
-    </div>
-
     <pre id="liveOutput" class="font-mono bg-black/70 p-3 mt-3 rounded h-44 overflow-auto text-green-300"></pre>
-    <div id="cards" class="mt-3"></div>
   </div>
 
   <!-- TROMMEL -->
@@ -164,15 +144,8 @@
   <!-- ANALYSE -->
   <div id="v-ana" class="glass hidden">
     <h2 class="text-xl font-bold mb-2">📊 Analyse</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-      <div class="glass"><div class="text-xs text-gray-300">Meistgezogen (Top 5)</div><div id="kpiTop" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Selten (Bottom 5)</div><div id="kpiLow" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Hot (letzte 20)</div><div id="kpiHot" class="font-bold"></div></div>
-      <div class="glass"><div class="text-xs text-gray-300">Top‑Paare</div><div id="kpiPairs" class="font-bold"></div></div>
-    </div>
     <canvas id="chartMain" class="w-full h-60 mb-4"></canvas>
     <canvas id="chartExtra" class="w-full h-56"></canvas>
-    <div id="analysisBox" class="mt-3 text-sm"></div>
   </div>
 
 <script>
@@ -196,12 +169,15 @@ const gameConfig = {
   lotto6aus49: { mainCount:6, mainMax:49, extraCount:1, extraMax:9,  extraName:'Superzahl',  archKey:'lz_archive_v1' }
 };
 
-// State
-let draws=[];
-let freqMain=[], freqExtra=[], lastSeenM=[], lastSeenE=[];
+let draws=[], freqMain=[], freqExtra=[], lastSeenM=[], lastSeenE=[];
 let chartMain, chartExtra;
 
-// Init
+function showError(msg){
+  const b=$('#errBox'); b.textContent=msg; b.classList.remove('hidden');
+  console.error(msg);
+}
+function clearError(){ $('#errBox').classList.add('hidden'); }
+
 function applyGameUI(){
   const cfg = gameConfig[currentGame];
   $('#archiveUrl').value = urls[currentGame];
@@ -216,12 +192,11 @@ applyGameUI();
 
 $('#gameSelect').addEventListener('change', (e)=>{
   currentGame = e.target.value;
-  // Reset archive stats to avoid cross‑contamination
   draws=[]; freqMain=[]; freqExtra=[];
+  clearError();
   applyGameUI();
 });
 
-// Map
 function renderMap(){
   const cfg = gameConfig[currentGame];
   const m=$('#mapMain'); m.innerHTML='';
@@ -239,7 +214,6 @@ async function animateSelection(main, extra){
   $('#progress').textContent='Fertig';
 }
 
-// KPIs / Freshness
 function setKPIs(){
   if(!draws.length){
     $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–'; $('#freshLabel').textContent='–';
@@ -254,10 +228,9 @@ function setKPIs(){
   $('#freshLabel').textContent = currentGame==='eurojackpot' ? 'EJ' : '6aus49';
 }
 
-// Archive loading
 async function ensureJSZip(){ return !!window.JSZip; }
 async function fetchWithProxies(url){
-  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
+  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
   let last=null;
   for(const u of trials){
     try{
@@ -289,14 +262,9 @@ function parseArchiveText(raw){
       else if(t.length&&regYMD.test(t[0])){const m=t[0].match(regYMD); date=iso(m[1],m[2],m[3]); rest=t.slice(1);}
       else{rest=t.slice(0);}
       const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
-
-      // Main numbers
       const main = nums.filter(n=> n>=1 && n<=cfg.mainMax).slice(0,cfg.mainCount).sort((a,b)=>a-b);
-      // Extra numbers (EJ 1..12, 6aus49 Super 0..9)
       const extraMin = currentGame==='lotto6aus49' ? 0 : 1;
-      const extra = nums.filter(n=> n>=extraMin && n<=cfg.extraMax)
-                        .slice(0,cfg.extraCount)
-                        .sort((a,b)=>a-b);
+      const extra = nums.filter(n=> n>=extraMin && n<=cfg.extraMax).slice(0,cfg.extraCount).sort((a,b)=>a-b);
       if(!date || main.length!==cfg.mainCount || (cfg.extraCount && extra.length!==cfg.extraCount)) return null;
       return {date,main,extra};
     }
@@ -308,37 +276,38 @@ function parseArchiveText(raw){
     draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeenM[n]=idx;}); d.extra.forEach(n=>{freqExtra[n]++; lastSeenE[n]=idx;}); });
     localStorage.setItem(gameConfig[currentGame].archKey, raw);
     $('#statusText').textContent='Archiv geladen ✔';
-    setKPIs(); renderCharts(); renderAnalyseKPIs();
-  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
+    setKPIs(); renderCharts();
+    clearError();
+  }catch(e){ $('#statusText').textContent='Fehler beim Parsen'; showError(e.message); }
 }
 
-// Buttons
 document.getElementById('loadLatestBtn').addEventListener('click', async ()=>{
   const url=$('#archiveUrl').value.trim();
   $('#statusText').textContent='Lade neuestes Archiv…';
+  clearError();
   try{ const text=await fetchWithProxies(url); parseArchiveText(text); }
-  catch(e){ $('#statusText').innerHTML="Download nicht möglich. <a class='underline' target='_blank' href='"+url+"'>Manuell öffnen</a>."; }
+  catch(e){ $('#statusText').textContent='Download fehlgeschlagen'; showError(e?.message||String(e)); }
 });
 document.getElementById('forceDlBtn').addEventListener('click', async ()=>{
   const url=$('#archiveUrl').value.trim();
-  try{ const res=await fetch(url); const blob=await res.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=url.split('/').pop()||'archiv.zip'; a.click(); URL.revokeObjectURL(a.href); }catch(e){ alert('Direkt-Download nicht möglich.'); }
+  try{ const res=await fetch(url); const blob=await res.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=url.split('/').pop()||'archiv.zip'; a.click(); URL.revokeObjectURL(a.href); }catch(e){ showError('Direkt-Download nicht möglich: '+(e?.message||e)); }
 });
 document.getElementById('zipInput').addEventListener('change', async (e)=>{
   const file=e.target.files?.[0]; if(!file) return; $('#fileName').textContent=file.name;
+  clearError();
   try{
     let text='';
     if(file.name.toLowerCase().endsWith('.zip')){
-      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar.'); return; }
+      if(!(await ensureJSZip())){ showError('JSZip nicht verfügbar.'); return; }
       const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
       let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name));
       if(!entry) throw new Error('ZIP ohne TXT/CSV.');
       text=await entry.async('string');
     }else{ text=await file.text(); }
     parseArchiveText(text);
-  }catch(err){ $('#statusText').textContent='Fehler: '+err.message; }
+  }catch(err){ showError(err.message||String(err)); }
 });
 
-// Analyse (Charts + KPIs)
 function renderCharts(){
   if(!draws.length) return;
   if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
@@ -350,26 +319,8 @@ function renderCharts(){
   const dataExtra = extraStart===0 ? [...freqExtra] : [...freqExtra].slice(1);
   chartExtra=new Chart($('#chartExtra'),{type:'bar',data:{labels:extraLabels,datasets:[{data:dataExtra, borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
 }
-function renderAnalyseKPIs(){
-  if(!draws.length) return;
-  const cfg = gameConfig[currentGame];
-  const mf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]);
-  const lf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>a[1]-b[1]);
-  $('#kpiTop').textContent = mf.slice(0,5).map(x=>x[0]).join(' ');
-  $('#kpiLow').textContent = lf.slice(0,5).map(x=>x[0]).join(' ');
-  const recent = draws.slice(-20);
-  const counts=Array(cfg.mainMax+1).fill(0); recent.forEach(d=>d.main.forEach(n=>counts[n]++));
-  const hot = counts.map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]).join(' ');
-  $('#kpiHot').textContent = hot;
-  const last=draws.slice(-200);
-  const map=new Map();
-  function inc(k){ map.set(k,(map.get(k)||0)+1); }
-  last.forEach(d=>{ const m=[...d.main].sort((a,b)=>a-b); for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) inc(`${m[i]}-${m[j]}`); });
-  const pairs=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>k).join('  ');
-  $('#kpiPairs').textContent = pairs;
-}
 
-// Generator (simplified)
+// Simple generator (archive-weighted)
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 function pickFromRange(from,to,avoid,count,weightFn){
   const bag=[]; for(let n=from;n<=to;n++){ if(!avoid.includes(n)){ const w=Math.max(1, weightFn?weightFn(n):1); for(let k=0;k<w;k++) bag.push(n);} }
@@ -406,7 +357,6 @@ function generateOneSimple(){
   const extra = autoExtra();
   return {main, extra};
 }
-
 document.getElementById('generateBtn').addEventListener('click', ()=>{
   const out=$('#liveOutput'); out.textContent='';
   const k=Math.max(1, Math.min(25, +$('#kombis').value||5));
@@ -415,9 +365,9 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
     out.textContent += `#${i}: ${tip.main.join(' ')}  |  [${tip.extra.join(' ')}]\\n`;
   }
 });
-document.getElementById('clearGeneratedBtn').addEventListener('click', ()=>{ $('#liveOutput').textContent=''; $('#cards').innerHTML=''; });
+document.getElementById('clearGeneratedBtn').addEventListener('click', ()=>{ $('#liveOutput').textContent=''; });
 
-// Trommel (very light simulation)
+// Trommel
 const Trommel=(function(){
   const canvas = ()=>$('#drumCanvas');
   let cfg={ mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 };
@@ -440,13 +390,11 @@ const Trommel=(function(){
     const extraBag = randBag(cfg.extraBalls, extraStart);
     const main = mainBag.slice(0,cfg.drawMain).sort((a,b)=>a-b);
     const extra = extraBag.slice(0,cfg.drawExtra).sort((a,b)=>a-b);
-    // simple visuals
     ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
     ctx.fillStyle='#0b1022'; ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
     ctx.fillStyle='#bdfcff'; ctx.font='18px monospace';
     ctx.fillText('Hauptzahlen: '+main.join(' '), 16, 40);
     ctx.fillText('Zusatz: '+extra.join(' '), 16, 68);
-    // output chips
     function chip(parent, n, euro=false){
       const d=document.createElement('div'); d.className='chip'+(euro?' euro':''); d.textContent=n; parent.appendChild(d);
     }
@@ -466,9 +414,41 @@ $('#resetDraw').addEventListener('click', ()=>{
                                          : { mainBalls:49, extraBalls:10, drawMain:6, drawExtra:1 };
   Trommel.init(gc);
 });
-// first init
 Trommel.init({ mainBalls:50, extraBalls:12, drawMain:5, drawExtra:2 });
 
+// Sample loader
+document.getElementById('loadSample').addEventListener('click', ()=>{
+  // Minimal synthetische Beispiele (10 Zeilen) für beide Spiele
+  const sampleEJ = `
+  2024-09-06; 4; 11; 24; 35; 48; 3; 7
+  2024-09-13; 8; 16; 17; 36; 49; 4; 9
+  2024-09-20; 2; 10; 19; 22; 28; 1; 6
+  2024-09-27; 7; 12; 25; 31; 44; 2; 8
+  2024-10-04; 5; 15; 18; 29; 47; 3; 12
+  2024-10-11; 6; 9; 13; 26; 33; 5; 10
+  2024-10-18; 1; 14; 23; 32; 40; 7; 11
+  2024-10-25; 3; 20; 27; 34; 41; 2; 9
+  2024-11-01; 16; 21; 30; 38; 45; 1; 5
+  2024-11-08; 11; 19; 22; 28; 50; 4; 6
+  `;
+  const sampleLZ = `
+  06.09.2024; 4; 11; 24; 35; 48; 49; 7
+  13.09.2024; 8; 16; 17; 36; 42; 44; 0
+  20.09.2024; 2; 10; 19; 22; 28; 33; 3
+  27.09.2024; 7; 12; 25; 31; 41; 45; 5
+  04.10.2024; 5; 15; 18; 29; 37; 47; 9
+  11.10.2024; 6; 9; 13; 26; 33; 39; 2
+  18.10.2024; 1; 14; 23; 32; 40; 46; 4
+  25.10.2024; 3; 20; 27; 34; 41; 43; 1
+  01.11.2024; 16; 21; 30; 38; 45; 49; 6
+  08.11.2024; 11; 19; 22; 28; 35; 44; 8
+  `;
+  const txt = currentGame==='eurojackpot' ? sampleEJ : sampleLZ;
+  parseArchiveText(txt);
+  $('#statusText').textContent='Beispieldaten geladen ✔';
+});
+// set default URL on load
+window.addEventListener('load', applyGameUI);
 </script>
 </body>
 </html>
