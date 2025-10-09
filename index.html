@@ -2,382 +2,922 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lotto Merged – Eurojackpot + 6aus49 (ohne iFrame, inkl. Trommel)</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eurojackpot Tool by EnoWeb • v6.5.2</title>
+
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
 <style>
-  :root{ --ink:#eaf7ff; --bg:#060712; --hi:#00fff0; --mag:#ff00ea; }
-  body{margin:0;background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%),
-                      radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg);
-       color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
-  .title{background:linear-gradient(90deg,var(--hi),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
-  .glass{background:rgba(15,18,40,.78); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow:0 12px 40px rgba(0,0,0,.45)}
-  .navbtn{display:flex;gap:.5rem;align-items:center;justify-content:center;height:40px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#1f2937;color:#fff}
-  .navbtn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 14px rgba(0,255,240,.32)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:40px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#15803d;color:#fff}
-  .btn.gray{background:#374151} .btn.amber{background:#b45309}
-  .file{display:none}
-  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:10px;margin:4px;font-weight:800;font-size:.9rem;color:#bdfcff;background:linear-gradient(180deg,#0e1530,#15204a);border:1px solid rgba(0,255,255,.25)}
-  .chip.extra{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
-  .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 12px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45)}
-  canvas{max-width:100%}
-  .hidden{display:none}
+  :root{ --cy:#00fff0; --mag:#ff00ea; --ink:#eaf7ff; --bg:#060712; --ok:#39ff88; --bad:#ff6b94; }
+  body{background:radial-gradient(900px 700px at -10% -10%, rgba(0,255,240,.12), transparent 60%), radial-gradient(900px 700px at 110% -10%, rgba(255,0,234,.12), transparent 60%), var(--bg); color:var(--ink); font-family:Inter, ui-sans-serif, system-ui;}
+  .title{background:linear-gradient(90deg,var(--cy),var(--mag)); -webkit-background-clip:text; color:transparent; font-weight:900}
+  .glass{background:rgba(15,18,40,.78); backdrop-filter: blur(14px); border:1px solid rgba(0,255,255,.18); border-radius:14px; padding:14px; box-shadow: 0 12px 40px rgba(0,0,0,.45);}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-width:90px;height:78px;padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); border:1px solid rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.4);}
+  .nav-btn.active{outline:2px solid rgba(255,255,255,.15); box-shadow:0 0 20px rgba(0,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.1);}
+  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:10px;margin:4px;font-weight:800;font-size:.9rem;color:#bdfcff;background:linear-gradient(180deg,#0e1530,#15204a);border:1px solid rgba(0,255,255,.25);}
+  .chip.euro{color:#ffe6ff;background:linear-gradient(180deg,#1c1433,#1c2b53);border-color:rgba(255,0,234,.3)}
+  .chip.sel{background:linear-gradient(180deg,rgba(0,255,240,.25),rgba(0,255,240,.05)); box-shadow:0 0 16px rgba(0,255,240,.35), inset 0 0 0 1px rgba(0,255,255,.45); }
+  .badge{background:rgba(255,255,255,.06); border:1px solid rgba(140,170,255,.22); border-radius:999px; padding:.15rem .5rem; font-size:.72rem;}
+  .counter{padding:.2rem .55rem;border-radius:999px;font-weight:700}
+  .counter.red{background:#3a1520;border:1px solid var(--bad)}
+  .counter.green{background:#153a29;border:1px solid var(--ok)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);font-weight:700}
+  .btn--green{background:#15803d;color:#fff;}
+  .btn--amber{background:#b45309;color:#fff;}
+  .btn--gray{background:#374151;color:#fff;}
+  .btn:hover{filter:brightness(1.1)}
+  .file-label{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg,rgba(18,24,50,.9),rgba(14,18,36,.9)); display:inline-flex; gap:8px; align-items:center;}
+  .file-input{display:none}
 </style>
 </head>
-<body class="p-4">
-  <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
-    <h1 class="title text-3xl md:text-4xl">Lotto Merged</h1>
-    <div class="flex items-center gap-2">
-      <span class="bg-white/10 rounded px-2 py-1 text-sm">Spiel</span>
-      <select id="game" class="bg-gray-900 p-2 rounded">
-        <option value="ej" selected>Eurojackpot</option>
-        <option value="lz">6 aus 49 (Bayern)</option>
-      </select>
-    </div>
-  </div>
+<body class="p-5">
+  <h1 class="title text-3xl md:text-4xl mb-4">Eurojackpot Tool by EnoWeb</h1>
 
-  <div class="flex gap-2 flex-wrap mb-4">
-    <button class="navbtn active" data-tab="archiv">📂 Archiv</button>
-    <button class="navbtn" data-tab="map">🗺️ Map</button>
-    <button class="navbtn" data-tab="gen">⚡ Generator</button>
-    <button class="navbtn" data-tab="ana">📊 Analyse</button>
-    <button class="navbtn" data-tab="trommel">🔮 Trommel</button>
+  <div class="flex justify-center flex-wrap gap-3 mb-6">
+    <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"><div>📂</div><span>Archiv</span></button>
+    <button type="button" onclick="tab('drum', this)" class="nav-btn" id="btn-drum"><div>🎱</div><span>Trommel</span></button>
+    <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
+    <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
+    <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
+    <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
   </div>
 
   <!-- ARCHIV -->
-  <section id="tab-archiv" class="glass">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="font-bold text-xl">📂 Archiv</h2>
-      <div id="freshBadge" class="bg-white/10 rounded px-2 py-1 text-sm">–</div>
-    </div>
-
-    <div id="err" class="hidden bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 mb-2 text-sm"></div>
-    <p id="status" class="text-sm mb-2">Noch kein Archiv geladen.</p>
+  <div id="v-archiv" class="glass">
+    <h2 class="text-xl font-bold mb-2">📂 Archiv</h2>
+    <p id="statusText" class="text-sm mb-2">Noch kein Archiv geladen.</p>
 
     <div class="glass mb-3">
+      <div class="font-semibold mb-2">Automatisches Laden</div>
       <div class="flex flex-col md:flex-row gap-2">
-        <input id="archiveUrl" class="bg-gray-900 p-2 rounded flex-1">
-        <button id="loadLatest" class="btn">📥 Neueste laden</button>
-        <button id="forceDl" class="btn amber">⬇️ ZIP speichern</button>
-        <a id="directDl" class="btn gray" target="_blank" rel="noopener">🔗 Direktlink</a>
-        <label class="btn gray" style="cursor:pointer">📄 Datei<input id="file" type="file" class="file" accept=".zip,.txt,.csv"></label>
-        <button id="sample" class="btn gray">🧪 Beispiel</button>
+        <input id="archiveUrl" class="bg-gray-900 p-2 rounded flex-1" value="https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip">
+        <button type="button" id="loadLatestBtn" class="btn btn--green">📥 Neueste laden</button>
+        <button type="button" id="forceDlBtn" class="btn btn--amber">⬇️ ZIP speichern</button>
+        <a id="directDl" class="btn btn--gray" target="_blank" rel="noopener">🔗 Direktlink</a>
       </div>
-      <p class="text-xs opacity-75 mt-2">Bayern-Archiv: EJ = archiv_eurojackpot.zip · 6aus49 = archiv_lotto.zip</p>
+      <p class="text-xs text-gray-300 mt-2">„ZIP speichern“ lädt über mehrere Proxys und speichert lokal. „Direktlink“ öffnet die Original-URL.</p>
+    </div>
+
+    <div class="glass mb-3">
+      <div class="font-semibold mb-2">Manuell laden</div>
+      <label class="file-label">
+        📄 Datei auswählen
+        <input type="file" id="zipInput" class="file-input" accept=".zip,.txt,.csv">
+      </label>
+      <span id="fileName" class="ml-2 text-sm opacity-80">Keine Datei ausgewählt</span>
+      <div class="badge mt-2">Tipp: ZIP/TXT/CSV per Drag & Drop auf die Seite ziehen.</div>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-      <div><div class="text-sm opacity-75">Ziehungen</div><div id="kpiCount" class="font-bold">–</div></div>
-      <div><div class="text-sm opacity-75">Von</div><div id="kpiFrom" class="font-bold">–</div></div>
-      <div><div class="text-sm opacity-75">Bis</div><div id="kpiTo" class="font-bold">–</div></div>
-      <div><div class="text-sm opacity-75">Aktualität</div><div id="kpiFresh" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Ziehungen</div><div id="kpiCount" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Von</div><div id="kpiFrom" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Bis</div><div id="kpiTo" class="font-bold">–</div></div>
+      <div><div class="text-sm text-gray-300">Aktualität</div><div id="kpiFresh" class="font-bold">–</div></div>
     </div>
-  </section>
+    <p id="freshHint" class="text-xs opacity-80 mt-2"></p>
+  </div>
 
   <!-- MAP -->
-  <section id="tab-map" class="glass hidden">
+  <div id="v-map" class="glass hidden">
     <div class="flex items-center justify-between mb-1">
       <h2 class="text-xl font-bold">🗺 Map</h2>
-      <div id="progress" class="bg-white/10 rounded px-2 py-1 text-sm">Bereit</div>
+      <div class="badge">Live‑Animation</div>
     </div>
-    <div class="mb-1 bg-white/10 rounded px-2 py-1 text-sm" id="mainLabel">Hauptzahlen</div>
-    <div id="mapMain" class="flex flex-wrap"></div>
-    <div class="mt-3 bg-white/10 rounded px-2 py-1 text-sm" id="extraLabel">Eurozahlen</div>
-    <div id="mapExtra" class="flex flex-wrap"></div>
-  </section>
+    <div class="mb-1 flex items-center justify-between">
+      <div class="badge">Hauptzahlen 1–50</div><div id="progress" class="badge">Bereit</div>
+    </div>
+    <div id="mapMain" class="flex flex-wrap relative"></div>
+    <div class="mt-3 badge">Eurozahlen 1–12</div>
+    <div id="mapEuro" class="flex flex-wrap relative"></div>
+  </div>
 
-  <!-- GENERATOR -->
-  <section id="tab-gen" class="glass hidden">
-    <h2 class="text-xl font-bold mb-2">⚡ Generator</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      <select id="modus" class="bg-gray-900 p-2 rounded">
-        <option value="last100">Letzte 100</option>
-        <option value="never">Nie gezogene</option>
-        <option value="hot">Hot Paare & Triples</option>
-      </select>
-      <input id="outCount" type="number" class="bg-gray-900 p-2 rounded" value="5" min="1" max="25">
-      <div class="flex gap-2">
-        <button id="gen" class="btn">⚡ Generieren</button>
-        <button id="genClear" class="btn gray">🗑️ Löschen</button>
+  <!-- GENERIEREN -->
+  <div id="v-gen" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">⚡ Generieren</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="text-sm text-gray-300">Modus</label>
+        <select id="modus" class="bg-gray-900 p-2 rounded w-full">
+          <option value="never">Nie gezogene</option>
+          <option value="last100">Letzte 100 – Frequenzmuster</option>
+          <option value="hot">Hot Paare & Triples</option>
+          <option value="groups">5er-Gruppen + Wünsche</option>
+          <option value="complex">Komplex (Simulated Annealing)</option>
+          <option value="runs">Folgen‑Zahlen</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm text-gray-300">Anzahl Kombinationen</label>
+        <input type="number" id="kombis" value="5" min="1" max="25" class="bg-gray-900 p-2 rounded w-full">
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" id="generateBtn" class="btn btn--green">⚡ Generieren</button>
+        <button type="button" id="analyseAllBtn" class="btn btn--amber">📊 Alle analysieren</button>
+        <button type="button" id="clearGeneratedBtn" class="btn btn--gray">🗑️ Alle löschen</button>
       </div>
     </div>
-    <pre id="genOut" class="font-mono bg-black/60 p-3 mt-2 rounded h-44 overflow-auto text-green-300"></pre>
-  </section>
+
+    <div id="groupUI" class="mt-4 hidden">
+      <div class="mb-1 text-sm text-gray-300 flex items-center gap-3">
+        <span>Gruppen: exakt 5 erforderlich</span>
+        <span id="mainCounter" class="counter red">0/5</span>
+        <span id="euroCounter" class="counter red hidden">0/2</span>
+      </div>
+      <div id="groupControls" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+      <div class="mt-1 flex items-center justify-between">
+        <div class="badge">Eurozahlen (optional, 0 oder 2)</div>
+        <label class="inline-flex items-center gap-2">
+          <input id="useEuro" type="checkbox"><span class="text-sm">Euro berücksichtigen</span>
+        </label>
+      </div>
+      <div id="euroControls" class="grid grid-cols-2 gap-2 mt-1 hidden"></div>
+      <div id="groupError" class="bg-red-900/40 border border-red-400 text-red-200 rounded px-2 py-1 hidden mt-2"></div>
+    </div>
+
+    <pre id="liveOutput" class="font-mono bg-black/70 p-3 mt-3 rounded h-44 overflow-auto text-green-300"></pre>
+    <div id="cards" class="mt-3"></div>
+  </div>
 
   <!-- ANALYSE -->
-  <section id="tab-ana" class="glass hidden">
+  <div id="v-ana" class="glass hidden">
     <h2 class="text-xl font-bold mb-2">📊 Analyse</h2>
-    <canvas id="chartMain" class="w-full h-56 mb-4"></canvas>
-    <canvas id="chartExtra" class="w-full h-52"></canvas>
-  </section>
-
-  <!-- TROMMEL -->
-  <section id="tab-trommel" class="glass hidden">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="text-xl font-bold">🔮 Trommel</h2>
-      <button id="drumStart" class="btn">Start</button>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+      <div class="glass"><div class="text-xs text-gray-300">Meistgezogen (Top 5)</div><div id="kpiTop" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Selten (Bottom 5)</div><div id="kpiLow" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Hot (letzte 20)</div><div id="kpiHot" class="font-bold"></div></div>
+      <div class="glass"><div class="text-xs text-gray-300">Top‑Paare</div><div id="kpiPairs" class="font-bold"></div></div>
     </div>
-    <canvas id="drum" width="640" height="240" class="w-full rounded border border-white/10 bg-black/40"></canvas>
-    <div id="drumOut" class="mt-2 font-mono"></div>
-  </section>
+    <canvas id="chartMain" class="w-full h-60 mb-4"></canvas>
+    <canvas id="chartEuro" class="w-full h-56"></canvas>
+    <div id="analysisBox" class="mt-3 text-sm"></div>
+  </div>
+
+  <!-- FAVORITEN -->
+  <div id="v-fav" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">⭐ Favoriten</h2>
+    <div class="flex gap-2 flex-wrap mb-3">
+      <input id="favSearch" placeholder="Suche…" class="bg-gray-900 p-2 rounded flex-1 min-w-[180px]">
+      <button type="button" id="favExport" class="btn btn--gray">Export</button>
+      <button type="button" id="favImport" class="btn btn--gray">Import</button>
+      <button type="button" id="favCSV" class="btn btn--gray">CSV</button>
+      <button type="button" id="favClear" class="btn btn--gray">Leeren</button>
+    </div>
+    <div id="favoritesBox" class="space-y-2"></div>
+  </div>
 
 <script>
-// ========= Helper =========
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const sum = a => a.reduce((s,v)=>s+v,0);
 
-// ========= Tabs =========
-$$('.navbtn').forEach(b=>b.addEventListener('click',()=>{
-  $$('.navbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  const id=b.dataset.tab;
-  ['archiv','map','gen','ana','trommel'].forEach(n=>$('#tab-'+n).classList.toggle('hidden', n!==id));
-}));
+/* === "Neueste Referenz" für Aktualität ===================================== */
+const LATEST_REF_KEY = 'ej_latest_ref_date_v1'; // ISO yyyy-mm-dd
+let latestRefDate = localStorage.getItem(LATEST_REF_KEY) || null;
 
-// ========= Game config =========
-let game='ej';
-const urls={ ej:'https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_eurojackpot.zip',
-             lz:'https://www.lotto-bayern.de/static/gamebroker_2/de/download_files/archiv_lotto.zip' };
-const cfgs={
-  ej:{ mainMax:50, mainCount:5, extraMin:1, extraMax:12, extraCount:2, extraName:'Eurozahlen' },
-  lz:{ mainMax:49, mainCount:6, extraMin:0, extraMax:9,  extraCount:1, extraName:'Superzahl' }
-};
-
-$('#game').addEventListener('change', e=>{ game=e.target.value; applyGame(); });
-function applyGame(){
-  const c=cfgs[game];
-  $('#archiveUrl').value=urls[game]; $('#directDl').href=urls[game];
-  $('#mainLabel').textContent=`Hauptzahlen 1–${c.mainMax}`;
-  $('#extraLabel').textContent=`${c.extraName} ${c.extraMin}–${c.extraMax}`;
-  renderMap(); setKPIs(); if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
-}
-applyGame();
-
-// ========= Archiv laden =========
-let draws=[], freqMain=[], freqExtra=[], lastSeenM=[], lastSeenE=[];
-let chartMain, chartExtra;
-
-function showErr(msg){ const el=$('#err'); el.textContent=msg; el.classList.remove('hidden'); console.error(msg); }
-function clearErr(){ $('#err').classList.add('hidden'); }
-
-async function ensureJSZip(){ return !!window.JSZip; }
-async function fetchWithProxies(url){
-  const trials=[url,'https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url)];
-  let last=null; for(const u of trials){
-    try{ const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('zip') || u.endsWith('.zip')){
-        if(!(await ensureJSZip())) throw new Error('JSZip fehlt.');
-        const blob=await res.blob(); const zip=await JSZip.loadAsync(blob);
-        const entries=Object.values(zip.files).filter(f=>/\.(txt|csv)$/i.test(f.name));
-        if(!entries.length) throw new Error('ZIP ohne TXT/CSV.');
-        let combined=''; for(const f of entries){ combined+='\\n'+await f.async('string'); }
-        return combined;
-      }else{ return await res.text(); }
-    }catch(e){ last=e; }
-  } throw last||new Error('Download fehlgeschlagen');
-}
-
-function parseArchiveText(raw){
-  const c=cfgs[game];
-  try{
-    const lines=raw.replace(/\\r\\n?/g,'\\n').split('\\n').map(l=>l.trim()).filter(Boolean);
-    const cleaned=lines.filter(l => (l.match(/\\d+/g)||[]).length >= (c.mainCount + c.extraCount));
-    function iso(y,m,d){ const dt=new Date(+y, +m-1, +d); return isNaN(dt)? null : dt.toISOString().slice(0,10); }
-    const dmy=/^(\\d{1,2})[.\\-\\/](\\d{1,2})[.\\-\\/](\\d{2,4})$/, ymd=/^(\\d{4})[.\\-\\/](\\d{1,2})[.\\-\\/](\\d{1,2})$/;
-    function parseLine(line){
-      const t=line.split(/;|,|\\t|\\s+/).filter(Boolean); let date=null,rest=[];
-      if(t.length && dmy.test(t[0])){ const m=t[0].match(dmy); date=iso(m[3],m[2],m[1]); rest=t.slice(1); }
-      else if(t.length && ymd.test(t[0])){ const m=t[0].match(ymd); date=iso(m[1],m[2],m[3]); rest=t.slice(1); }
-      else{ rest=t.slice(0); }
-      const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
-      const main = nums.filter(n=> n>=1 && n<=c.mainMax).slice(0,c.mainCount).sort((a,b)=>a-b);
-      const extra = nums.filter(n=> n>=c.extraMin && n<=c.extraMax).slice(0,c.extraCount).sort((a,b)=>a-b);
-      if(!date || main.length!==c.mainCount || (c.extraCount && extra.length!==c.extraCount)) return null;
-      return {date,main,extra};
-    }
-    draws=[]; freqMain=Array(c.mainMax+1).fill(0); freqExtra=Array(c.extraMax+1).fill(0);
-    lastSeenM=Array(c.mainMax+1).fill(null); lastSeenE=Array(c.extraMax+1).fill(null);
-    cleaned.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
-    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
-    draws.sort((a,b)=>a.date.localeCompare(b.date));
-    draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeenM[n]=idx;}); d.extra.forEach(n=>{freqExtra[n]++; lastSeenE[n]=idx;}); });
-    $('#status').textContent='Archiv geladen ✔'; setKPIs(); renderCharts(); clearErr();
-  }catch(e){ $('#status').textContent='Fehler beim Parsen'; showErr(e.message||String(e)); }
-}
-
-$('#loadLatest').addEventListener('click', async()=>{
-  const url=$('#archiveUrl').value.trim(); $('#status').textContent='Lade…'; clearErr();
-  try{ const text=await fetchWithProxies(url); parseArchiveText(text); }catch(e){ $('#status').textContent='Download fehlgeschlagen'; showErr(e?.message||String(e)); }
-});
-$('#forceDl').addEventListener('click', async()=>{
-  const url=$('#archiveUrl').value.trim();
-  try{ const res=await fetch(url); const blob=await res.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=url.split('/').pop()||'archiv.zip'; a.click(); URL.revokeObjectURL(a.href);}catch(e){ showErr('Direkt-Download nicht möglich: '+(e?.message||e)); }
-});
-$('#file').addEventListener('change', async (e)=>{
-  const f=e.target.files?.[0]; if(!f) return; clearErr();
-  try{
-    let text=''; if(f.name.toLowerCase().endsWith('.zip')){
-      if(!(await ensureJSZip())){ showErr('JSZip fehlt'); return; }
-      const zip=await JSZip.loadAsync(f); const entries=Object.values(zip.files).filter(x=>/\\.(txt|csv)$/i.test(x.name));
-      if(!entries.length) throw new Error('ZIP ohne TXT/CSV');
-      text=await entries[0].async('string');
-    }else{ text=await f.text(); }
-    parseArchiveText(text);
-  }catch(err){ showErr(err?.message||String(err)); }
-});
-$('#sample').addEventListener('click',()=>{
-  const ej=`
-  2024-09-06; 4; 11; 24; 35; 48; 3; 7
-  2024-09-13; 8; 16; 17; 36; 49; 4; 9
-  2024-09-20; 2; 10; 19; 22; 28; 1; 6
-  2024-09-27; 7; 12; 25; 31; 44; 2; 8
-  2024-10-04; 5; 15; 18; 29; 47; 3; 12
-  2024-10-11; 6; 9; 13; 26; 33; 5; 10
-  2024-10-18; 1; 14; 23; 32; 40; 7; 11
-  2024-10-25; 3; 20; 27; 34; 41; 2; 9
-  2024-11-01; 16; 21; 30; 38; 45; 1; 5
-  2024-11-08; 11; 19; 22; 28; 50; 4; 6`;
-  const lz=`
-  06.09.2024; 4; 11; 24; 35; 48; 49; 7
-  13.09.2024; 8; 16; 17; 36; 42; 44; 0
-  20.09.2024; 2; 10; 19; 22; 28; 33; 3
-  27.09.2024; 7; 12; 25; 31; 41; 45; 5
-  04.10.2024; 5; 15; 18; 29; 37; 47; 9
-  11.10.2024; 6; 9; 13; 26; 33; 39; 2
-  18.10.2024; 1; 14; 23; 32; 40; 46; 4
-  25.10.2024; 3; 20; 27; 34; 41; 43; 1
-  01.11.2024; 16; 21; 30; 38; 45; 49; 6
-  08.11.2024; 11; 19; 22; 28; 35; 44; 8`;
-  parseArchiveText(game==='ej'?ej:lz); $('#status').textContent='Beispiel geladen ✔';
-});
-
-function setKPIs(){
-  if(!draws.length){ $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–'; return; }
-  $('#kpiCount').textContent=draws.length; $('#kpiFrom').textContent=draws[0].date; $('#kpiTo').textContent=draws.at(-1).date;
-  const d=new Date(draws.at(-1).date); const days=Math.max(0, Math.round((Date.now()-d)/86400000));
-  $('#kpiFresh').textContent= days<=14? 'aktuell' : (days<=60? 'ok ('+days+' Tage)' : 'veraltet ('+days+' Tage)');
+/* === UI Grundfunktionen ==================================================== */
+function tab(name, btn){
+  ['archiv','map','gen','ana','fav'].forEach(n=>$('#v-'+n).classList.add('hidden'));
+  $('#v-'+name).classList.remove('hidden');
+  $$('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(name==='fav') renderFavs();
 }
 
 function renderMap(){
-  const c=cfgs[game];
   const m=$('#mapMain'); m.innerHTML='';
-  for(let i=1;i<=c.mainMax;i++){ const d=document.createElement('div'); d.className='chip'; d.textContent=i; m.appendChild(d); }
-  const e=$('#mapExtra'); e.innerHTML='';
-  for(let i=c.extraMin;i<=c.extraMax;i++){ const d=document.createElement('div'); d.className='chip extra'; d.textContent=i; e.appendChild(d); }
+  for(let i=1;i<=50;i++){ const d=document.createElement('div'); d.className='chip'; d.textContent=i; d.dataset.n=i; m.appendChild(d); }
+  const e=$('#mapEuro'); e.innerHTML='';
+  for(let i=1;i<=12;i++){ const d=document.createElement('div'); d.className='chip euro'; d.textContent=i; d.dataset.n=i; e.appendChild(d); }
   $('#progress').textContent='Bereit';
 }
-
-function renderCharts(){
-  if(chartMain) chartMain.destroy(); if(chartExtra) chartExtra.destroy();
-  const c=cfgs[game];
-  const mainLabels=[...Array(c.mainMax).keys()].map(i=>i+1);
-  const extraLabels=[...Array(c.extraMax-c.extraMin+1).keys()].map(i=>i+c.extraMin);
-  chartMain=new Chart($('#chartMain'),{type:'bar',data:{labels:mainLabels,datasets:[{data:[...freqMain].slice(1),borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
-  const exData = c.extraMin===0 ? [...freqExtra] : [...freqExtra].slice(c.extraMin);
-  chartExtra=new Chart($('#chartExtra'),{type:'bar',data:{labels:extraLabels,datasets:[{data:exData,borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+renderMap();
+function clearMap(){ $$('#mapMain .chip, #mapEuro .chip').forEach(c=>c.classList.remove('sel')); }
+async function animateSelection(main,euro){
+  tab('map',$('#btn-map')); clearMap(); $('#progress').textContent='Tippt…';
+  for(const n of main){ const el=$(`#mapMain .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
+  for(const n of euro){ const el=$(`#mapEuro .chip[data-n="${n}"]`); if(el){ el.classList.add('sel'); await sleep(120);} }
+  $('#progress').textContent='Fertig';
 }
 
-// ========= Generator =========
+/* === State ================================================================= */
+let draws=[]; let freqMain=Array(51).fill(0), freqEuro=Array(13).fill(0); let lastSeen=Array(51).fill(null), lastSeenE=Array(13).fill(null);
+let generated=[];
+let favorites = JSON.parse(localStorage.getItem("ej_favs_v1")||"[]");
+const ARCH_KEY='ej_archive_v1';
+
+/* === KPIs & Aktualität ===================================================== */
+function computeFreshnessLabel(endIso){
+  // 1) Vergleich zu "latestRefDate", falls vorhanden
+  if(latestRefDate){
+    const end = new Date(endIso); const ref = new Date(latestRefDate);
+    if(end < ref){ // älter als zuletzt bekannte "neueste"
+      const daysBehind = Math.round((ref - end)/86400000);
+      return `veraltet (−${daysBehind} Tage gegenüber neuestem: ${latestRefDate})`;
+    }
+  }
+  // 2) Fallback: Vergleich zu heute
+  const last=new Date(endIso);
+  const days=Math.max(0, Math.round((Date.now()-last.getTime())/86400000));
+  if(days<=14) return 'aktuell';
+  if(days<=60) return `ok (${days} Tage alt)`;
+  return `veraltet (${days} Tage alt)`;
+}
+
+function setKPIs(){
+  if(!draws.length){
+    $('#kpiCount').textContent='–'; $('#kpiFrom').textContent='–'; $('#kpiTo').textContent='–'; $('#kpiFresh').textContent='–';
+    $('#freshHint').textContent=''; return;
+  }
+  $('#kpiCount').textContent=draws.length;
+  $('#kpiFrom').textContent=draws[0].date;
+  $('#kpiTo').textContent=draws.at(-1).date;
+  const label = computeFreshnessLabel(draws.at(-1).date);
+  $('#kpiFresh').textContent = label;
+  $('#freshHint').textContent = latestRefDate ? `Neuestes Referenz-Ende: ${latestRefDate}` : '';
+}
+
+/* === Archiv Laden/Parsen =================================================== */
+async function ensureJSZip(){
+  if (window.JSZip) return true;
+  const cdns = [
+    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+    'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  ];
+  for(const src of cdns){
+    try{
+      await new Promise((resolve, reject)=>{
+        const s=document.createElement('script');
+        s.src=src; s.async=true;
+        s.onload=()=>resolve(); s.onerror=()=>reject();
+        document.head.appendChild(s);
+      });
+      if(window.JSZip) return true;
+    }catch{}
+  }
+  return false;
+}
+
+async function fetchWithProxies(url){
+  const trials=[
+    url,
+    'https://cors.isomorphic-git.org/'+url,
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://thingproxy.freeboard.io/fetch/'+url,
+    'https://corsproxy.io/?'+encodeURIComponent(url)
+  ];
+  let last=null;
+  for(const u of trials){
+    try{
+      const res=await fetch(u);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const ct=res.headers.get('content-type')||'';
+      if(ct.includes('zip') || u.endsWith('.zip')){
+        const ok = await ensureJSZip();
+        if(!ok) throw new Error('JSZip nicht verfügbar (CDN blockiert).');
+        const blob=await res.blob();
+        const zip=await JSZip.loadAsync(blob); const entries=Object.values(zip.files);
+        let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+        if(!entry) throw new Error('ZIP ohne TXT/CSV.');
+        const text=await entry.async('string'); return text;
+      }else{
+        return await res.text();
+      }
+    }catch(e){ last=e; }
+  }
+  throw last||new Error('Download fehlgeschlagen');
+}
+
+function parseArchiveText(txt, source='manual'){
+  try{
+    txt=txt.replace(/^\uFEFF/,'');
+    const lines = txt.replace(/\r\n?/g,'\n').split('\n').map(l=>l.trim()).filter(Boolean);
+    const cleaned = lines.filter(l => (l.match(/\d+/g)||[]).length >= 7);
+    function iso(y,m,d){ const dt=new Date(+y, +m-1, +d); return isNaN(dt)? null : dt.toISOString().slice(0,10); }
+    const regDMY=/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/, regYMD=/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/;
+    function parseLine(line){
+      const t=line.split(/;|,|\t|\s+/).filter(Boolean); let date=null,rest=[];
+      if(t.length&&regDMY.test(t[0])){const m=t[0].match(regDMY); date=iso(m[3],m[2],m[1]); rest=t.slice(1);}
+      else if(t.length&&regYMD.test(t[0])){const m=t[0].match(regYMD); date=iso(m[1],m[2],m[3]); rest=t.slice(1);}
+      else{rest=t.slice(0);}
+      const nums=rest.map(Number).filter(n=>!Number.isNaN(n));
+      if(!date){ const only=(line.match(/\d+/g)||[]).map(Number); if(only.length>=7){ const [a,b,c]=only.slice(0,3); const d=iso(c,b,a); if(d) date=d; } }
+      const main=nums.filter(n=>n>=1&&n<=50).slice(0,5).sort((a,b)=>a-b);
+      const euro=nums.filter(n=>n>=1&&n<=12).slice(0,2).sort((a,b)=>a-b);
+      if(!date||main.length!==5||euro.length!==2) return null;
+      return {date,main,euro};
+    }
+    draws=[]; freqMain.fill(0); freqEuro.fill(0); lastSeen.fill(null); lastSeenE.fill(null);
+    cleaned.forEach(l=>{ const r=parseLine(l); if(r) draws.push(r); });
+    if(!draws.length) throw new Error('Keine gültigen Ziehungen erkannt.');
+    draws.sort((a,b)=>a.date.localeCompare(b.date));
+    draws.forEach((d,idx)=>{ d.main.forEach(n=>{freqMain[n]++; lastSeen[n]=idx;}); d.euro.forEach(n=>{freqEuro[n]++; lastSeenE[n]=idx;}); });
+    localStorage.setItem(ARCH_KEY, txt);
+    // Wenn Quelle "latest" ist, Referenz-Enddatum speichern
+    if(source==='latest'){
+      latestRefDate = draws.at(-1).date;
+      localStorage.setItem(LATEST_REF_KEY, latestRefDate);
+    }
+    $('#statusText').textContent='Archiv geladen ✔';
+    setKPIs(); renderCharts(); renderAnalyseKPIs();
+  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
+}
+
+/* === Buttons =============================================================== */
+document.getElementById('loadLatestBtn').addEventListener('click', async ()=>{
+  const url=$('#archiveUrl').value.trim();
+  $('#statusText').textContent='Lade neuestes Archiv…';
+  try{ const text=await fetchWithProxies(url); parseArchiveText(text, 'latest'); }
+  catch(e){
+    $('#statusText').innerHTML="Download nicht möglich. <a class='underline' target='_blank' href='"+url+"'>Manuell öffnen</a>.";
+  }
+});
+document.getElementById('forceDlBtn').addEventListener('click', async ()=>{
+  const url=$('#archiveUrl').value.trim();
+  const trials=['https://cors.isomorphic-git.org/'+url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://thingproxy.freeboard.io/fetch/'+url,'https://corsproxy.io/?'+encodeURIComponent(url),url];
+  let last=null;
+  for(const u of trials){
+    try{
+      const res=await fetch(u); if(!res.ok) throw new Error('HTTP '+res.status);
+      const blob=await res.blob();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='archiv_eurojackpot.zip'; a.click(); URL.revokeObjectURL(a.href);
+      return;
+    }catch(e){ last=e; }
+  }
+  alert('Direkt-Download nicht möglich: '+(last?.message||'Unbekannt'));
+});
+(function(){ const u=$('#archiveUrl').value.trim(); $('#directDl').href=u; })();
+
+document.getElementById('zipInput').addEventListener('change', async (e)=>{
+  const file=e.target.files?.[0]; if(!file) return; $('#fileName').textContent=file.name;
+  try{
+    let text='';
+    if(file.name.toLowerCase().endsWith('.zip')){
+      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
+      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
+      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+      if(!entry) throw new Error('ZIP ohne TXT/CSV.');
+      text=await entry.async('string');
+    }else{ text=await file.text(); }
+    // Manuelle Datei = Quelle "manual", keine Aktualisierung der "latestRefDate"
+    parseArchiveText(text, 'manual');
+  }catch(err){ $('#statusText').textContent='Fehler: '+err.message; }
+});
+
+/* Drag & Drop */
+document.body.addEventListener('dragover', e=>{ e.preventDefault(); });
+document.body.addEventListener('drop', async e=>{
+  e.preventDefault();
+  const file=e.dataTransfer?.files?.[0]; if(!file) return;
+  $('#fileName').textContent = file.name;
+  $('#statusText').textContent='Lade Datei…';
+  try{
+    let text='';
+    if(file.name.toLowerCase().endsWith('.zip')){
+      if(!(await ensureJSZip())){ alert('JSZip nicht verfügbar – bitte ZIP entpacken und TXT/CSV hochladen.'); return; }
+      const zip=await JSZip.loadAsync(file); const entries=Object.values(zip.files);
+      let entry=entries.find(f=>/\.(txt|csv)$/i.test(f.name) && /eurojackpot/i.test(f.name)) || entries.find(f=>/\.(txt|csv)$/i.test(f.name));
+      if(!entry) throw new Error('ZIP ohne TXT/CSV.');
+      text=await entry.async('string');
+    }else{ text=await file.text(); }
+    parseArchiveText(text, 'manual');
+  }catch(e){ $('#statusText').textContent='Fehler: '+e.message; }
+});
+
+/* === Analyse (Charts + KPIs) ============================================== */
+let chartMain, chartEuro;
+function renderCharts(){
+  if(!draws.length) return;
+  if(chartMain) chartMain.destroy(); if(chartEuro) chartEuro.destroy();
+  chartMain=new Chart($('#chartMain'),{type:'bar',data:{labels:[...Array(50).keys()].slice(1),datasets:[{data:[...freqMain].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+  chartEuro=new Chart($('#chartEuro'),{type:'bar',data:{labels:[...Array(12).keys()].slice(1),datasets:[{data:[...freqEuro].slice(1), borderWidth:0}]},options:{plugins:{legend:{display:false}}}});
+}
+function renderAnalyseKPIs(){
+  if(!draws.length) return;
+  const mf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]);
+  const lf = [...freqMain].map((v,i)=>[i,v]).slice(1).sort((a,b)=>a[1]-b[1]);
+  $('#kpiTop').textContent = mf.slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiLow').textContent = lf.slice(0,5).map(x=>x[0]).join(' ');
+  const recent = draws.slice(-20);
+  const counts=Array(51).fill(0); recent.forEach(d=>d.main.forEach(n=>counts[n]++));
+  const hot = counts.map((v,i)=>[i,v]).slice(1).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]).join(' ');
+  $('#kpiHot').textContent = hot;
+  const last=draws.slice(-200);
+  const map=new Map();
+  function inc(k){ map.set(k,(map.get(k)||0)+1); }
+  last.forEach(d=>{ const m=[...d.main].sort((a,b)=>a-b); for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) inc(`${m[i]}-${m[j]}`); });
+  const pairs=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>k).join('  ');
+  $('#kpiPairs').textContent = pairs;
+}
+
+/* === Gruppen & Generator =================================================== */
+const GROUPS=[{label:'1–10',from:1,to:10},{label:'11–20',from:11,to:20},{label:'21–30',from:21,to:30},{label:'31–40',from:31,to:40},{label:'41–50',from:41,to:50}];
+const EGROUPS=[{label:'1–6',from:1,to:6},{label:'7–12',from:7,to:12}];
+function buildGroupUI(){
+  const host=$('#groupControls'); host.innerHTML='';
+  GROUPS.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded" data-idx="${i}">${[0,1,2,3,4,5].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    host.appendChild(row);
+  });
+  $$('#groupControls select').forEach(sel=> sel.addEventListener('change', updateGroupCounters));
+  updateGroupCounters();
+}
+function buildEuroUI(){
+  const host=$('#euroControls'); host.innerHTML='';
+  EGROUPS.forEach((g,i)=>{
+    const row=document.createElement('div'); row.className='grid grid-cols-3 gap-2 items-center';
+    row.innerHTML=`<div class="font-bold">${g.label}</div><select class="bg-gray-900 p-2 rounded euro" data-idx="${i}">${[0,1,2].map(v=>`<option value="${v}">${v}</option>`).join('')}</select><div class="text-right text-sm text-gray-400">0</div>`;
+    host.appendChild(row);
+  });
+  $$('#euroControls select').forEach(sel=> sel.addEventListener('change', updateGroupCounters));
+}
+function setCounter(el, val, total){
+  el.textContent = `${val}/${total}`;
+  el.classList.toggle('green', val===total);
+  el.classList.toggle('red', val!==total);
+}
+function updateGroupCounters(){
+  let sumG=0; $$('#groupControls select').forEach(s=>{ const v=+s.value||0; sumG+=v; s.parentElement.lastChild.textContent=v; });
+  setCounter($('#mainCounter'), sumG, 5);
+  let sumE=0;
+  if($('#useEuro').checked){
+    $$('#euroControls select').forEach(s=>{ const v=+s.value||0; sumE+=v; s.parentElement.lastChild.textContent=v; });
+    $('#euroCounter').classList.remove('hidden');
+    setCounter($('#euroCounter'), sumE, 2);
+  }else{
+    $('#euroCounter').classList.add('hidden');
+  }
+  const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+  if(sumG!==5){ err.classList.remove('hidden'); err.textContent='Bitte genau 5 aus den Gruppen wählen.'; }
+  if($('#useEuro').checked && !(sumE===0 || sumE===2)){ err.classList.remove('hidden'); err.textContent='Euro-Summe muss 0 oder 2 sein.'; }
+}
+$('#modus').addEventListener('change', ()=>{
+  const on = $('#modus').value==='groups';
+  $('#groupUI').classList.toggle('hidden', !on);
+  if(on){ buildGroupUI(); }
+});
+$('#useEuro').addEventListener('change', e=>{
+  $('#euroControls').classList.toggle('hidden', !e.target.checked);
+  if(e.target.checked){ buildEuroUI(); setCounter($('#euroCounter'), 0, 2); }
+  updateGroupCounters();
+});
+
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 function pickFromRange(from,to,avoid,count,weightFn){
   const bag=[]; for(let n=from;n<=to;n++){ if(!avoid.includes(n)){ const w=Math.max(1, weightFn?weightFn(n):1); for(let k=0;k<w;k++) bag.push(n);} }
-  shuffle(bag); const res=[]; for(const v of bag){ if(!res.includes(v)){ res.push(v); if(res.length===count) break; } } return res;
+  shuffle(bag);
+  const res=[]; for(const v of bag){ if(!res.includes(v)){ res.push(v); if(res.length===count) break; } }
+  return res;
 }
-function autoExtra(){
-  const c=cfgs[game]; const start=c.extraMin; const fe=[...freqExtra]; const maxE=Math.max(...fe.slice(start))||1; const last=draws.length-1;
-  const w=e=>{ const f=fe[e]/maxE; const gap=lastSeenE[e]!=null ? (last-lastSeenE[e]) : last+1; const gn=Math.min(1, gap/(last+1)); return 1 + Math.round(3*(0.55*f+0.45*gn)); };
-  return pickFromRange(start,c.extraMax,[],c.extraCount,w).sort((a,b)=>a-b);
+function euroAuto(){
+  const fe=[...freqEuro]; const maxE=Math.max(...fe.slice(1))||1;
+  const lastIdx=draws.length-1;
+  const w = (e)=>{
+    const f = fe[e]/maxE;
+    const gap = lastSeenE[e]!=null ? (lastIdx-lastSeenE[e]) : lastIdx+1;
+    const gapN = Math.min(1, gap/(lastIdx+1));
+    return 1 + Math.round(3*(0.55*f + 0.45*gapN));
+  };
+  const e = pickFromRange(1,12,[],2,w).sort((a,b)=>a-b);
+  return e;
 }
-function genOne(){
-  const c=cfgs[game];
-  if(!draws.length){ return {main:pickFromRange(1,c.mainMax,[],c.mainCount).sort((a,b)=>a-b), extra:pickFromRange(c.extraMin,c.extraMax,[],c.extraCount)}; }
-  const mode=$('#modus').value;
+
+const normalizeVec = v => { const m=Math.max(...v); return v.map(x=> m? x/m : 0); };
+function buildMatrices(){
+  const C = Array.from({length:51}, ()=>Array(51).fill(0));
+  const recentW = Math.min(150, draws.length);
+  const recentStart = draws.length - recentW;
+  const recentF = Array(51).fill(0);
+  for(let i=0;i<draws.length;i++){
+    const d=draws[i]; const m=d.main;
+    for(let a=0;a<m.length;a++) for(let b=a+1;b<m.length;b++){ C[m[a]][m[b]]++; C[m[b]][m[a]]++; }
+    if(i>=recentStart){ m.forEach(x=>recentF[x]++); }
+  }
+  const fNorm = normalizeVec(freqMain);
+  const trendNorm = normalizeVec(recentF);
+  const gaps = lastSeen.map(ix => ix==null ? draws.length : (draws.length-1-ix));
+  const gapNorm = normalizeVec(gaps);
+  const pairScore = (i,j)=>{
+    const fij=C[i][j]; if(fij===0) return 0;
+    const denom = (freqMain[i]||1)*(freqMain[j]||1);
+    return fij/denom;
+  };
+  return {pairScore, fNorm, trendNorm, gapNorm};
+}
+function scoreSet(set, mats){
+  const {pairScore,fNorm,trendNorm,gapNorm} = mats;
+  const wF=0.32, wT=0.30, wR=0.38, wPair=0.75, wBal=0.25;
+  const base = set.reduce((s,n)=> s + (wF*fNorm[n] + wT*trendNorm[n] + wR*gapNorm[n]), 0);
+  let p=0; for(let i=0;i<set.length;i++) for(let j=i+1;j<set.length;j++){ p += pairScore(set[i],set[j]); }
+  const target=[1,1,1,1,1]; const counts=[0,0,0,0,0];
+  set.forEach(n=>{ const g = Math.floor((n-1)/10); counts[g]++; });
+  const balPenalty = counts.reduce((s,c,i)=> s + Math.abs(c-target[i]), 0);
+  const balScore = Math.max(0, 5 - balPenalty)/5;
+  return base + wPair*p + wBal*balScore;
+}
+function complexSimulatedAnnealing(){
+  const mats = buildMatrices();
+  const w = n=> 1 + Math.round(5*(mats.trendNorm[n]*0.6 + mats.gapNorm[n]*0.4));
+  let current = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+  let best = current.slice();
+  let currentScore = scoreSet(current, mats);
+  let bestScore = currentScore;
+  const ITER = 1600 + Math.floor(Math.random()*600);
+  for(let t=0;t<ITER;t++){
+    const T = 1 - t/ITER;
+    const c = current.slice();
+    const k = (Math.random()<T? 2:1);
+    for(let i=0;i<k;i++){
+      const rmIdx = Math.floor(Math.random()*c.length);
+      const avoid = c.slice(); avoid.splice(rmIdx,1);
+      const add = pickFromRange(1,50,avoid,1,w);
+      if(add.length){ c[rmIdx]=add[0]; }
+      c.sort((a,b)=>a-b);
+    }
+    const s = scoreSet(c, mats);
+    const accept = (s>currentScore) || (Math.random()<Math.exp((s-currentScore)/(0.15+0.0001)));
+    if(accept){ current=c; currentScore=s; if(s>bestScore){ best=c; bestScore=s; } }
+  }
+  return {main:best, euro:euroAuto()};
+}
+function runsBest(){
+  const runMap=new Map();
+  function inc(key){ runMap.set(key,(runMap.get(key)||0)+1); }
+  for(const d of draws){
+    const m=[...d.main].sort((a,b)=>a-b);
+    let seq=[m[0]];
+    for(let i=1;i<m.length;i++){
+      if(m[i]===m[i-1]+1){ seq.push(m[i]); }
+      else{
+        if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+        seq=[m[i]];
+      }
+    }
+    if(seq.length>=2){ for(let L=2; L<=Math.min(4,seq.length); L++){ for(let s=0;s+L<=seq.length;s++){ inc(seq.slice(s,s+L).join('-')); } } }
+  }
+  const lastIdx = draws.length-1;
+  const scoreEntries=[];
+  for(const [k,v] of runMap.entries()){
+    const nums=k.split('-').map(Number);
+    const lastSeenMin = Math.min(...nums.map(n=> lastSeen[n]==null? -1 : lastSeen[n]));
+    const gap = lastSeenMin<0? lastIdx+1 : (lastIdx-lastSeenMin);
+    const fresh = 1 + gap/(lastIdx+1);
+    scoreEntries.push([nums, v*fresh]);
+  }
+  scoreEntries.sort((a,b)=>b[1]-a[1]);
+  const pick = scoreEntries.slice(0,50);
+  const base = pick.length? pick[Math.floor(Math.random()*Math.min(12,pick.length))][0] : [];
+  let main = Array.from(new Set(base));
+  while(main.length<5){
+    const add = pickFromRange(1,50,main,1, n=> (freqMain[n]? freqMain[n]:1) + (lastSeen[n]==null?3:0) );
+    if(add.length) main.push(add[0]); else break;
+  }
+  main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,5);
+  return {main, euro:euroAuto()};
+}
+
+/* Typing Engine */
+async function typeLine(el, text){ for(const ch of text){ el.append(ch); await sleep(10);} }
+async function printTip(outEl, index, tip){
+  await typeLine(outEl, "#"+index+": ");
+  for(const n of tip.main){ await typeLine(outEl, n+" "); }
+  await typeLine(outEl, "| E: ");
+  for(const e of tip.euro){ await typeLine(outEl, e+" "); }
+  outEl.append("\n"); outEl.scrollTop = outEl.scrollHeight;
+}
+
+/* Analyse & Karten */
+function inFav(tip){ return favorites.some(f=> f.main.join('-')===tip.main.join('-') && f.euro.join('-')===tip.euro.join('-')); }
+function exactOccurrences(tip){
+  const idx=[]; for(let i=0;i<draws.length;i++){ const d=draws[i];
+    if(tip.main.length===5 && d.main.length===5 && tip.main.every((n,j)=>n===d.main[j])) idx.push(i);
+  } return idx;
+}
+function analyseVariant(tip){
+  const idx=exactOccurrences(tip);
+  const occurCount=idx.length;
+  const last = occurCount? draws[idx.at(-1)].date : 'nie';
+  const avgGap = occurCount? (function(){
+    let gaps=[]; for(let i=1;i<idx.length;i++) gaps.push(idx[i]-idx[i-1]); const m=gaps.reduce((a,b)=>a+b,0)/(gaps.length||1); return m.toFixed(1);
+  })() : '–';
+  const first = occurCount? draws[idx[0]].date : '–';
+  const dist = Array(8).fill(0);
+  for(const d of draws){ const ov = tip.main.filter(x=>d.main.includes(x)).length + tip.euro.filter(x=>d.euro.includes(x)).length; dist[ov]++; }
+  const ov3p = dist.slice(3).reduce((a,b)=>a+b,0);
+  const freqSum = tip.main.reduce((s,n)=>s+freqMain[n],0);
+  return {occurCount,last,first,avgGap,dist,ov3p,freqSum};
+}
+function tipCard(idx, tip){
+  const a = analyseVariant(tip);
+  const isFav = inFav(tip);
+  const card=document.createElement('div'); card.className='glass mb-3'; card.dataset.key = tip.main.join('-')+'|'+tip.euro.join('-');
+  card.innerHTML = `
+    <div class="flex items-center justify-between">
+      <div>
+        ${tip.main.map(n=>`<span class="chip">${n}</span>`).join('')}
+        <span class="badge">Euro</span>
+        ${tip.euro.map(n=>`<span class="chip euro">${n}</span>`).join('')}
+      </div>
+      <span class="badge">#${idx}</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 text-sm">
+      <div class="badge">Vorkommen exakt: <b>${a.occurCount}</b></div>
+      <div class="badge">Erstes: <b>${a.first}</b></div>
+      <div class="badge">Letztes: <b>${a.last}</b></div>
+      <div class="badge">Ø Abstand: <b>${a.avgGap}</b></div>
+      <div class="badge">Overlap ≥3: <b>${a.ov3p}</b></div>
+      <div class="badge">FreqSum: <b>${a.freqSum}</b></div>
+    </div>
+    <div class="mt-2 flex gap-2 flex-wrap">
+      <button class="btn ${isFav?'btn--green':'btn--amber'} fav-toggle">${isFav?'✅ In Favoriten':'⭐ Favorit'}</button>
+      <button class="btn btn--gray copy-btn">📋 Kopieren</button>
+      <button class="btn btn--gray del-btn">🗑️ Entfernen</button>
+    </div>`;
+  card.querySelector('.copy-btn').onclick = ()=> navigator.clipboard.writeText(`${tip.main.join('-')} | E:${tip.euro.join('-')}`);
+  card.querySelector('.del-btn').onclick = ()=>{ card.remove(); generated = generated.filter(g=> g!==tip); };
+  card.querySelector('.fav-toggle').onclick = (ev)=>{
+    if(inFav(tip)){
+      favorites = favorites.filter(f=> !(f.main.join('-')===tip.main.join('-') && f.euro.join('-')===tip.euro.join('-')));
+    }else{
+      favorites.push(tip);
+    }
+    localStorage.setItem('ej_favs_v1', JSON.stringify(favorites));
+    ev.target.textContent = inFav(tip) ? '✅ In Favoriten' : '⭐ Favorit';
+    ev.target.classList.toggle('btn--green', inFav(tip));
+    ev.target.classList.toggle('btn--amber', !inFav(tip));
+  };
+  return card;
+}
+
+function generateOne(){
+  const mode = $('#modus').value;
+  let main=[];
+  if(!draws.length){
+    main = pickFromRange(1,50,[],5); return {main:main.sort((a,b)=>a-b), euro: pickFromRange(1,12,[],2).sort((a,b)=>a-b)};
+  }
+  if(mode==='groups'){
+    const want = $$('#groupControls select').map(s=>+s.value||0);
+    const sumWant = sum(want);
+    const err=$('#groupError'); err.classList.add('hidden'); err.textContent='';
+    if(sumWant!==5){ err.classList.remove('hidden'); err.textContent='Bitte genau 5 aus den Gruppen wählen.'; throw new Error('Gruppen nicht vollständig.'); }
+    let weightMain=null;
+    const r=draws.slice(-100); const fm=Array(51).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); weightMain=n=>Math.ceil(3*fm[n]/maxM);
+    GROUPS.forEach((g,i)=>{ const need=want[i]; if(need>0){ main.push(...pickFromRange(g.from,g.to,main,need,weightMain)); } });
+    main = Array.from(new Set(main)).sort((a,b)=>a-b).slice(0,5);
+    let euro=[];
+    if($('#useEuro').checked){
+      const eWant = $$('#euroControls select').map(s=>+s.value||0);
+      const eSum = sum(eWant);
+      if(!(eSum===0 || eSum===2)){ throw new Error('Euro-Summe muss 0 oder 2 sein.'); }
+      if(eSum===2){ EGROUPS.forEach((g,i)=>{ const need=eWant[i]; if(need>0){ euro.push(...pickFromRange(g.from,g.to,euro,need)); } }); euro.sort((a,b)=>a-b); }
+      if(eSum===0){ euro=euroAuto(); }
+    }else{ euro=euroAuto(); }
+    return {main, euro};
+  }
   if(mode==='last100'){
-    const r=draws.slice(-100); const fm=Array(c.mainMax+1).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const r=draws.slice(-100); const fm=Array(51).fill(1); r.forEach(d=>d.main.forEach(n=>fm[n]++));
     const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(3*fm[n]/maxM);
-    return {main:pickFromRange(1,c.mainMax,[],c.mainCount,w).sort((a,b)=>a-b), extra:autoExtra()};
+    main = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
   }
   if(mode==='never'){
-    const fm=[...freqMain]; const w=n=> fm[n]===0?5:(fm[n]<=5?3:1);
-    return {main:pickFromRange(1,c.mainMax,[],c.mainCount,w).sort((a,b)=>a-b), extra:autoExtra()};
+    const fm=freqMain.slice(); const w=n=> fm[n]===0?5:(fm[n]<=5?3:1);
+    main = pickFromRange(1,50,[],5,w).sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
   }
-  // hot
-  const recent = draws.slice(-200); const pair=new Map(), trip=new Map(); const inc=(m,k)=>m.set(k,(m.get(k)||0)+1);
-  for(const d of recent){ const m=[...d.main].sort((a,b)=>a-b);
-    for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) inc(pair,`${m[i]}-${m[j]}`);
-    for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) for(let k=j+1;k<m.length;k++) inc(trip,`${m[i]}-${m[j]}-${m[k]}`);
+  if(mode==='hot'){
+    const recent = draws.slice(-200);
+    const pairMap=new Map(); const tripleMap=new Map();
+    function inc(map,key){ map.set(key,(map.get(key)||0)+1); }
+    for(const d of recent){
+      const m=[...d.main].sort((a,b)=>a-b);
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++){ inc(pairMap, `${m[i]}-${m[j]}`); }
+      for(let i=0;i<m.length;i++) for(let j=i+1;j<m.length;j++) for(let k=j+1;k<m.length;k++){ inc(tripleMap, `${m[i]}-${m[j]}-${m[k]}`); }
+    }
+    const topPairs=[...pairMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,30).map(e=>e[0].split('-').map(Number));
+    const topTrip=[...tripleMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0].split('-').map(Number));
+    if(Math.random()<0.5 && topTrip.length){ main = [...topTrip[Math.floor(Math.random()*topTrip.length)]]; }
+    else if(topPairs.length){ main = [...topPairs[Math.floor(Math.random()*topPairs.length)]]; }
+    const r2=draws.slice(-100); const fm=Array(51).fill(1); r2.forEach(d=>d.main.forEach(n=>fm[n]++));
+    const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(2*fm[n]/maxM);
+    while(main.length<5){ const add = pickFromRange(1,50,main,1,w); if(add.length) main.push(add[0]); else break; }
+    main.sort((a,b)=>a-b);
+    return {main, euro:euroAuto()};
   }
-  const tPairs=[...pair.entries()].sort((a,b)=>b[1]-a[1]).slice(0,30).map(e=>e[0].split('-').map(Number));
-  const tTrip=[...trip.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0].split('-').map(Number));
-  let m=[]; if(Math.random()<0.5 && tTrip.length) m=[...tTrip[Math.floor(Math.random()*tTrip.length)]]; else if(tPairs.length) m=[...tPairs[Math.floor(Math.random()*tPairs.length)]];
-  const r2=draws.slice(-100); const fm=Array(c.mainMax+1).fill(1); r2.forEach(d=>d.main.forEach(n=>fm[n]++)); const maxM=Math.max(...fm.slice(1)); const w=n=>Math.ceil(2*fm[n]/maxM);
-  while(m.length<c.mainCount){ const add=pickFromRange(1,c.mainMax,m,1,w); if(add.length) m.push(add[0]); else break; } m.sort((a,b)=>a-b);
-  return {main:m, extra:autoExtra()};
-}
-$('#gen').addEventListener('click',()=>{
-  if(!draws.length){ alert('Bitte zuerst Archiv laden (oder Beispiel).'); return; }
-  const out=$('#genOut'); out.textContent=''; const k=Math.max(1,Math.min(25,+$('#outCount').value||5));
-  for(let i=1;i<=k;i++){ const t=genOne(); out.textContent+=`#${i}: ${t.main.join(' ')}  |  [${t.extra.join(' ')}]\\n`; }
-});
-$('#genClear').addEventListener('click',()=>$('#genOut').textContent='');
-
-// ========= Trommel (2D Animation) =========
-const cvs=$('#drum'), ctx=cvs.getContext('2d');
-function drumDraw(balls, pick, extraPick){
-  const c=cfgs[game]; const W=cvs.width, H=cvs.height; const R=14;
-  let pos=balls.map((n,i)=>({n,x:Math.random()*W*0.9+20,y:Math.random()*H*0.8+20, vx:(Math.random()*2-1)*2, vy:(Math.random()*2-1)*2}));
-  let picks=[], epicks=[]; let frame=0, done=false;
-  function step(){
-    ctx.clearRect(0,0,W,H);
-    // border
-    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.strokeRect(1,1,W-2,H-2);
-    // physics-lite
-    for(const p of pos){
-      p.x+=p.vx; p.y+=p.vy; p.vy+=0.04;
-      if(p.x<R||p.x>W-R) p.vx*=-1;
-      if(p.y<R||p.y>H-R){ p.vy*=-0.9; p.y=Math.min(Math.max(p.y,R),H-R); }
-    }
-    // collisions (rough)
-    for(let i=0;i<pos.length;i++) for(let j=i+1;j<pos.length;j++){
-      const a=pos[i], b=pos[j]; const dx=a.x-b.x, dy=a.y-b.y; const d=Math.hypot(dx,dy);
-      if(d<2*R){ const nx=dx/d, ny=dy/d; const ov=2*R-d; a.x+=nx*ov/2; a.y+=ny*ov/2; b.x-=nx*ov/2; b.y-=ny*ov/2; const vax=a.vx, vay=a.vy; a.vx=b.vx; a.vy=b.vy; b.vx=vax; b.vy=vay; }
-    }
-    // draw balls
-    for(const p of pos){
-      ctx.beginPath(); ctx.arc(p.x,p.y,R,0,Math.PI*2); ctx.fillStyle='rgba(0,255,240,.25)'; ctx.fill();
-      ctx.fillStyle='#eaf7ff'; ctx.font='bold 12px ui-sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.n, p.x, p.y);
-    }
-    // selection timeline
-    if(frame%40===0 && (picks.length<c.mainCount || epicks.length<c.extraCount)){
-      if(picks.length<c.mainCount){ const n=pick(); picks.push(n); }
-      else if(epicks.length<c.extraCount){ const n=extraPick(); epicks.push(n); }
-      $('#drumOut').textContent = `Haupt: ${picks.join(' ')}   |   Extra: [${epicks.join(' ')}]`;
-    }
-    frame++; if(frame<1200 && (picks.length<c.mainCount || epicks.length<c.extraCount)) requestAnimationFrame(step);
-    else if(!done){ done=true; $('#drumOut').textContent += '  ✔'; }
-  }
-  step();
+  if(mode==='complex'){ return complexSimulatedAnnealing(); }
+  if(mode==='runs'){ return runsBest(); }
+  main = pickFromRange(1,50,[],5).sort((a,b)=>a-b); return {main, euro:euroAuto()};
 }
 
-$('#drumStart').addEventListener('click',()=>{
-  if(!draws.length){ alert('Bitte zuerst Archiv laden (oder Beispiel).'); return; }
-  const c=cfgs[game];
-  // bag from frequencies (favor less recently drawn numbers slightly)
-  const last=draws.length-1; const gapM=Array(c.mainMax+1).fill(last+1); for(let n=1;n<=c.mainMax;n++){ if(lastSeenM[n]!=null) gapM[n]=last-lastSeenM[n]; }
-  const gapE=Array(c.extraMax+1).fill(last+1); for(let n=c.extraMin;n<=c.extraMax;n++){ if(lastSeenE[n]!=null) gapE[n]=last-lastSeenE[n]; }
-  const wM=n=>1+Math.round(4*(gapM[n]/Math.max(...gapM.slice(1)))); const wE=n=>1+Math.round(3*(gapE[n]/Math.max(...gapE.slice(c.extraMin))));
-  const pickMain=(()=>{ const used=new Set(); return ()=>{ let n; do{ n=pickFromRange(1,c.mainMax,[...used],1,wM)[0]; }while(used.has(n)); used.add(n); return n; }; })();
-  const pickExtra=(()=>{ const used=new Set(); return ()=>{ let n; do{ n=pickFromRange(c.extraMin,c.extraMax,[...used],1,wE)[0]; }while(used.has(n)); used.add(n); return n; }; })();
-  const balls=[...Array(c.mainMax).keys()].map(i=>i+1);
-  drumDraw(balls, pickMain, pickExtra);
+async function printTipAndCard(outEl, index, tip){
+  await printTip(outEl, index, tip);
+  $('#cards').appendChild(tipCard(index, tip));
+}
+
+/* Buttons Generator/Analyse */
+$('#generateBtn').addEventListener('click', async ()=>{
+  if(!draws.length){ alert('Bitte zuerst ein Archiv laden.'); return; }
+  if($('#modus').value==='groups' && $('#groupControls').children.length===0){ buildGroupUI(); }
+  const total = +$('#kombis').value || 1;
+  const out = $('#liveOutput'); out.textContent='';
+  $('#cards').innerHTML='';
+  generated=[];
+  const seen=new Set();
+  for(let i=1;i<=total;i++){
+    try{
+      let tip = generateOne();
+      let key = tip.main.join('-')+'|'+tip.euro.join('-');
+      let guard=0; while(seen.has(key) && guard<10){ tip = generateOne(); key=tip.main.join('-')+'|'+tip.euro.join('-'); guard++; }
+      seen.add(key); generated.push(tip);
+      await animateSelection(tip.main, tip.euro);
+      await printTipAndCard(out, i, tip);
+    }catch(e){
+      const err=$('#groupError'); err.classList.remove('hidden'); err.textContent=e.message; break;
+    }
+  }
+});
+$('#clearGeneratedBtn').addEventListener('click', ()=>{ generated=[]; $('#cards').innerHTML=''; $('#liveOutput').textContent=''; });
+$('#analyseAllBtn').addEventListener('click', ()=>{
+  if(!generated.length){ alert('Bitte zuerst Varianten generieren.'); return; }
+  const dist=Array(8).fill(0);
+  generated.forEach(t=>{ for(const d of draws){ const ov = t.main.filter(x=>d.main.includes(x)).length + t.euro.filter(x=>d.euro.includes(x)).length; dist[ov]++; } });
+  const table = dist.map((v,i)=>`<tr><td class="px-2 py-1">${i}</td><td class="px-2 py-1">${v}</td></tr>`).join('');
+  $('#analysisBox').innerHTML = `<div class="glass mt-2"><div class="font-bold mb-2">Overlap‑Verteilung (alle Varianten × Archiv)</div><table class="text-sm"><thead><tr><th class="px-2 py-1">Treffer</th><th class="px-2 py-1">Anzahl</th></tr></thead><tbody>${table}</tbody></table></div>`;
+  $('#v-ana').scrollIntoView({behavior:'smooth'});
 });
 
-// ========= init =========
-function init(){ $('#archiveUrl').value=urls[game]; $('#directDl').href=urls[game]; renderMap(); }
-init();
+/* Favoriten */
+function saveFavs(){ localStorage.setItem('ej_favs_v1', JSON.stringify(favorites)); renderFavs(); }
+function renderFavs(){
+  const q=($('#favSearch')?.value||'').toLowerCase();
+  const box=$('#favoritesBox'); if(!box) return; box.innerHTML='';
+  favorites.filter(f=> (f.main.join(' ')+' '+f.euro.join(' ')).toLowerCase().includes(q)).forEach((f,i)=>{
+    const div=document.createElement('div'); div.className='glass p-3';
+    const grid=document.createElement('div'); grid.className='flex flex-wrap items-center gap-1';
+    f.main.forEach(n=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=n; grid.appendChild(s); });
+    const label=document.createElement('span'); label.className='badge ml-2'; label.textContent='Euro'; grid.appendChild(label);
+    f.euro.forEach(n=>{ const s=document.createElement('span'); s.className='chip euro'; s.textContent=n; grid.appendChild(s); });
+    const actions=document.createElement('div'); actions.className='mt-2 flex gap-2 flex-wrap';
+    actions.innerHTML=`
+      <button class="btn btn--gray" onclick='navigator.clipboard.writeText("${f.main.join('-')} | E:${f.euro.join('-')}")'>Copy</button>
+      <button class="btn btn--gray" onclick='animateSelection(${JSON.stringify(f.main)}, ${JSON.stringify(f.euro)})'>Show</button>
+      <button class="btn btn--gray" onclick="favorites.splice(${i},1); saveFavs();" style="border-color: rgba(255,0,0,.25)">Entfernen</button>`;
+    div.appendChild(grid); div.appendChild(actions); box.appendChild(div);
+  });
+}
+$('#favSearch')?.addEventListener('input', renderFavs);
+$('#favExport')?.addEventListener('click', ()=>{
+  const blob=new Blob([JSON.stringify(favorites,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='favoriten.json'; a.click(); URL.revokeObjectURL(url);
+});
+$('#favCSV')?.addEventListener('click', ()=>{
+  const rows = [["n1","n2","n3","n4","n5","e1","e2"], ...favorites.map(f=>[...f.main, ...f.euro])];
+  const csv = rows.map(r=>r.join(",")).join("\n");
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='favoriten.csv'; a.click(); URL.revokeObjectURL(url);
+});
+$('#favImport')?.addEventListener('click', ()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=async e=>{ const file=e.target.files?.[0]; if(!file) return; const txt=await file.text(); favorites=JSON.parse(txt||'[]'); saveFavs(); };
+  inp.click();
+});
+$('#favClear')?.addEventListener('click', ()=>{ if(confirm('Alle Favoriten löschen?')){ favorites=[]; saveFavs(); } });
+renderFavs();
+
+/* Restore */
+(()=>{
+  const saved=localStorage.getItem(ARCH_KEY);
+  if(saved){ try{ parseArchiveText(saved, 'manual'); $('#statusText').textContent='Archiv aus Speicher geladen ✔'; }catch{} }
+  latestRefDate = localStorage.getItem(LATEST_REF_KEY) || latestRefDate;
+  setKPIs();
+})();
 </script>
+
+<!-- === BEGIN Trommel (v8) ================================================== -->
+<div id="v-drum" class="glass hidden" style="display:none;margin-top:1rem;">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-xl font-bold">🎱 Ziehung – Trommel</h2>
+    <div class="badge" id="drumLabel">Venus · 50 gelbe Styroporkugeln</div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="md:col-span-2">
+      <canvas id="drumCanvas" width="760" height="560" class="w-full rounded border border-white/10 bg-black/30"></canvas>
+    </div>
+    <div class="space-y-2">
+      <div class="glass">
+        <div class="font-semibold mb-1">Ziehung</div>
+        <div class="text-sm opacity-80"><b>Venus</b> (50 gelb) mit Gebläse unten & Fang oben. Danach <b>Pearl</b> (12 weiß).</div>
+        <div class="mt-2 flex gap-2 flex-wrap">
+          <button type="button" class="btn btn--green" id="drumAutoStart">🎬 Start Ziehung</button>
+          <button type="button" class="btn btn--amber" id="drumReset">🔄 Reset</button>
+        </div>
+        <div class="mt-2">
+          <div class="badge">Gezogene Hauptzahlen (Venus)</div>
+          <div id="drumOutMain" class="mt-1 flex flex-wrap"></div>
+          <div class="badge mt-2">Gezogene Eurozahlen (Pearl)</div>
+          <div id="drumOutEuro" class="mt-1 flex flex-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="dbg" style="position:fixed;left:12px;bottom:12px;font:12px/1.2 monospace;color:#b7c7ff;background:rgba(17,24,39,.7);padding:.35rem .5rem;border:1px solid rgba(255,255,255,.15);border-radius:.4rem">init…</div>
+
+<script>
+(function(){
+  function clearInline(){ document.querySelectorAll('[id^="v-"]').forEach(v=>{ if(v.style) v.style.display=''; }); }
+  function showDrum(btn){
+    document.querySelectorAll('[id^="v-"]').forEach(v=> v.classList && v.classList.add('hidden'));
+    const view = document.getElementById('v-drum');
+    if(view){ view.classList.remove('hidden'); view.style.display=''; }
+    document.querySelectorAll('.nav-btn').forEach(b=> b.classList && b.classList.remove('active'));
+    if(btn) btn.classList && btn.classList.add('active');
+  }
+  const oldTab = window.tab;
+  window.tab = function(name, el){
+    if(name==='drum'){ showDrum(el); return; }
+    clearInline();
+    if(typeof oldTab==='function'){ oldTab(name, el); }
+  };
+  const btn = document.getElementById('btn-drum');
+  if(btn){ btn.addEventListener('click', ()=> window.tab('drum', btn)); }
+})();
+</script>
+
+<script>
+// v8 Physics (ASCII only, robust)
+(function(){
+  const canvas = document.getElementById('drumCanvas'); if(!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const W=canvas.width, H=canvas.height, CX=W*0.5, CY=H*0.52, DRUM_R=Math.min(W,H)*0.44;
+  const CATCH_POS={x:CX+DRUM_R*0.45,y:CY-DRUM_R*0.78}, CATCH_R=20;
+  const JETS=[{x:CX-DRUM_R*0.32,y:CY+DRUM_R*0.60,phase:0.0},{x:CX,y:CY+DRUM_R*0.60,phase:1.2},{x:CX+DRUM_R*0.32,y:CY+DRUM_R*0.60,phase:2.4}];
+  const BALL_DIAM_PX=22, R=BALL_DIAM_PX/2, PADDLES=3, REST=0.8, JET_R=82;
+  const BASE_LIFT_V=220, BASE_LIFT_P=180;
+  const outMain=document.getElementById('drumOutMain'), outEuro=document.getElementById('drumOutEuro'), label=document.getElementById('drumLabel');
+  const btnStart=document.getElementById('drumAutoStart'), btnReset=document.getElementById('drumReset'), dbg=document.getElementById('dbg');
+  let balls=[], drawnMain=[], drawnEuro=[], phase='idle', running=false, rafId=null, lastT=0, lastCatchMs=0;
+  let tNoise=0, tGrav=0, jetT=0, paddleAngle=0, gvec={x:0,y:60};
+  const minGapMain=1500, minGapEuro=1800;
+
+  function rng(a,b){return a+Math.random()*(b-a);}
+  function pill(n,e){const s=document.createElement('span');s.className='chip'+(e?' euro':'');s.textContent=n;setTimeout(()=>{s.classList.add('pop');setTimeout(()=>s.classList.remove('pop'),240);},10);return s;}
+  function render(){outMain.innerHTML='';drawnMain.forEach(n=>outMain.appendChild(pill(n,false)));outEuro.innerHTML='';drawnEuro.forEach(n=>outEuro.appendChild(pill(n,true)));}
+  function initBalls(c,isP){balls=[];for(let i=0;i<c;i++){const a=Math.random()*Math.PI*2,r=DRUM_R*0.50*rng(0.35,0.92);const x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;balls.push({id:i+1,x:x,y:y,vx:rng(-70,70),vy:rng(-70,70),r:R});}label.textContent=isP?'Pearl · 12 weiße Styroporkugeln':'Venus · 50 gelbe Styroporkugeln';}
+  function drawDrum(isP){ctx.fillStyle='#0b1022';ctx.fillRect(0,0,W,H);ctx.beginPath();ctx.arc(CX,CY,DRUM_R,0,Math.PI*2);ctx.strokeStyle='rgba(180,220,255,.35)';ctx.lineWidth=8;ctx.stroke();ctx.save();ctx.translate(CX,CY);const L=DRUM_R*0.65;for(let i=0;i<PADDLES;i++){const ang=paddleAngle+i*(2*Math.PI/PADDLES);ctx.rotate(ang);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(L,0);ctx.lineWidth=6;ctx.strokeStyle='rgba(200,200,255,.22)';ctx.stroke();ctx.rotate(-ang);}ctx.restore();ctx.beginPath();ctx.arc(CATCH_POS.x,CATCH_POS.y,CATCH_R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3;ctx.stroke();for(const j of JETS){ctx.beginPath();ctx.arc(j.x,j.y,7,0,Math.PI*2);ctx.fillStyle='rgba(120,170,255,.35)';ctx.fill();}}
+  function drawBall(b,isP){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle=isP?'rgba(255,255,255,.96)':'rgba(255,240,120,.98)';ctx.fill();ctx.lineWidth=1.4;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();ctx.fillStyle='#111';ctx.font='bold 12px Inter, system-ui';const s=String(b.id),w=ctx.measureText(s).width;ctx.fillText(s,b.x-w/2,b.y+4);}
+  const CELL=R*2.4; function hkey(x,y){return (Math.floor(x/CELL))+','+(Math.floor(y/CELL));}
+  function step(dt,now,isP){
+    tNoise+=dt; tGrav+=dt; jetT+=dt; paddleAngle+=2.0*dt;
+    if(tGrav>1.1){tGrav=0; const a=rng(-Math.PI,Math.PI),g=rng(40,80); gvec={x:Math.cos(a)*g,y:Math.sin(a)*g};}
+    if(tNoise>0.25){tNoise=0; for(const b of balls){b.vx+=rng(-22,22); b.vy+=rng(-22,22);}}
+    const base = isP ? BASE_LIFT_P : BASE_LIFT_V;
+    for(const b of balls){
+      b.vx*=0.988; b.vy*=0.988; b.vx+=gvec.x*dt; b.vy+=gvec.y*dt;
+      const rx=b.x-CX, ry=b.y-CY, ang=Math.atan2(ry,rx), rad=Math.hypot(rx,ry);
+      for(let i=0;i<PADDLES;i++){ const targ=paddleAngle+i*(2*Math.PI/PADDLES);
+        const diff=Math.atan2(Math.sin(ang-targ),Math.cos(ang-targ));
+        if(Math.abs(diff)<0.22 && rad<DRUM_R*0.82){ const k=(DRUM_R-rad)*(isP?9:11)*dt; b.vx+=-Math.sin(targ)*k; b.vy+=Math.cos(targ)*k; } }
+      for(const J of JETS){ const dx=b.x-J.x, dy=b.y-J.y, d2=dx*dx+dy*dy;
+        if(d2 < JET_R*JET_R){ const p=(Math.sin(jetT*2.6+J.phase)+1)*0.5; b.vy -= base*p*dt; b.vx += dx*0.002*dt; } }
+      b.x+=b.vx*dt; b.y+=b.vy*dt;
+      const dx=b.x-CX, dy=b.y-CY, dist=Math.hypot(dx,dy), maxR=DRUM_R-b.r-4;
+      if(dist>maxR){ const nx=dx/dist, ny=dy/dist; b.x=CX+nx*maxR; b.y=CY+ny*maxR; const vn=b.vx*nx+b.vy*ny; const vtx=b.vx-vn*nx, vty=b.vy-vn*ny; b.vx=vtx*1.01-REST*vn*nx; b.vy=vty*1.01-REST*vn*ny; }
+    }
+    const grid=new Map(); for(const b of balls){ const k=hkey(b.x,b.y); if(!grid.has(k))grid.set(k,[]); grid.get(k).push(b); }
+    const neigh=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+    for(const b of balls){ const ix=Math.floor(b.x/CELL), iy=Math.floor(b.y/CELL);
+      for(const n of neigh){ const arr=grid.get((ix+n[0])+','+(iy+n[1])); if(!arr) continue;
+        for(const o of arr){ if(o===b) continue; const dx=o.x-b.x, dy=o.y-b.y, rsum=o.r+b.r, d2=dx*dx+dy*dy;
+          if(d2<rsum*rsum){ const d=Math.sqrt(d2)||0.0001, nx=dx/d, ny=dy/d, overlap=(rsum-d), push=overlap*0.52;
+            b.x-=nx*push*0.5; b.y-=ny*push*0.5; o.x+=nx*push*0.5; o.y+=ny*push*0.5;
+            const reln=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny; const J=(-1.8*reln)/2; b.vx+=J*nx; b.vy+=J*ny; o.vx-=J*nx; o.vy-=J*ny; } } } }
+    for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; const d=Math.hypot(b.x-CATCH_POS.x,b.y-CATCH_POS.y); const wait=(phase==='main')?minGapMain:minGapEuro;
+      if(d < CATCH_R-2){ const nowMs=now*1000.0; if(nowMs-lastCatchMs<wait){ const nx=(b.x-CATCH_POS.x)/(d||1), ny=(b.y-CATCH_POS.y)/(d||1); b.vx+=nx*80; b.vy+=ny*80; continue; }
+        balls.splice(i,1); lastCatchMs=nowMs; setTimeout(()=>capture(b),200); } }
+  }
+  function capture(b){ if(phase==='main'){ drawnMain.push(b.id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5){ phase='switch'; } }
+                      else if(phase==='euro'){ drawnEuro.push(b.id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; stop(); } } }
+  function draw(){ const isP=(phase==='euro'||phase==='done'); drawDrum(isP); for(const b of balls) drawBall(b,isP); }
+  function loop(ts){ if(!running) return; const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
+    if(phase==='main'||phase==='euro'){ step(dt,t,(phase!=='main')); } else if(phase==='switch'){ phase='euro_init'; setTimeout(()=>{ initBalls(12,true); phase='euro'; lastCatchMs=performance.now(); }, 650); }
+    draw(); if(dbg) dbg.textContent='phase='+phase+' | balls='+balls.length+' | drawn='+drawnMain.length+'+'+drawnEuro.length; rafId=requestAnimationFrame(loop); }
+  function start(){ if(running) return; running=true; lastT=0; lastCatchMs=performance.now(); rafId=requestAnimationFrame(loop); }
+  function stop(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
+  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; if(outMain) outMain.innerHTML=''; if(outEuro) outEuro.innerHTML=''; balls=[]; if(label) label.textContent='Venus · 50 gelbe Styroporkugeln'; phase='idle'; draw(); }
+  const startBtn=document.getElementById('drumAutoStart'), resetBtn=document.getElementById('drumReset');
+  if(resetBtn) resetBtn.addEventListener('click', reset);
+  if(startBtn) startBtn.addEventListener('click', ()=>{ reset(); initBalls(50,false); phase='main'; start(); });
+  // auto-start on load so you definitely see balls
+  (function(){ reset(); initBalls(50,false); phase='main'; start(); })();
+})();
+</script>
+<!-- === END Trommel (v8) ==================================================== -->
+
 </body>
 </html>
