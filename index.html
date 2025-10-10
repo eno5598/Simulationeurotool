@@ -5,8 +5,134 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Eurojackpot Tool by EnoWeb • v6.5.2</title>
 
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
+/* === Gruppen-Tracker (5 Gruppen) ========================================== */
+const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
+
+function runGroups(){
+  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
+  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse(); // newest first
+
+  const counts = GRP_DEF.map(()=>0);
+  const perDraw=[];
+
+  for(const d of lines){
+    const hit=new Set();
+    d.main.forEach(n=>{
+      const idx=Math.floor((n-1)/10); counts[idx]++; hit.add(idx);
+    });
+    perDraw.push(hit);
+  }
+
+  const used = lines.length;
+  const total = counts.reduce((a,b)=>a+b,0);
+  const maxV = Math.max(...counts,1);
+
+  const statusEl = document.getElementById('grpStatus');
+  if(statusEl) statusEl.textContent = `Ausgewertet: ${used} Ziehungen`;
+
+  const tbody = document.getElementById('grpTable');
+  if(tbody){ tbody.innerHTML=''; }
+  GRP_DEF.forEach((g,i)=>{
+    const hits = counts[i];
+    const avg = (hits/Math.max(1,used)).toFixed(2);
+    const pct = total? (100*hits/total).toFixed(1) : '0.0';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2 font-semibold">${g.id}</td>
+      <td class="p-2">${g.label}</td>
+      <td class="p-2">${hits}</td>
+      <td class="p-2">${avg}</td>
+      <td class="p-2">${pct}%</td>
+      <td class="p-2">
+        <div style="height:8px;background:#0b0e13;border:1px solid #263142;border-radius:6px;position:relative">
+          <span style="position:absolute;left:0;top:0;bottom:0;width:${(hits/maxV*100).toFixed(1)}%;background:linear-gradient(90deg,#39ff88,#19d36b);border-radius:6px"></span>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const heat = document.getElementById('grpHeat');
+  if(heat){ heat.innerHTML=''; }
+  for(let i=0;i<used;i++){
+    for(let g=0; g<GRP_DEF.length; g++){
+      const cell=document.createElement('div');
+      const wasHit = perDraw[i].has(g);
+      cell.title = `Ziehung ${i+1}: `+(wasHit?'Treffer':'kein Treffer');
+      cell.style.cssText = 'aspect-ratio:1/1;border-radius:6px;border:1px solid #263142;'+(wasHit?'background:#143222':'background:#0b0e13');
+      heat.appendChild(cell);
+    }
+  }
+}
+
+document.getElementById('grpRun')?.addEventListener('click', runGroups);
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+/* === Gruppen-Tracker (5 Gruppen) ========================================== */
+const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
+
+function runGroups(){
+  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
+  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse(); // newest first
+
+  const counts = GRP_DEF.map(()=>0);
+  const perDraw=[];
+
+  for(const d of lines){
+    const hit=new Set();
+    d.main.forEach(n=>{
+      const idx=Math.floor((n-1)/10); counts[idx]++; hit.add(idx);
+    });
+    perDraw.push(hit);
+  }
+
+  const used = lines.length;
+  const total = counts.reduce((a,b)=>a+b,0);
+  const maxV = Math.max(...counts,1);
+
+  const statusEl = document.getElementById('grpStatus');
+  if(statusEl) statusEl.textContent = `Ausgewertet: ${used} Ziehungen`;
+
+  const tbody = document.getElementById('grpTable');
+  if(tbody){ tbody.innerHTML=''; }
+  GRP_DEF.forEach((g,i)=>{
+    const hits = counts[i];
+    const avg = (hits/Math.max(1,used)).toFixed(2);
+    const pct = total? (100*hits/total).toFixed(1) : '0.0';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2 font-semibold">${g.id}</td>
+      <td class="p-2">${g.label}</td>
+      <td class="p-2">${hits}</td>
+      <td class="p-2">${avg}</td>
+      <td class="p-2">${pct}%</td>
+      <td class="p-2">
+        <div style="height:8px;background:#0b0e13;border:1px solid #263142;border-radius:6px;position:relative">
+          <span style="position:absolute;left:0;top:0;bottom:0;width:${(hits/maxV*100).toFixed(1)}%;background:linear-gradient(90deg,#39ff88,#19d36b);border-radius:6px"></span>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const heat = document.getElementById('grpHeat');
+  if(heat){ heat.innerHTML=''; }
+  for(let i=0;i<used;i++){
+    for(let g=0; g<GRP_DEF.length; g++){
+      const cell=document.createElement('div');
+      const wasHit = perDraw[i].has(g);
+      cell.title = `Ziehung ${i+1}: `+(wasHit?'Treffer':'kein Treffer');
+      cell.style.cssText = 'aspect-ratio:1/1;border-radius:6px;border:1px solid #263142;'+(wasHit?'background:#143222':'background:#0b0e13');
+      heat.appendChild(cell);
+    }
+  }
+}
+
+document.getElementById('grpRun')?.addEventListener('click', runGroups);
+
+</script>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
 <style>
@@ -37,11 +163,11 @@
 
   <div class="flex justify-center flex-wrap gap-3 mb-6">
     <button type="button" onclick="tab('archiv', this)" class="nav-btn active" id="btn-archiv"><div>📂</div><span>Archiv</span></button>
-    <button type="button" onclick="tab('drum', this)" class="nav-btn" id="btn-drum"><div>🎱</div><span>Trommel</span></button>
     <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
     <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
     <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
     <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
+      <button type="button" onclick="tab('groups', this)" class="nav-btn" id="btn-groups"><div>🧮</div><span>Gruppen</span></button>
   </div>
 
   <!-- ARCHIV -->
@@ -154,6 +280,48 @@
     <div id="analysisBox" class="mt-3 text-sm"></div>
   </div>
 
+
+  <!-- GROUPS -->
+  <div id="v-groups" class="glass hidden">
+    <h2 class="text-xl font-bold mb-2">🧮 Gruppen (letzte X Ziehungen)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+      <div>
+        <div class="flex items-end gap-2">
+          <label class="text-sm text-gray-300">Fenster
+            <select id="grpWindow" class="bg-gray-900 p-2 rounded">
+              <option value="12">12</option>
+              <option value="18">18</option>
+              <option value="24" selected>24</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+          <button id="grpRun" class="btn btn--green">🔄 Aktualisieren</button>
+          <span id="grpStatus" class="text-sm text-gray-300"></span>
+        </div>
+        <div class="overflow-x-auto mt-3">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-gray-300">
+                <th class="text-left p-2">Gruppe</th>
+                <th class="text-left p-2">Range</th>
+                <th class="text-left p-2">Treffer</th>
+                <th class="text-left p-2">Ø/Ziehung</th>
+                <th class="text-left p-2">Quote</th>
+                <th class="text-left p-2">Leiste</th>
+              </tr>
+            </thead>
+            <tbody id="grpTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="text-sm text-gray-300">Heatmap (pro Ziehung; grün = Gruppe hatte mind. 1 Treffer)</div>
+        <div id="grpHeat" class="grid grid-cols-5 gap-1 mt-1"></div>
+      </div>
+    </div>
+    <div class="text-xs text-gray-300">Hinweis: Nutzt das geladene Archiv. Lade zuerst das Archiv im Tab „Archiv“.</div>
+  </div>
+
   <!-- FAVORITEN -->
   <div id="v-fav" class="glass hidden">
     <h2 class="text-xl font-bold mb-2">⭐ Favoriten</h2>
@@ -179,7 +347,7 @@ let latestRefDate = localStorage.getItem(LATEST_REF_KEY) || null;
 
 /* === UI Grundfunktionen ==================================================== */
 function tab(name, btn){
-  ['archiv','map','gen','ana','fav'].forEach(n=>$('#v-'+n).classList.add('hidden'));
+  ['archiv','map','gen','ana','groups','fav'].forEach(n=>$('#v-'+n).classList.add('hidden'));
   $('#v-'+name).classList.remove('hidden');
   $$('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
@@ -796,128 +964,69 @@ renderFavs();
   latestRefDate = localStorage.getItem(LATEST_REF_KEY) || latestRefDate;
   setKPIs();
 })();
-</script>
 
-<!-- === BEGIN Trommel (v8) ================================================== -->
-<div id="v-drum" class="glass hidden" style="display:none;margin-top:1rem;">
-  <div class="flex items-center justify-between mb-2">
-    <h2 class="text-xl font-bold">🎱 Ziehung – Trommel</h2>
-    <div class="badge" id="drumLabel">Venus · 50 gelbe Styroporkugeln</div>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-    <div class="md:col-span-2">
-      <canvas id="drumCanvas" width="760" height="560" class="w-full rounded border border-white/10 bg-black/30"></canvas>
-    </div>
-    <div class="space-y-2">
-      <div class="glass">
-        <div class="font-semibold mb-1">Ziehung</div>
-        <div class="text-sm opacity-80"><b>Venus</b> (50 gelb) mit Gebläse unten & Fang oben. Danach <b>Pearl</b> (12 weiß).</div>
-        <div class="mt-2 flex gap-2 flex-wrap">
-          <button type="button" class="btn btn--green" id="drumAutoStart">🎬 Start Ziehung</button>
-          <button type="button" class="btn btn--amber" id="drumReset">🔄 Reset</button>
-        </div>
-        <div class="mt-2">
-          <div class="badge">Gezogene Hauptzahlen (Venus)</div>
-          <div id="drumOutMain" class="mt-1 flex flex-wrap"></div>
-          <div class="badge mt-2">Gezogene Eurozahlen (Pearl)</div>
-          <div id="drumOutEuro" class="mt-1 flex flex-wrap"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div id="dbg" style="position:fixed;left:12px;bottom:12px;font:12px/1.2 monospace;color:#b7c7ff;background:rgba(17,24,39,.7);padding:.35rem .5rem;border:1px solid rgba(255,255,255,.15);border-radius:.4rem">init…</div>
+/* === Gruppen-Tracker (5 Gruppen) ========================================== */
+const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
 
-<script>
-(function(){
-  function clearInline(){ document.querySelectorAll('[id^="v-"]').forEach(v=>{ if(v.style) v.style.display=''; }); }
-  function showDrum(btn){
-    document.querySelectorAll('[id^="v-"]').forEach(v=> v.classList && v.classList.add('hidden'));
-    const view = document.getElementById('v-drum');
-    if(view){ view.classList.remove('hidden'); view.style.display=''; }
-    document.querySelectorAll('.nav-btn').forEach(b=> b.classList && b.classList.remove('active'));
-    if(btn) btn.classList && btn.classList.add('active');
+function runGroups(){
+  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
+  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse(); // newest first
+
+  const counts = GRP_DEF.map(()=>0);
+  const perDraw=[];
+
+  for(const d of lines){
+    const hit=new Set();
+    d.main.forEach(n=>{
+      const idx=Math.floor((n-1)/10); counts[idx]++; hit.add(idx);
+    });
+    perDraw.push(hit);
   }
-  const oldTab = window.tab;
-  window.tab = function(name, el){
-    if(name==='drum'){ showDrum(el); return; }
-    clearInline();
-    if(typeof oldTab==='function'){ oldTab(name, el); }
-  };
-  const btn = document.getElementById('btn-drum');
-  if(btn){ btn.addEventListener('click', ()=> window.tab('drum', btn)); }
-})();
-</script>
 
-<script>
-// v8 Physics (ASCII only, robust)
-(function(){
-  const canvas = document.getElementById('drumCanvas'); if(!canvas) return;
-  const ctx = canvas.getContext('2d', { alpha:false });
-  const W=canvas.width, H=canvas.height, CX=W*0.5, CY=H*0.52, DRUM_R=Math.min(W,H)*0.44;
-  const CATCH_POS={x:CX+DRUM_R*0.45,y:CY-DRUM_R*0.78}, CATCH_R=20;
-  const JETS=[{x:CX-DRUM_R*0.32,y:CY+DRUM_R*0.60,phase:0.0},{x:CX,y:CY+DRUM_R*0.60,phase:1.2},{x:CX+DRUM_R*0.32,y:CY+DRUM_R*0.60,phase:2.4}];
-  const BALL_DIAM_PX=22, R=BALL_DIAM_PX/2, PADDLES=3, REST=0.8, JET_R=82;
-  const BASE_LIFT_V=220, BASE_LIFT_P=180;
-  const outMain=document.getElementById('drumOutMain'), outEuro=document.getElementById('drumOutEuro'), label=document.getElementById('drumLabel');
-  const btnStart=document.getElementById('drumAutoStart'), btnReset=document.getElementById('drumReset'), dbg=document.getElementById('dbg');
-  let balls=[], drawnMain=[], drawnEuro=[], phase='idle', running=false, rafId=null, lastT=0, lastCatchMs=0;
-  let tNoise=0, tGrav=0, jetT=0, paddleAngle=0, gvec={x:0,y:60};
-  const minGapMain=1500, minGapEuro=1800;
+  const used = lines.length;
+  const total = counts.reduce((a,b)=>a+b,0);
+  const maxV = Math.max(...counts,1);
 
-  function rng(a,b){return a+Math.random()*(b-a);}
-  function pill(n,e){const s=document.createElement('span');s.className='chip'+(e?' euro':'');s.textContent=n;setTimeout(()=>{s.classList.add('pop');setTimeout(()=>s.classList.remove('pop'),240);},10);return s;}
-  function render(){outMain.innerHTML='';drawnMain.forEach(n=>outMain.appendChild(pill(n,false)));outEuro.innerHTML='';drawnEuro.forEach(n=>outEuro.appendChild(pill(n,true)));}
-  function initBalls(c,isP){balls=[];for(let i=0;i<c;i++){const a=Math.random()*Math.PI*2,r=DRUM_R*0.50*rng(0.35,0.92);const x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;balls.push({id:i+1,x:x,y:y,vx:rng(-70,70),vy:rng(-70,70),r:R});}label.textContent=isP?'Pearl · 12 weiße Styroporkugeln':'Venus · 50 gelbe Styroporkugeln';}
-  function drawDrum(isP){ctx.fillStyle='#0b1022';ctx.fillRect(0,0,W,H);ctx.beginPath();ctx.arc(CX,CY,DRUM_R,0,Math.PI*2);ctx.strokeStyle='rgba(180,220,255,.35)';ctx.lineWidth=8;ctx.stroke();ctx.save();ctx.translate(CX,CY);const L=DRUM_R*0.65;for(let i=0;i<PADDLES;i++){const ang=paddleAngle+i*(2*Math.PI/PADDLES);ctx.rotate(ang);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(L,0);ctx.lineWidth=6;ctx.strokeStyle='rgba(200,200,255,.22)';ctx.stroke();ctx.rotate(-ang);}ctx.restore();ctx.beginPath();ctx.arc(CATCH_POS.x,CATCH_POS.y,CATCH_R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3;ctx.stroke();for(const j of JETS){ctx.beginPath();ctx.arc(j.x,j.y,7,0,Math.PI*2);ctx.fillStyle='rgba(120,170,255,.35)';ctx.fill();}}
-  function drawBall(b,isP){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle=isP?'rgba(255,255,255,.96)':'rgba(255,240,120,.98)';ctx.fill();ctx.lineWidth=1.4;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();ctx.fillStyle='#111';ctx.font='bold 12px Inter, system-ui';const s=String(b.id),w=ctx.measureText(s).width;ctx.fillText(s,b.x-w/2,b.y+4);}
-  const CELL=R*2.4; function hkey(x,y){return (Math.floor(x/CELL))+','+(Math.floor(y/CELL));}
-  function step(dt,now,isP){
-    tNoise+=dt; tGrav+=dt; jetT+=dt; paddleAngle+=2.0*dt;
-    if(tGrav>1.1){tGrav=0; const a=rng(-Math.PI,Math.PI),g=rng(40,80); gvec={x:Math.cos(a)*g,y:Math.sin(a)*g};}
-    if(tNoise>0.25){tNoise=0; for(const b of balls){b.vx+=rng(-22,22); b.vy+=rng(-22,22);}}
-    const base = isP ? BASE_LIFT_P : BASE_LIFT_V;
-    for(const b of balls){
-      b.vx*=0.988; b.vy*=0.988; b.vx+=gvec.x*dt; b.vy+=gvec.y*dt;
-      const rx=b.x-CX, ry=b.y-CY, ang=Math.atan2(ry,rx), rad=Math.hypot(rx,ry);
-      for(let i=0;i<PADDLES;i++){ const targ=paddleAngle+i*(2*Math.PI/PADDLES);
-        const diff=Math.atan2(Math.sin(ang-targ),Math.cos(ang-targ));
-        if(Math.abs(diff)<0.22 && rad<DRUM_R*0.82){ const k=(DRUM_R-rad)*(isP?9:11)*dt; b.vx+=-Math.sin(targ)*k; b.vy+=Math.cos(targ)*k; } }
-      for(const J of JETS){ const dx=b.x-J.x, dy=b.y-J.y, d2=dx*dx+dy*dy;
-        if(d2 < JET_R*JET_R){ const p=(Math.sin(jetT*2.6+J.phase)+1)*0.5; b.vy -= base*p*dt; b.vx += dx*0.002*dt; } }
-      b.x+=b.vx*dt; b.y+=b.vy*dt;
-      const dx=b.x-CX, dy=b.y-CY, dist=Math.hypot(dx,dy), maxR=DRUM_R-b.r-4;
-      if(dist>maxR){ const nx=dx/dist, ny=dy/dist; b.x=CX+nx*maxR; b.y=CY+ny*maxR; const vn=b.vx*nx+b.vy*ny; const vtx=b.vx-vn*nx, vty=b.vy-vn*ny; b.vx=vtx*1.01-REST*vn*nx; b.vy=vty*1.01-REST*vn*ny; }
+  const statusEl = document.getElementById('grpStatus');
+  if(statusEl) statusEl.textContent = `Ausgewertet: ${used} Ziehungen`;
+
+  const tbody = document.getElementById('grpTable');
+  if(tbody){ tbody.innerHTML=''; }
+  GRP_DEF.forEach((g,i)=>{
+    const hits = counts[i];
+    const avg = (hits/Math.max(1,used)).toFixed(2);
+    const pct = total? (100*hits/total).toFixed(1) : '0.0';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2 font-semibold">${g.id}</td>
+      <td class="p-2">${g.label}</td>
+      <td class="p-2">${hits}</td>
+      <td class="p-2">${avg}</td>
+      <td class="p-2">${pct}%</td>
+      <td class="p-2">
+        <div style="height:8px;background:#0b0e13;border:1px solid #263142;border-radius:6px;position:relative">
+          <span style="position:absolute;left:0;top:0;bottom:0;width:${(hits/maxV*100).toFixed(1)}%;background:linear-gradient(90deg,#39ff88,#19d36b);border-radius:6px"></span>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const heat = document.getElementById('grpHeat');
+  if(heat){ heat.innerHTML=''; }
+  for(let i=0;i<used;i++){
+    for(let g=0; g<GRP_DEF.length; g++){
+      const cell=document.createElement('div');
+      const wasHit = perDraw[i].has(g);
+      cell.title = `Ziehung ${i+1}: `+(wasHit?'Treffer':'kein Treffer');
+      cell.style.cssText = 'aspect-ratio:1/1;border-radius:6px;border:1px solid #263142;'+(wasHit?'background:#143222':'background:#0b0e13');
+      heat.appendChild(cell);
     }
-    const grid=new Map(); for(const b of balls){ const k=hkey(b.x,b.y); if(!grid.has(k))grid.set(k,[]); grid.get(k).push(b); }
-    const neigh=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
-    for(const b of balls){ const ix=Math.floor(b.x/CELL), iy=Math.floor(b.y/CELL);
-      for(const n of neigh){ const arr=grid.get((ix+n[0])+','+(iy+n[1])); if(!arr) continue;
-        for(const o of arr){ if(o===b) continue; const dx=o.x-b.x, dy=o.y-b.y, rsum=o.r+b.r, d2=dx*dx+dy*dy;
-          if(d2<rsum*rsum){ const d=Math.sqrt(d2)||0.0001, nx=dx/d, ny=dy/d, overlap=(rsum-d), push=overlap*0.52;
-            b.x-=nx*push*0.5; b.y-=ny*push*0.5; o.x+=nx*push*0.5; o.y+=ny*push*0.5;
-            const reln=(b.vx-o.vx)*nx+(b.vy-o.vy)*ny; const J=(-1.8*reln)/2; b.vx+=J*nx; b.vy+=J*ny; o.vx-=J*nx; o.vy-=J*ny; } } } }
-    for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; const d=Math.hypot(b.x-CATCH_POS.x,b.y-CATCH_POS.y); const wait=(phase==='main')?minGapMain:minGapEuro;
-      if(d < CATCH_R-2){ const nowMs=now*1000.0; if(nowMs-lastCatchMs<wait){ const nx=(b.x-CATCH_POS.x)/(d||1), ny=(b.y-CATCH_POS.y)/(d||1); b.vx+=nx*80; b.vy+=ny*80; continue; }
-        balls.splice(i,1); lastCatchMs=nowMs; setTimeout(()=>capture(b),200); } }
   }
-  function capture(b){ if(phase==='main'){ drawnMain.push(b.id); drawnMain.sort((a,b)=>a-b); render(); if(drawnMain.length>=5){ phase='switch'; } }
-                      else if(phase==='euro'){ drawnEuro.push(b.id); drawnEuro.sort((a,b)=>a-b); render(); if(drawnEuro.length>=2){ phase='done'; stop(); } } }
-  function draw(){ const isP=(phase==='euro'||phase==='done'); drawDrum(isP); for(const b of balls) drawBall(b,isP); }
-  function loop(ts){ if(!running) return; const t=ts*0.001, dt=Math.min(0.033, lastT?(t-lastT):0.016); lastT=t;
-    if(phase==='main'||phase==='euro'){ step(dt,t,(phase!=='main')); } else if(phase==='switch'){ phase='euro_init'; setTimeout(()=>{ initBalls(12,true); phase='euro'; lastCatchMs=performance.now(); }, 650); }
-    draw(); if(dbg) dbg.textContent='phase='+phase+' | balls='+balls.length+' | drawn='+drawnMain.length+'+'+drawnEuro.length; rafId=requestAnimationFrame(loop); }
-  function start(){ if(running) return; running=true; lastT=0; lastCatchMs=performance.now(); rafId=requestAnimationFrame(loop); }
-  function stop(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; }
-  function reset(){ stop(); drawnMain=[]; drawnEuro=[]; if(outMain) outMain.innerHTML=''; if(outEuro) outEuro.innerHTML=''; balls=[]; if(label) label.textContent='Venus · 50 gelbe Styroporkugeln'; phase='idle'; draw(); }
-  const startBtn=document.getElementById('drumAutoStart'), resetBtn=document.getElementById('drumReset');
-  if(resetBtn) resetBtn.addEventListener('click', reset);
-  if(startBtn) startBtn.addEventListener('click', ()=>{ reset(); initBalls(50,false); phase='main'; start(); });
-  // auto-start on load so you definitely see balls
-  (function(){ reset(); initBalls(50,false); phase='main'; start(); })();
-})();
-</script>
-<!-- === END Trommel (v8) ==================================================== -->
+}
 
+document.getElementById('grpRun')?.addEventListener('click', runGroups);
+
+</script>
 </body>
 </html>
