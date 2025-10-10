@@ -10,9 +10,9 @@
 const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
 
 function runGroups(){
-  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
-  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
-  const lines = draws.slice(-windowSize).reverse(); // newest first
+  const windowSize = parseInt(document.getElementById('grpWindow')?.value||'24',10);
+  if(!draws.length){ const s=document.getElementById('grpStatus'); if(s) s.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse();
 
   const counts = GRP_DEF.map(()=>0);
   const perDraw=[];
@@ -74,9 +74,9 @@ document.getElementById('grpRun')?.addEventListener('click', runGroups);
 const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
 
 function runGroups(){
-  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
-  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
-  const lines = draws.slice(-windowSize).reverse(); // newest first
+  const windowSize = parseInt(document.getElementById('grpWindow')?.value||'24',10);
+  if(!draws.length){ const s=document.getElementById('grpStatus'); if(s) s.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse();
 
   const counts = GRP_DEF.map(()=>0);
   const perDraw=[];
@@ -166,8 +166,8 @@ document.getElementById('grpRun')?.addEventListener('click', runGroups);
     <button type="button" onclick="tab('map', this)" class="nav-btn" id="btn-map"><div>🗺️</div><span>Map</span></button>
     <button type="button" onclick="tab('gen', this)" class="nav-btn" id="btn-gen"><div>⚡</div><span>Generieren</span></button>
     <button type="button" onclick="tab('ana', this)" class="nav-btn" id="btn-ana"><div>📊</div><span>Analyse</span></button>
+    <button type="button" onclick="tab('groups', this)" class="nav-btn" id="btn-groups"><div>🧮</div><span>Gruppen</span></button>
     <button type="button" onclick="tab('fav', this)" class="nav-btn" id="btn-fav"><div>⭐</div><span>Favoriten</span></button>
-      <button type="button" onclick="tab('groups', this)" class="nav-btn" id="btn-groups"><div>🧮</div><span>Gruppen</span></button>
   </div>
 
   <!-- ARCHIV -->
@@ -969,9 +969,9 @@ renderFavs();
 const GRP_DEF=[{id:'G1',label:'1–10', from:1,to:10},{id:'G2',label:'11–20', from:11,to:20},{id:'G3',label:'21–30', from:21,to:30},{id:'G4',label:'31–40', from:31,to:40},{id:'G5',label:'41–50', from:41,to:50}];
 
 function runGroups(){
-  const windowSize = parseInt($('#grpWindow')?.value||'24',10);
-  if(!draws.length){ $('#grpStatus')?.textContent='Bitte zuerst ein Archiv laden.'; return; }
-  const lines = draws.slice(-windowSize).reverse(); // newest first
+  const windowSize = parseInt(document.getElementById('grpWindow')?.value||'24',10);
+  if(!draws.length){ const s=document.getElementById('grpStatus'); if(s) s.textContent='Bitte zuerst ein Archiv laden.'; return; }
+  const lines = draws.slice(-windowSize).reverse();
 
   const counts = GRP_DEF.map(()=>0);
   const perDraw=[];
